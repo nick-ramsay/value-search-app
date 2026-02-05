@@ -15,6 +15,10 @@ async function getValues(): Promise<ValueRecord[]> {
     throw new Error("Missing MONGODB_URI in environment.");
   }
 
+  if (!aiAssessmentsCollection) {
+    throw new Error("Missing MONGODB_AI_ASSESSMENTS_COLLECTION in environment.");
+  }
+
   const db = client.db(dbName);
   const docs = await db.collection(aiAssessmentsCollection).find({}).limit(25).toArray();
 
@@ -52,7 +56,9 @@ export default async function Home() {
                     {values.map((item) => (
                       <li key={item.symbol} className="list-group-item">
                         <div className="fw-semibold">
-                          <a href={"https://finviz.com/quote.ashx?t=" + item.symbol.replace(".", "-") + "&ty=l&ta=0&p=w"} target="_blank">{item.symbol}</a>
+                          {
+                            item.symbol ? <a href={"https://finviz.com/quote.ashx?t=" + item.symbol.replace(".", "-") + "&ty=l&ta=0&p=w"} target="_blank">{item.symbol}</a> : ""
+                          }
                         </div>
                         <div className="text-secondary">
                           {item.aiRating ? <div className="text-secondary">{item.aiRating}</div> : ""}
@@ -67,4 +73,5 @@ export default async function Home() {
         </div>
       </main>
     </div>
-  )};
+  )
+};
