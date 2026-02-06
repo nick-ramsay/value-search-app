@@ -22,7 +22,7 @@ async function getValues(): Promise<ValueRecord[]> {
   }
 
   const db = client.db(dbName);
-  const docs = await db.collection(aiAssessmentsCollection).find({}).limit(10000).toArray();
+  const docs = await db.collection(aiAssessmentsCollection).find({}).limit(100).toArray();
 
   return docs.map((doc) => ({
     _id: doc._id.toString(),
