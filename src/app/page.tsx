@@ -3,7 +3,9 @@ import clientPromise from "@/lib/mongodb";
 type ValueRecord = {
   _id: string;
   symbol?: string;
+  name?: string;
   aiRating?: string;
+  assessment?: string;
 };
 
 async function getValues(): Promise<ValueRecord[]> {
@@ -20,12 +22,14 @@ async function getValues(): Promise<ValueRecord[]> {
   }
 
   const db = client.db(dbName);
-  const docs = await db.collection(aiAssessmentsCollection).find({}).limit(25).toArray();
+  const docs = await db.collection(aiAssessmentsCollection).find({}).limit(10000).toArray();
 
   return docs.map((doc) => ({
     _id: doc._id.toString(),
     symbol: typeof doc.symbol === "string" ? doc.symbol : undefined,
     aiRating: typeof doc.aiRating === "string" ? doc.aiRating : undefined,
+    assessment: typeof doc.assessment === "string" ? doc.assessment : undefined,
+    name: typeof doc.name === "string" ? doc.name : undefined,
   }));
 }
 
@@ -53,18 +57,72 @@ export default async function Home() {
                   </p>
                 ) : (
                   <ul className="list-group list-group-flush">
-                    {values.map((item) => (
-                      <li key={item.symbol} className="list-group-item">
-                        <div className="fw-semibold">
-                          {
-                            item.symbol ? <a href={"https://finviz.com/quote.ashx?t=" + item.symbol.replace(".", "-") + "&ty=l&ta=0&p=w"} target="_blank">{item.symbol}</a> : ""
-                          }
-                        </div>
-                        <div className="text-secondary">
-                          {item.aiRating ? <div className="text-secondary">{item.aiRating}</div> : ""}
-                        </div>
-                      </li>
-                    ))}
+                    {values.map((item) => {
+                      const accordionId = `accordion-${item._id}`;
+                      const headingId = `heading-${item._id}`;
+                      const collapseId = `collapse-${item._id}`;
+
+                      return (
+                        <li key={item._id} className="list-group-item">
+                          <div className="fw-semibold">
+                            {item.symbol ? (
+                              <a
+                                href={
+                                  "https://finviz.com/quote.ashx?t=" +
+                                  item.symbol.replace(".", "-") +
+                                  "&ty=l&ta=0&p=w"
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {(item.name ? item.name:"") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
+                              </a>
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                          <div className="text-secondary">
+                            {item.aiRating ? (
+                              <div className="text-secondary">{item.aiRating}</div>
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                          <div className="accordion" id={accordionId}>
+                            <div className="accordion-item">
+                              <h2 className="accordion-header" id={headingId}>
+                                <button
+                                  className="accordion-button collapsed"
+                                  type="button"
+                                  data-bs-toggle="collapse"
+                                  data-bs-target={`#${collapseId}`}
+                                  aria-expanded="false"
+                                  aria-controls={collapseId}
+                                >
+                                  Assessment
+                                </button>
+                              </h2>
+                              <div
+                                id={collapseId}
+                                className="accordion-collapse collapse"
+                                data-bs-parent={`#${accordionId}`}
+                                aria-labelledby={headingId}
+                              >
+                                <div className="accordion-body">
+                                  {item.assessment ? (
+                                    <div className="text-secondary">
+                                      {item.assessment}
+                                    </div>
+                                  ) : (
+                                    ""
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
