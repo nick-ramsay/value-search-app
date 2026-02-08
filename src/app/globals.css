@@ -1,3 +1,27 @@
 body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
+
+.ai-accordion-button {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  font-size: 0.95rem;
+  background-color: #f1f3f5;
+  color: #000;
+}
+
+.ai-accordion-button.collapsed,
+.ai-accordion-button:not(.collapsed) {
+  background-color: #f1f3f5;
+  color: #000;
+}
+
+.ai-accordion-button:focus,
+.ai-accordion-button:focus-visible {
+  border-color: inherit;
+  box-shadow: none;
+}
+
+.ai-accordion-button:not(.collapsed) {
+  box-shadow: none;
+}
