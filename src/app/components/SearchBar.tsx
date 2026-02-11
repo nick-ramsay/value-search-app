@@ -111,27 +111,10 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
     formRef.current?.requestSubmit();
   };
 
-  const handleClear = () => {
-    setQuery("");
-    setSuggestions([]);
-    setIsOpen(false);
-    setIsSelectedMatch(false);
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
-    if (selectedRef.current) {
-      selectedRef.current.value = "";
-    }
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("clearSearchInput", "1");
-      window.location.href = "/";
-    }
-  };
-
   return (
     <form
       ref={formRef}
-      className="d-flex gap-2 position-relative"
+      className="d-flex gap-2 position-relative w-100"
       role="search"
       action="/"
       method="GET"
@@ -139,7 +122,7 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
     >
       <input
         ref={inputRef}
-        className="form-control"
+        className="form-control flex-grow-1"
         type="search"
         name="q"
         placeholder="Search symbol or name"
@@ -161,15 +144,18 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
           window.setTimeout(() => setIsOpen(false), 100);
         }}
       />
-      <button className="btn btn-outline-secondary" type="button" onClick={handleClear}>
-        Clear
-      </button>
       <input ref={selectedRef} type="hidden" name="selected" value={isSelectedMatch ? "1" : ""} />
-      {isOpen ? (
+      {isOpen || isLoading ? (
         <div
           className="list-group position-absolute top-100 start-0 mt-1 shadow-sm w-100"
           role="listbox"
         >
+          {isLoading ? (
+            <div className="list-group-item d-flex align-items-center gap-2" role="status" aria-live="polite">
+              <span className="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              <span>Loading suggestions</span>
+            </div>
+          ) : null}
           {filteredSuggestions.map((suggestion) => {
             const label = formatSuggestionLabel(suggestion);
             const value = pickSearchValue(suggestion);
@@ -188,11 +174,6 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
             );
           })}
         </div>
-      ) : null}
-      {isLoading ? (
-        <span className="visually-hidden" role="status" aria-live="polite">
-          Loading suggestions
-        </span>
       ) : null}
     </form>
   );

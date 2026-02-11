@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
 import SearchBar from "../app/components/SearchBar";
@@ -92,7 +93,7 @@ async function getValues(
   return { values, hasMore };
 }
 
-export default async function Home({
+async function ResultsCard({
   searchParams,
 }: {
   searchParams?: Promise<{ page?: string; q?: string; selected?: string }>;
@@ -106,12 +107,165 @@ export default async function Home({
   const { values, hasMore } = await getValues(isFiltered ? 1 : currentPage, isFiltered ? query : undefined);
 
   return (
+    <section className="card shadow-sm mb-4">
+      <div className="card-body">
+        {!isFiltered ? (
+          <nav aria-label="Results pages" className="d-flex align-items-center justify-content-between mb-4">
+            {currentPage > 1 ? (
+              <Link
+                href={`/?page=${currentPage - 1}`}
+              >
+                <i className="page-change-icon bi bi-arrow-left-square"></i>
+              </Link>
+            ) : (
+              <span aria-hidden="true" style={{ width: "40px" }} />
+            )
+            }
+            <span className="text-muted align-self-center">Page {currentPage}</span>
+            {hasMore ? (
+              <Link  href={`/?page=${currentPage + 1}`}>
+                <i className="page-change-icon bi bi bi-arrow-right-square"></i>
+              </Link>
+            ) : (
+              <span aria-hidden="true" style={{ width: "40px" }} />
+            )}
+          </nav>
+        ) : null}
+        {values.length === 0 ? (
+          <p className="text-muted mb-0">
+            No values found. Add documents to get started.
+          </p>
+        ) : (
+          <>
+            <div className="d-flex flex-column gap-3">
+              {values.map((item) => {
+                const accordionId = `accordion-${item._id}`;
+                const headingId = `heading-${item._id}`;
+                const collapseId = `collapse-${item._id}`;
+
+                return (
+                  <div key={item._id} className="card shadow-sm">
+                    <div className="card-body text-center">
+                    <div className="fw-semibold">
+                      {item.symbol ? (
+                        <a
+                          href={
+                            "https://finviz.com/quote.ashx?t=" +
+                            item.symbol.replace(".", "-") +
+                            "&ty=l&ta=0&p=w"
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {(item.name ? item.name:"") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
+                        </a>
+                      ) : (
+                        ""
+                      )}
+                    </div>
+                    <div className="text-secondary mt-2 mb-3">
+                      {item.aiRating ? (
+                        <span className={`${getRatingBadgeClass(item.aiRating)} fw-bold`}>
+                          {toTitleCase(item.aiRating)}
+                        </span>
+                      ) : (
+                        ""
+                      )}
+                    </div>
+                    <div className="accordion" id={accordionId}>
+                      <div className="accordion-item">
+                        <h2 className="accordion-header" id={headingId}>
+                          <button
+                          className="accordion-button collapsed ai-accordion-button fw-bold"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target={`#${collapseId}`}
+                            aria-expanded="false"
+                            aria-controls={collapseId}
+                          >
+                            Assessment
+                          </button>
+                        </h2>
+                        <div
+                          id={collapseId}
+                          className="accordion-collapse collapse"
+                          data-bs-parent={`#${accordionId}`}
+                          aria-labelledby={headingId}
+                        >
+                          <div className="accordion-body">
+                            {item.assessment ? (
+                              <div className="text-secondary">
+                                {item.assessment}
+                              </div>
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {!isFiltered && hasMore ? (
+              <nav aria-label="Results pages" className="d-flex align-items-center justify-content-between mt-4">
+                {currentPage > 1 ? (
+                  <Link
+                    href={`/?page=${currentPage - 1}`}
+                  >
+                    <i className="page-change-icon bi bi-arrow-left-square"></i>
+                  </Link>
+                ) : (
+                  <span aria-hidden="true" style={{ width: "40px" }} />
+                )}
+                <span className="text-muted align-self-center">Page {currentPage}</span>
+                {hasMore ? (
+                  <Link href={`/?page=${currentPage + 1}`}>
+                    <i className="page-change-icon bi bi-arrow-right-square"></i>
+                  </Link>
+                ) : (
+                  <span aria-hidden="true" style={{ width: "40px" }} />
+                )}
+              </nav>
+            ) : null}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ResultsLoadingFallback() {
+  return (
+    <section className="card shadow-sm mb-4">
+      <div className="card-body d-flex flex-column align-items-center justify-content-center py-5">
+        <div className="d-flex align-items-center gap-2" role="status" aria-live="polite">
+          <span className="spinner-border" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; q?: string; selected?: string }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const query = resolvedSearchParams?.q?.trim() ?? "";
+
+  return (
     <div className="min-vh-100 bg-light">
       <nav className="navbar navbar-expand-lg bg-white border-bottom fixed-top w-100 shadow-sm">
         <div className="container-fluid px-3">
-          <div className="d-flex align-items-center gap-3 w-100">
-            <span className="navbar-brand mb-0 h1"><a href="/" style={{ color: "inherit", textDecoration: "none" }}>valuesearch.app</a></span>
-            <div className="ms-auto" style={{ minWidth: "280px", maxWidth: "460px", width: "100%" }}>
+          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
+            <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0 }}>
+              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>valuesearch.app</a>
+            </span>
+            <div className="ms-auto flex-grow-1" style={{ minWidth: 0, maxWidth: "460px" }}>
               <SearchBar initialQuery={query} />
             </div>
           </div>
@@ -120,142 +274,9 @@ export default async function Home({
       <main className="container pt-5 mt-4">
         <div className="row justify-content-center">
           <div className="col-lg-8">
-            <section className="card shadow-sm">
-              <div className="card-body">
-                {!isFiltered ? (
-                  <nav aria-label="Results pages" className="d-flex justify-content-between mb-4">
-                    {currentPage > 1 ? (
-                      <Link
-                        className="btn btn-outline-secondary"
-                        href={`/?page=${currentPage - 1}`}
-                      >
-                        Previous 25
-                      </Link>
-                    ) : (
-                      <span className="btn btn-outline-secondary disabled" aria-disabled="true">
-                        Previous 25
-                      </span>
-                    )}
-                    <span className="text-muted align-self-center">Page {currentPage}</span>
-                    {hasMore ? (
-                      <Link className="btn btn-outline-secondary" href={`/?page=${currentPage + 1}`}>
-                        Next 25
-                      </Link>
-                    ) : (
-                      <span className="btn btn-outline-secondary disabled" aria-disabled="true">
-                        Next 25
-                      </span>
-                    )}
-                  </nav>
-                ) : null}
-                {values.length === 0 ? (
-                  <p className="text-muted mb-0">
-                    No values found. Add documents to get started.
-                  </p>
-                ) : (
-                  <>
-                    <div className="d-flex flex-column gap-3">
-                      {values.map((item) => {
-                        const accordionId = `accordion-${item._id}`;
-                        const headingId = `heading-${item._id}`;
-                        const collapseId = `collapse-${item._id}`;
-
-                        return (
-                          <div key={item._id} className="card shadow-sm">
-                            <div className="card-body text-center">
-                            <div className="fw-semibold">
-                              {item.symbol ? (
-                                <a
-                                  href={
-                                    "https://finviz.com/quote.ashx?t=" +
-                                    item.symbol.replace(".", "-") +
-                                    "&ty=l&ta=0&p=w"
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {(item.name ? item.name:"") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
-                                </a>
-                              ) : (
-                                ""
-                              )}
-                            </div>
-                            <div className="text-secondary mt-2 mb-3">
-                              {item.aiRating ? (
-                                <span className={`${getRatingBadgeClass(item.aiRating)} fw-bold`}>
-                                  {toTitleCase(item.aiRating)}
-                                </span>
-                              ) : (
-                                ""
-                              )}
-                            </div>
-                            <div className="accordion" id={accordionId}>
-                              <div className="accordion-item">
-                                <h2 className="accordion-header" id={headingId}>
-                                  <button
-                                  className="accordion-button collapsed ai-accordion-button fw-bold"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target={`#${collapseId}`}
-                                    aria-expanded="false"
-                                    aria-controls={collapseId}
-                                  >
-                                    Assessment
-                                  </button>
-                                </h2>
-                                <div
-                                  id={collapseId}
-                                  className="accordion-collapse collapse"
-                                  data-bs-parent={`#${accordionId}`}
-                                  aria-labelledby={headingId}
-                                >
-                                  <div className="accordion-body">
-                                    {item.assessment ? (
-                                      <div className="text-secondary">
-                                        {item.assessment}
-                                      </div>
-                                    ) : (
-                                      ""
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {!isFiltered ? (
-                      <nav aria-label="Results pages" className="d-flex justify-content-between mt-4">
-                        {currentPage > 1 ? (
-                          <Link
-                            className="btn btn-outline-secondary"
-                            href={`/?page=${currentPage - 1}`}
-                          >
-                            Previous 25
-                          </Link>
-                        ) : (
-                          <span className="btn btn-outline-secondary disabled" aria-disabled="true">
-                            Previous 25
-                          </span>
-                        )}
-                        <span className="text-muted align-self-center">Page {currentPage}</span>
-                        {hasMore ? (
-                          <Link className="btn btn-outline-secondary" href={`/?page=${currentPage + 1}`}>
-                            Next 25
-                          </Link>
-                        ) : (
-                          <span className="btn btn-outline-secondary disabled" aria-disabled="true">
-                            Next 25
-                          </span>
-                        )}
-                      </nav>
-                    ) : null}
-                  </>
-                )}
-              </div>
-            </section>
+            <Suspense fallback={<ResultsLoadingFallback />}>
+              <ResultsCard searchParams={searchParams} />
+            </Suspense>
           </div>
         </div>
       </main>

@@ -25,3 +25,12 @@ body {
 .ai-accordion-button:not(.collapsed) {
   box-shadow: none;
 }
+
+.page-change-icon {
+  color: #000;
+  font-size: 24px;
+}
+
+.page-change-icon-disabled {
+  color: #6c757d;
+}
