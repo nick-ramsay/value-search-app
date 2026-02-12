@@ -34,3 +34,27 @@ body {
 .page-change-icon-disabled {
   color: #6c757d;
 }
+
+.filter-apply-button {
+  background-color: #f1f3f5;
+  color: #000;
+  border-color: #f1f3f5;
+}
+
+.filter-apply-button:hover {
+  background-color: #e0e2e5;
+  border-color: #e0e2e5;
+  color: #000;
+}
+
+.filter-clear-button {
+  background-color: #fff;
+  color: #e0115f;
+  border-color: #e0115f;
+}
+
+.filter-clear-button:hover {
+  background-color: #e0115f;
+  color: #fff;
+  border-color: #e0115f;
+}
