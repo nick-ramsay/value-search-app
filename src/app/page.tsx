@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
 import SearchBar from "../app/components/SearchBar";
 import FilterClearButton from "../app/components/FilterClearButton";
+import ThemeSwitcher from "../app/components/ThemeSwitcher";
+import PaginationWithLoader from "../app/components/PaginationWithLoader";
 
 type ValueRecord = {
   _id: string;
@@ -24,6 +26,188 @@ type FilterOptions = {
   sectors: string[];
   countries: string[];
 };
+
+function FiltersSection({
+  filterOptions,
+  query,
+  isSelected,
+  selectedIndustry,
+  selectedSector,
+  selectedCountry,
+}: {
+  filterOptions: FilterOptions;
+  query: string;
+  isSelected: boolean;
+  selectedIndustry: string;
+  selectedSector: string;
+  selectedCountry: string;
+}) {
+  const { industries, sectors, countries } = filterOptions;
+  return (
+    <section>
+      <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
+        <div className="accordion-item">
+          <h2 className="accordion-header" id="filtersHeading">
+            <button
+              className="accordion-button collapsed ai-accordion-button fw-bold"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#filtersCollapse"
+              aria-expanded="false"
+              aria-controls="filtersCollapse"
+            >
+              Filters
+            </button>
+          </h2>
+          <div
+            id="filtersCollapse"
+            className="accordion-collapse collapse"
+            aria-labelledby="filtersHeading"
+            data-bs-parent="#filtersAccordion"
+          >
+            <div className="accordion-body">
+              <form method="get" action="/" className="row g-3">
+                <input type="hidden" name="q" value={query} />
+                {isSelected ? <input type="hidden" name="selected" value="1" /> : null}
+                <div className="col-md-4">
+                  <label htmlFor="industry" className="form-label fw-semibold">
+                    Industry
+                  </label>
+                  <select
+                    id="industry"
+                    name="industry"
+                    className="form-select glass-select"
+                    defaultValue={selectedIndustry}
+                  >
+                    <option value="">All industries</option>
+                    {industries.map((industry) => (
+                      <option key={industry} value={industry}>
+                        {industry}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label htmlFor="sector" className="form-label fw-semibold">
+                    Sector
+                  </label>
+                  <select
+                    id="sector"
+                    name="sector"
+                    className="form-select glass-select"
+                    defaultValue={selectedSector}
+                  >
+                    <option value="">All sectors</option>
+                    {sectors.map((sector) => (
+                      <option key={sector} value={sector}>
+                        {sector}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label htmlFor="country" className="form-label fw-semibold">
+                    Country
+                  </label>
+                  <select
+                    id="country"
+                    name="country"
+                    className="form-select glass-select"
+                    defaultValue={selectedCountry}
+                  >
+                    <option value="">All countries</option>
+                    {countries.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-12 d-flex justify-content-end gap-2 mt-2">
+                  {(selectedIndustry || selectedSector || selectedCountry) && (
+                    <FilterClearButton className="btn btn-sm filter-clear-button" />
+                  )}
+                  <button
+                    type="submit"
+                    className="btn btn-light btn-sm filter-apply-button"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FiltersLoadingFallback() {
+  return (
+    <section>
+      <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
+        <div className="accordion-item">
+          <h2 className="accordion-header" id="filtersHeading">
+            <button
+              className="accordion-button collapsed ai-accordion-button fw-bold"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#filtersCollapse"
+              aria-expanded="false"
+              aria-controls="filtersCollapse"
+            >
+              Filters
+            </button>
+          </h2>
+          <div
+            id="filtersCollapse"
+            className="accordion-collapse collapse"
+            aria-labelledby="filtersHeading"
+            data-bs-parent="#filtersAccordion"
+          >
+            <div className="accordion-body d-flex align-items-center justify-content-center py-4">
+              <span className="spinner-border spinner-border-sm me-2" aria-hidden />
+              <span className="small text-muted">Loading filters…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+async function FiltersAsyncWrapper({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    q?: string;
+    selected?: string;
+    industry?: string;
+    sector?: string;
+    country?: string;
+  }>;
+}) {
+  const [resolvedSearchParams, filterOptions] = await Promise.all([
+    searchParams,
+    getFilterOptions(),
+  ]);
+  const query = resolvedSearchParams?.q?.trim() ?? "";
+  const isSelected = resolvedSearchParams?.selected === "1";
+  const selectedIndustry = resolvedSearchParams?.industry ?? "";
+  const selectedSector = resolvedSearchParams?.sector ?? "";
+  const selectedCountry = resolvedSearchParams?.country ?? "";
+  return (
+    <FiltersSection
+      filterOptions={filterOptions}
+      query={query}
+      isSelected={isSelected}
+      selectedIndustry={selectedIndustry}
+      selectedSector={selectedSector}
+      selectedCountry={selectedCountry}
+    />
+  );
+}
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -55,7 +239,7 @@ function getRatingBadgeClass(rating: string) {
   }
 }
 
-async function getFilterOptions(): Promise<FilterOptions> {
+const getFilterOptions = cache(async (): Promise<FilterOptions> => {
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
 
@@ -100,7 +284,7 @@ async function getFilterOptions(): Promise<FilterOptions> {
     sectors,
     countries,
   };
-}
+});
 
 async function getValues(
   page: number,
@@ -226,7 +410,6 @@ async function getValuesCount({
 
 async function ResultsCard({
   searchParams,
-  filterOptions,
 }: {
   searchParams?: Promise<{
     page?: string;
@@ -236,9 +419,11 @@ async function ResultsCard({
     sector?: string;
     country?: string;
   }>;
-  filterOptions: FilterOptions;
 }) {
-  const resolvedSearchParams = await searchParams;
+  const [resolvedSearchParams, filterOptions] = await Promise.all([
+    searchParams,
+    getFilterOptions(),
+  ]);
   const requestedPage = Number.parseInt(resolvedSearchParams?.page ?? "1", 10);
   const currentPage = Number.isNaN(requestedPage) ? 1 : Math.max(1, requestedPage);
   const query = resolvedSearchParams?.q?.trim() ?? "";
@@ -274,103 +459,6 @@ async function ResultsCard({
 
   return (
     <div>
-      <section>
-        <div className="accordion pb-3" id="filtersAccordion">
-          <div className="accordion-item">
-            <h2 className="accordion-header" id="filtersHeading">
-              <button
-                className="accordion-button collapsed ai-accordion-button fw-bold"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#filtersCollapse"
-                aria-expanded="false"
-                aria-controls="filtersCollapse"
-              >
-                Filters
-              </button>
-            </h2>
-            <div
-              id="filtersCollapse"
-              className="accordion-collapse collapse"
-              aria-labelledby="filtersHeading"
-              data-bs-parent="#filtersAccordion"
-            >
-              <div className="accordion-body">
-                <form method="get" action="/" className="row g-3">
-                  <input type="hidden" name="q" value={query} />
-                  {isSelected ? <input type="hidden" name="selected" value="1" /> : null}
-                  <div className="col-md-4">
-                    <label htmlFor="industry" className="form-label fw-semibold">
-                      Industry
-                    </label>
-                    <select
-                      id="industry"
-                      name="industry"
-                      className="form-select"
-                      defaultValue={selectedIndustry}
-                    >
-                      <option value="">All industries</option>
-                      {industries.map((industry) => (
-                        <option key={industry} value={industry}>
-                          {industry}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-4">
-                    <label htmlFor="sector" className="form-label fw-semibold">
-                      Sector
-                    </label>
-                    <select
-                      id="sector"
-                      name="sector"
-                      className="form-select"
-                      defaultValue={selectedSector}
-                    >
-                      <option value="">All sectors</option>
-                      {sectors.map((sector) => (
-                        <option key={sector} value={sector}>
-                          {sector}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-4">
-                    <label htmlFor="country" className="form-label fw-semibold">
-                      Country
-                    </label>
-                    <select
-                      id="country"
-                      name="country"
-                      className="form-select"
-                      defaultValue={selectedCountry}
-                    >
-                      <option value="">All countries</option>
-                      {countries.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                <div className="col-12 d-flex justify-content-end gap-2 mt-2">
-                  {(selectedIndustry || selectedSector || selectedCountry) && (
-                    <FilterClearButton className="btn btn-sm filter-clear-button" />
-                  )}
-                  <button
-                    type="submit"
-                    className="btn btn-light btn-sm filter-apply-button"
-                  >
-                    Apply
-                  </button>
-                </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
       <section className="card-body pb-2">
         <p className="text-muted small mb-0 text-center">
           {(() => {
@@ -389,36 +477,23 @@ async function ResultsCard({
           })()}
         </p>
       </section>
-      <section className="card shadow-sm mb-4 pt-3">
+      <section className="card liquid-glass-card mb-4 pt-3">
         <div className="card-body pt-0">
-          {!isFiltered ? (
-            <nav aria-label="Results pages" className="d-flex align-items-center justify-content-between mb-4">
-              {currentPage > 1 ? (
-                <Link
-                  href={buildPageHref(currentPage - 1)}
-                >
-                  <i className="page-change-icon bi bi-chevron-left"></i>
-                </Link>
-              ) : (
-                <span aria-hidden="true" style={{ width: "40px" }} />
-              )
-              }
-              <span className="align-self-center">Page {currentPage}</span>
-              {hasMore ? (
-                <Link href={buildPageHref(currentPage + 1)}>
-                  <i className="page-change-icon bi bi bi-chevron-right"></i>
-                </Link>
-              ) : (
-                <span aria-hidden="true" style={{ width: "40px" }} />
-              )}
-            </nav>
-          ) : null}
-          {values.length === 0 ? (
-            <p className="text-muted text-center mb-0">
-              No values found
-            </p>
-          ) : (
-            <>
+          <PaginationWithLoader
+            currentPage={currentPage}
+            hasMore={hasMore}
+            isFiltered={isFiltered}
+            query={query}
+            isSelected={isSelected}
+            selectedIndustry={selectedIndustry}
+            selectedSector={selectedSector}
+            selectedCountry={selectedCountry}
+          >
+            {values.length === 0 ? (
+              <p className="text-muted text-center mb-0">
+                No results found
+              </p>
+            ) : (
               <div className="d-flex flex-column gap-3">
                 {values.map((item) => {
                   const accordionId = `accordion-${item._id}`;
@@ -426,7 +501,7 @@ async function ResultsCard({
                   const collapseId = `collapse-${item._id}`;
 
                   return (
-                    <div key={item._id} className="card shadow-sm">
+                    <div key={item._id} className="card result-item-glass">
                       <div className="card-body text-center">
                         <div className="fw-semibold">
                           {item.symbol ? (
@@ -491,29 +566,8 @@ async function ResultsCard({
                   );
                 })}
               </div>
-              {!isFiltered && hasMore ? (
-                <nav aria-label="Results pages" className="d-flex align-items-center justify-content-between mt-4">
-                  {currentPage > 1 ? (
-                    <Link
-                      href={buildPageHref(currentPage - 1)}
-                    >
-                      <i className="page-change-icon bi bi-chevron-left"></i>
-                    </Link>
-                  ) : (
-                    <span aria-hidden="true" style={{ width: "40px" }} />
-                  )}
-                  <span className="align-self-center">Page {currentPage}</span>
-                  {hasMore ? (
-                    <Link href={buildPageHref(currentPage + 1)}>
-                      <i className="page-change-icon bi bi-chevron-right"></i>
-                    </Link>
-                  ) : (
-                    <span aria-hidden="true" style={{ width: "40px" }} />
-                  )}
-                </nav>
-              ) : null}
-            </>
-          )}
+            )}
+          </PaginationWithLoader>
         </div>
       </section>
     </div >
@@ -522,13 +576,46 @@ async function ResultsCard({
 
 function ResultsLoadingFallback() {
   return (
-    <section className="card shadow-sm mb-4">
-      <div className="card-body d-flex flex-column align-items-center justify-content-center py-5">
-        <div className="d-flex align-items-center gap-2" role="status" aria-live="polite">
-          <span className="spinner-border" aria-hidden="true"></span>
+    <div className="d-flex flex-column flex-grow-1">
+      <section className="card-body pb-2">
+        <p className="text-muted small mb-0 text-center">
+          0 results
+        </p>
+      </section>
+      <section className="card liquid-glass-card mb-4 pt-3 page-loading-results-card flex-grow-1 d-flex flex-column">
+        <div className="card-body pt-0 page-loading-results-card-body d-flex flex-column">
+          <nav
+            aria-label="Results pages"
+            className="d-flex align-items-center justify-content-between mb-4"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <span
+              className="page-change-icon page-change-icon-disabled"
+              style={{ width: "40px" }}
+              aria-hidden
+            >
+              <i className="bi bi-chevron-left" />
+            </span>
+            <span className="align-self-center">Page 1</span>
+            <span
+              className="page-change-icon page-change-icon-disabled"
+              style={{ width: "40px" }}
+              aria-hidden
+            >
+              <i className="bi bi-chevron-right" />
+            </span>
+          </nav>
+          <div
+            className="d-flex flex-column align-items-center justify-content-center flex-grow-1"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="spinner-border" aria-hidden />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -546,20 +633,23 @@ export default async function Home({
 }) {
   const resolvedSearchParams = await searchParams;
   const query = resolvedSearchParams?.q?.trim() ?? "";
-  const filterOptions = await getFilterOptions();
+  const isSelected = resolvedSearchParams?.selected === "1";
 
   return (
-    <div className="min-vh-100 bg-light">
-      <nav className="navbar navbar-expand-lg bg-white border-bottom fixed-top w-100 shadow-sm">
+    <div className="min-vh-100">
+      <nav className="navbar navbar-expand-lg fixed-top w-100 liquid-navbar" style={{ padding: "0.5rem 0" }}>
         <div className="container-fluid px-3">
           <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
-            <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0 }}>
-              <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>
+            <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0, fontWeight: 600 }}>
+              <Link href="/" style={{ color: "var(--text-primary)", textDecoration: "none" }}>
                 valuesearch.app
               </Link>
             </span>
-            <div className="ms-auto flex-grow-1" style={{ minWidth: 0, maxWidth: "460px" }}>
-              <SearchBar initialQuery={query} />
+            <div className="ms-auto d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
+                <SearchBar initialQuery={isSelected ? "" : query} />
+              </div>
+              <ThemeSwitcher />
             </div>
           </div>
         </div>
@@ -567,8 +657,11 @@ export default async function Home({
       <main className="container pt-5 mt-4">
         <div className="row justify-content-center">
           <div className="col-lg-8">
+            <Suspense fallback={<FiltersLoadingFallback />}>
+              <FiltersAsyncWrapper searchParams={searchParams} />
+            </Suspense>
             <Suspense fallback={<ResultsLoadingFallback />}>
-              <ResultsCard searchParams={searchParams} filterOptions={filterOptions} />
+              <ResultsCard searchParams={searchParams} />
             </Suspense>
           </div>
         </div>

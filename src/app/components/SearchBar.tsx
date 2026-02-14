@@ -122,7 +122,7 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
     >
       <input
         ref={inputRef}
-        className="form-control flex-grow-1"
+        className="form-control flex-grow-1 search-input-glass"
         type="search"
         name="q"
         placeholder="Search symbol or name"
@@ -147,11 +147,11 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
       <input ref={selectedRef} type="hidden" name="selected" value={isSelectedMatch ? "1" : ""} />
       {isOpen || isLoading ? (
         <div
-          className="list-group position-absolute top-100 start-0 mt-1 shadow-sm w-100"
+          className="position-absolute top-100 start-0 mt-2 w-100 suggestions-glass list-group list-group-flush"
           role="listbox"
         >
           {isLoading ? (
-            <div className="list-group-item d-flex align-items-center gap-2" role="status" aria-live="polite">
+            <div className="list-group-item suggestion-item-glass d-flex align-items-center gap-2 py-3" role="status" aria-live="polite">
               <span className="spinner-border spinner-border-sm" aria-hidden="true"></span>
               <span>Loading suggestions</span>
             </div>
@@ -165,7 +165,7 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
               <button
                 key={key}
                 type="button"
-                className="list-group-item list-group-item-action"
+                className="list-group-item list-group-item-action suggestion-item-glass py-3"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handleSelect(suggestion)}
               >
