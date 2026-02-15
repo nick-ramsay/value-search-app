@@ -14,6 +14,7 @@
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   --glass-shadow-floating: 0 12px 40px rgba(0, 0, 0, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-blur-stronger: 80px;
   /* Context & hierarchy */
   --surface-base: #f5f6f8;
   --surface-gradient-start: #eef0f4;
@@ -67,6 +68,7 @@
   --glass-border-subtle: rgba(0, 0, 0, 0.06);
   --glass-blur: 20px;
   --glass-blur-strong: 40px;
+  --glass-blur-stronger: 80px;
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   --glass-shadow-floating: 0 12px 40px rgba(0, 0, 0, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.6);
@@ -90,6 +92,7 @@
   --glass-bg-subtle: rgba(44, 44, 46, 0.55);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-subtle: rgba(255, 255, 255, 0.08);
+  --glass-blur-stronger: 80px;
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   --glass-shadow-floating: 0 12px 40px rgba(0, 0, 0, 0.45);
   --glass-highlight: rgba(255, 255, 255, 0.08);
@@ -187,6 +190,59 @@ button.accordion-button.ai-accordion-button:focus-visible {
   outline: none !important;
 }
 
+/* Score breakdown modal – theme-aware glass (light/dark) */
+.score-breakdown-modal .modal-content {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border-subtle);
+  box-shadow: var(--glass-shadow-floating);
+}
+
+/* Modal headers – strong frosted blur */
+.score-breakdown-modal .modal-header {
+  background: var(--glass-bg-subtle);
+  backdrop-filter: blur(var(--glass-blur-stronger));
+  -webkit-backdrop-filter: blur(var(--glass-blur-stronger));
+  border-bottom-color: var(--glass-border-subtle);
+  color: var(--text-primary);
+}
+
+/* Close button: dark X in light theme, light X in dark theme */
+@media (prefers-color-scheme: light) {
+  .score-breakdown-modal .modal-header .btn-close {
+    filter: invert(0);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .score-breakdown-modal .modal-header .btn-close {
+    filter: invert(1);
+  }
+}
+
+[data-theme="light"] .score-breakdown-modal .modal-header .btn-close {
+  filter: invert(0);
+}
+
+[data-theme="dark"] .score-breakdown-modal .modal-header .btn-close {
+  filter: invert(1);
+}
+
+.score-breakdown-modal .modal-body {
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+}
+
+.score-breakdown-modal .score-breakdown-summary {
+  color: var(--text-secondary) !important;
+}
+
+.score-breakdown-modal .score-breakdown-list .list-group-item {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--glass-border-subtle);
+}
+
 /* Keep accordion arrow the same color when collapsed vs expanded (Bootstrap uses different SVGs per state) */
 .ai-accordion-button::after,
 .ai-accordion-button.collapsed::after,
@@ -254,6 +310,43 @@ button.accordion-button.ai-accordion-button:focus-visible {
   border: 1px solid var(--glass-border-subtle);
   box-shadow: var(--glass-shadow);
   border-radius: 14px;
+}
+
+/* Result card header – strong frosted blur */
+.result-card-header {
+  background: var(--glass-bg-subtle);
+  backdrop-filter: blur(var(--glass-blur-stronger));
+  -webkit-backdrop-filter: blur(var(--glass-blur-stronger));
+  padding: 1rem 1rem 0.5rem;
+  border-radius: 14px 14px 0 0;
+}
+
+/* Card title link (Finviz) – slightly larger, fits glass UI */
+.result-card-title {
+  line-height: 1.35;
+}
+
+.result-card-title-link {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+}
+
+.result-card-title-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--accent-soft);
+}
+
+.result-card-title-link-icon {
+  font-size: 1.1em;
+  opacity: 0.85;
+  vertical-align: middle;
+  margin-top: 0.08em;
 }
 
 /* Search input – glass */
@@ -618,6 +711,14 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
   border-radius: 8px;
   font-weight: 600;
   padding: 0.35em 0.65em;
+}
+
+/* Result card: AI Rating and Score labels – same size and weight */
+.result-card-badge,
+button.result-card-badge {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
 }
 
 /* Links */

@@ -6,6 +6,32 @@ import SearchBar from "../app/components/SearchBar";
 import FilterClearButton from "../app/components/FilterClearButton";
 import ThemeSwitcher from "../app/components/ThemeSwitcher";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
+import ScoreModalTrigger from "../app/components/ScoreModalTrigger";
+import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
+
+type ValueSearchScoreDisplay = {
+  calculatedScorePercentage: number;
+  totalPossiblePoints: number;
+  totalCalculatedPoints?: number;
+  [key: string]: unknown;
+};
+
+const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
+  { key: "healthyPE", label: "Healthy P/E (0–15)" },
+  { key: "healthyFuturePE", label: "Healthy Forward P/E (0–15)" },
+  { key: "profitMarginPositive", label: "Positive profit margin" },
+  { key: "forwardPEGreater", label: "Forward P/E ≥ current P/E" },
+  { key: "healthyDebtEquity", label: "Healthy debt/equity (0–2)" },
+  { key: "healthyPriceBook", label: "Healthy P/B (0.95–1.1)" },
+  { key: "healthyPriceSales", label: "Healthy P/S (0–2)" },
+  { key: "movingAveragesGreaterThanPrice", label: "MAs > price & 200d > 50d" },
+  { key: "movingAverageSupport", label: "Moving average support" },
+  { key: "returnOnEquity", label: "Return on equity" },
+  { key: "returnOnInvestment", label: "Return on investment" },
+  { key: "priceToEarningsGrowth", label: "Price/earnings growth" },
+  { key: "relativeStengthIndex", label: "Relative strength index (30–70)" },
+  { key: "earningsPerShareGrowingNextYear", label: "EPS growing next year" },
+];
 
 type ValueRecord = {
   _id: string;
@@ -17,6 +43,7 @@ type ValueRecord = {
   industry?: string;
   sector?: string;
   country?: string;
+  valueSearchScore?: ValueSearchScoreDisplay;
 };
 
 const PAGE_SIZE = 25;
@@ -239,6 +266,12 @@ function getRatingBadgeClass(rating: string) {
   }
 }
 
+function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
+  if (calculatedScorePercentage > 0.66) return "badge bg-success text-white";
+  if (calculatedScorePercentage >= 0.33) return "badge bg-warning text-dark";
+  return "badge bg-danger text-white";
+}
+
 const getFilterOptions = cache(async (): Promise<FilterOptions> => {
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
@@ -335,6 +368,7 @@ async function getValues(
     filter.country = country;
   }
 
+  // Fetch a page of assessments sorted by aiRatingScore, name, symbol (no lookup yet)
   const docs = await db
     .collection(aiAssessmentsCollection)
     .find(filter)
@@ -342,19 +376,86 @@ async function getValues(
     .skip(skip)
     .limit(PAGE_SIZE + 1)
     .toArray();
-  const hasMore = docs.length > PAGE_SIZE;
 
-  const values = docs.slice(0, PAGE_SIZE).map((doc) => ({
-    _id: doc._id.toString(),
-    symbol: typeof doc.symbol === "string" ? doc.symbol : undefined,
-    aiRating: typeof doc.aiRating === "string" ? doc.aiRating : undefined,
-    aiRatingScore: typeof doc.aiRatingScore === "number" ? doc.aiRatingScore : undefined,
-    assessment: typeof doc.assessment === "string" ? doc.assessment : undefined,
-    name: typeof doc.name === "string" ? doc.name : undefined,
-    industry: typeof doc.industry === "string" ? doc.industry : undefined,
-    sector: typeof doc.sector === "string" ? doc.sector : undefined,
-    country: typeof doc.country === "string" ? doc.country : undefined,
-  }));
+  const hasMore = docs.length > PAGE_SIZE;
+  const pageDocs = docs.slice(0, PAGE_SIZE);
+  const symbols = pageDocs
+    .map((d) => (typeof d.symbol === "string" ? d.symbol : null))
+    .filter((s): s is string => s != null && s.length > 0);
+
+  // Load valueSearchScore for this page only
+  const valueSearchScoreBySymbol = new Map<string, ValueSearchScoreDisplay>();
+  if (symbols.length > 0) {
+    const quotes = await db
+      .collection("stock-quotes")
+      .find({ symbol: { $in: symbols } })
+      .project({ symbol: 1, valueSearchScore: 1 })
+      .toArray();
+    for (const q of quotes) {
+      const sym = typeof q.symbol === "string" ? q.symbol : null;
+      const vs = q.valueSearchScore;
+      if (
+        sym &&
+        vs &&
+        typeof vs === "object" &&
+        typeof (vs as { calculatedScorePercentage?: unknown }).calculatedScorePercentage === "number" &&
+        typeof (vs as { totalPossiblePoints?: unknown }).totalPossiblePoints === "number" &&
+        (vs as { totalPossiblePoints: number }).totalPossiblePoints > 0
+      ) {
+        valueSearchScoreBySymbol.set(sym, vs as ValueSearchScoreDisplay);
+      }
+    }
+  }
+
+  // Sort this page by aiRatingScore, then calculatedScorePercentage (desc), then name, symbol
+  const withScore = pageDocs.map((doc) => {
+    const symbol = typeof doc.symbol === "string" ? doc.symbol : undefined;
+    const valueSearchScore = symbol ? valueSearchScoreBySymbol.get(symbol) : undefined;
+    const pct = valueSearchScore?.totalPossiblePoints
+      ? valueSearchScore.calculatedScorePercentage
+      : -1;
+    return { doc, symbol, valueSearchScore, sortPct: pct };
+  });
+  withScore.sort((a, b) => {
+    const aiA = typeof a.doc.aiRatingScore === "number" ? a.doc.aiRatingScore : -1;
+    const aiB = typeof b.doc.aiRatingScore === "number" ? b.doc.aiRatingScore : -1;
+    if (aiA !== aiB) return aiB - aiA;
+    if (a.sortPct !== b.sortPct) return b.sortPct - a.sortPct;
+    const nameA = typeof a.doc.name === "string" ? a.doc.name : "";
+    const nameB = typeof b.doc.name === "string" ? b.doc.name : "";
+    const nameCmp = nameA.localeCompare(nameB);
+    if (nameCmp !== 0) return nameCmp;
+    const symA = typeof a.doc.symbol === "string" ? a.doc.symbol : "";
+    const symB = typeof b.doc.symbol === "string" ? b.doc.symbol : "";
+    return symA.localeCompare(symB);
+  });
+
+  const values = withScore.map(({ doc, symbol, valueSearchScore }) => {
+    let normalized: ValueSearchScoreDisplay | undefined;
+    if (valueSearchScore) {
+      const totalPossiblePoints = Number(valueSearchScore.totalPossiblePoints);
+      const calculatedScorePercentage = Number(valueSearchScore.calculatedScorePercentage);
+      if (totalPossiblePoints > 0 && !Number.isNaN(calculatedScorePercentage)) {
+        normalized = {
+          ...valueSearchScore,
+          calculatedScorePercentage,
+          totalPossiblePoints,
+        };
+      }
+    }
+    return {
+      _id: doc._id.toString(),
+      symbol,
+      aiRating: typeof doc.aiRating === "string" ? doc.aiRating : undefined,
+      aiRatingScore: typeof doc.aiRatingScore === "number" ? doc.aiRatingScore : undefined,
+      assessment: typeof doc.assessment === "string" ? doc.assessment : undefined,
+      name: typeof doc.name === "string" ? doc.name : undefined,
+      industry: typeof doc.industry === "string" ? doc.industry : undefined,
+      sector: typeof doc.sector === "string" ? doc.sector : undefined,
+      country: typeof doc.country === "string" ? doc.country : undefined,
+      valueSearchScore: normalized,
+    };
+  });
 
   return { values, hasMore };
 }
@@ -479,6 +580,7 @@ async function ResultsCard({
       </section>
       <section className="card liquid-glass-card mb-4 pt-3">
         <div className="card-body pt-0">
+          <ScoreExplanationModal />
           <PaginationWithLoader
             currentPage={currentPage}
             hasMore={hasMore}
@@ -502,33 +604,60 @@ async function ResultsCard({
 
                   return (
                     <div key={item._id} className="card result-item-glass">
-                      <div className="card-body text-center">
-                        <div className="fw-semibold">
-                          {item.symbol ? (
-                            <a
-                              href={
-                                "https://finviz.com/quote.ashx?t=" +
-                                item.symbol.replace(".", "-") +
-                                "&ty=l&ta=0&p=w"
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {(item.name ? item.name : "") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
-                            </a>
-                          ) : (
-                            ""
-                          )}
+                      <div className="card-body text-center p-0">
+                        <div className="result-card-header">
+                          <div className="result-card-title">
+                            {item.symbol ? (
+                              <a
+                                href={
+                                  "https://finviz.com/quote.ashx?t=" +
+                                  item.symbol.replace(".", "-") +
+                                  "&ty=l&ta=0&p=w"
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="result-card-title-link"
+                              >
+                                {(item.name ? item.name : "") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
+                                <i className="bi bi-link-45deg ms-1 result-card-title-link-icon" aria-hidden />
+                              </a>
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                          <div className="text-secondary mt-2 mb-3 row g-2">
+                          <div
+                            className={
+                              item.valueSearchScore != null &&
+                              item.valueSearchScore.totalPossiblePoints > 0 &&
+                              typeof item.valueSearchScore.calculatedScorePercentage === "number"
+                                ? "col-6 d-flex justify-content-center"
+                                : "col-12 d-flex justify-content-center"
+                            }
+                          >
+                            {item.aiRating ? (
+                              <span className={`${getRatingBadgeClass(item.aiRating)} result-card-badge`}>
+                                AI Rating: {toTitleCase(item.aiRating)}
+                              </span>
+                            ) : null}
+                          </div>
+                          {item.valueSearchScore != null &&
+                            item.valueSearchScore.totalPossiblePoints > 0 &&
+                            typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
+                            <div className="col-6 d-flex justify-content-center">
+                              <ScoreModalTrigger
+                                modalId={`score-modal-${item._id}`}
+                                name={item.name}
+                                symbol={item.symbol}
+                                valueSearchScore={item.valueSearchScore}
+                                buttonClassName={getValueScoreBadgeClass(item.valueSearchScore.calculatedScorePercentage)}
+                                buttonLabel={`Score: ${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
+                              />
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="text-secondary mt-2 mb-3">
-                          {item.aiRating ? (
-                            <span className={`${getRatingBadgeClass(item.aiRating)} fw-bold`}>
-                              {toTitleCase(item.aiRating)}
-                            </span>
-                          ) : (
-                            ""
-                          )}
                         </div>
+                        <div className="px-3 pb-3">
                         <div className="accordion" id={accordionId}>
                           <div className="accordion-item">
                             <h2 className="accordion-header" id={headingId}>
@@ -560,6 +689,7 @@ async function ResultsCard({
                               </div>
                             </div>
                           </div>
+                        </div>
                         </div>
                       </div>
                     </div>
