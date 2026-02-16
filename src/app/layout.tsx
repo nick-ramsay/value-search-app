@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "./bootstrap-client";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
 import ThemeInitScript from "./components/ThemeInitScript";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={plexMono.variable}>
         <ThemeInitScript />
         <BootstrapClient />
         {children}

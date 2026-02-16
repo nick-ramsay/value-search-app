@@ -112,7 +112,8 @@
 
 /* Base */
 body {
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
   background: linear-gradient(165deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
   color: var(--text-primary);
   min-height: 100vh;
@@ -154,6 +155,10 @@ body {
 
 [data-theme="light"] .liquid-navbar {
   background: rgba(255, 255, 255, 0.52) !important;
+}
+
+[data-theme="dark"] .liquid-navbar {
+  background: var(--glass-bg) !important;
 }
 
 /* Accordion */
