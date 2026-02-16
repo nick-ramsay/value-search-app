@@ -8,6 +8,7 @@ import ThemeSwitcher from "../app/components/ThemeSwitcher";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
 import ScoreModalTrigger from "../app/components/ScoreModalTrigger";
 import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
+import HistoryCharts from "../app/components/HistoryCharts";
 
 type ValueSearchScoreDisplay = {
   calculatedScorePercentage: number;
@@ -634,37 +635,38 @@ async function ResultsCard({
                               ""
                             )}
                           </div>
-                          <div className="text-secondary mt-2 mb-3 row g-2">
-                          <div
-                            className={
-                              item.valueSearchScore != null &&
+                          <div className="text-secondary mt-2 mb-2 row g-2">
+                            <div
+                              className={
+                                item.valueSearchScore != null &&
+                                item.valueSearchScore.totalPossiblePoints > 0 &&
+                                typeof item.valueSearchScore.calculatedScorePercentage === "number"
+                                  ? "col-6 d-flex justify-content-center"
+                                  : "col-12 d-flex justify-content-center"
+                              }
+                            >
+                              {item.aiRating ? (
+                                <span className={`${getRatingBadgeClass(item.aiRating)} result-card-badge`}>
+                                  AI Rating: {toTitleCase(item.aiRating)}
+                                </span>
+                              ) : null}
+                            </div>
+                            {item.valueSearchScore != null &&
                               item.valueSearchScore.totalPossiblePoints > 0 &&
-                              typeof item.valueSearchScore.calculatedScorePercentage === "number"
-                                ? "col-6 d-flex justify-content-center"
-                                : "col-12 d-flex justify-content-center"
-                            }
-                          >
-                            {item.aiRating ? (
-                              <span className={`${getRatingBadgeClass(item.aiRating)} result-card-badge`}>
-                                AI Rating: {toTitleCase(item.aiRating)}
-                              </span>
+                              typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
+                              <div className="col-6 d-flex justify-content-center">
+                                <ScoreModalTrigger
+                                  modalId={`score-modal-${item._id}`}
+                                  name={item.name}
+                                  symbol={item.symbol}
+                                  valueSearchScore={item.valueSearchScore}
+                                  buttonClassName={getValueScoreBadgeClass(item.valueSearchScore.calculatedScorePercentage)}
+                                  buttonLabel={`Score: ${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
+                                />
+                              </div>
                             ) : null}
                           </div>
-                          {item.valueSearchScore != null &&
-                            item.valueSearchScore.totalPossiblePoints > 0 &&
-                            typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
-                            <div className="col-6 d-flex justify-content-center">
-                              <ScoreModalTrigger
-                                modalId={`score-modal-${item._id}`}
-                                name={item.name}
-                                symbol={item.symbol}
-                                valueSearchScore={item.valueSearchScore}
-                                buttonClassName={getValueScoreBadgeClass(item.valueSearchScore.calculatedScorePercentage)}
-                                buttonLabel={`Score: ${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
-                              />
-                            </div>
-                          ) : null}
-                        </div>
+                          <HistoryCharts symbol={item.symbol} name={item.name ?? item.symbol} />
                         </div>
                         <div className="px-3 pb-3">
                         <div className="accordion" id={accordionId}>

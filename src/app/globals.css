@@ -203,6 +203,13 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: var(--glass-shadow-floating);
 }
 
+/* Modal backdrop – stronger blur behind any open modal */
+.modal-backdrop.show {
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
 /* Modal headers – strong frosted blur */
 .score-breakdown-modal .modal-header {
   background: var(--glass-bg-subtle);
@@ -800,6 +807,20 @@ button.result-card-badge {
   font-size: 0.8125rem !important;
   font-weight: 600 !important;
   line-height: 1.35 !important;
+}
+
+/* "View trends" button – light glass chip that works in dark and light themes */
+.view-trends-btn {
+  background: var(--accent-soft);
+  color: var(--accent) !important;
+  border-radius: 999px;
+  padding-inline: 0.9rem;
+}
+
+.view-trends-btn:hover,
+.view-trends-btn:focus-visible {
+  background: var(--accent-hover);
+  color: #ffffff !important;
 }
 
 /* Links */
