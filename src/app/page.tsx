@@ -372,65 +372,17 @@ async function getValues(
   const docs = await db
     .collection(aiAssessmentsCollection)
     .find(filter)
-    .sort({ aiRatingScore: -1, name: 1, symbol: 1 })
+    .sort({ aiRatingScore: -1, "valueSearchScore.calculatedScorePercentage": -1, name: 1, symbol: 1 })
     .skip(skip)
     .limit(PAGE_SIZE + 1)
     .toArray();
 
   const hasMore = docs.length > PAGE_SIZE;
   const pageDocs = docs.slice(0, PAGE_SIZE);
-  const symbols = pageDocs
-    .map((d) => (typeof d.symbol === "string" ? d.symbol : null))
-    .filter((s): s is string => s != null && s.length > 0);
 
-  // Load valueSearchScore for this page only
-  const valueSearchScoreBySymbol = new Map<string, ValueSearchScoreDisplay>();
-  if (symbols.length > 0) {
-    const quotes = await db
-      .collection("stock-quotes")
-      .find({ symbol: { $in: symbols } })
-      .project({ symbol: 1, valueSearchScore: 1 })
-      .toArray();
-    for (const q of quotes) {
-      const sym = typeof q.symbol === "string" ? q.symbol : null;
-      const vs = q.valueSearchScore;
-      if (
-        sym &&
-        vs &&
-        typeof vs === "object" &&
-        typeof (vs as { calculatedScorePercentage?: unknown }).calculatedScorePercentage === "number" &&
-        typeof (vs as { totalPossiblePoints?: unknown }).totalPossiblePoints === "number" &&
-        (vs as { totalPossiblePoints: number }).totalPossiblePoints > 0
-      ) {
-        valueSearchScoreBySymbol.set(sym, vs as ValueSearchScoreDisplay);
-      }
-    }
-  }
-
-  // Sort this page by aiRatingScore, then calculatedScorePercentage (desc), then name, symbol
-  const withScore = pageDocs.map((doc) => {
+  const values = pageDocs.map((doc) => {
     const symbol = typeof doc.symbol === "string" ? doc.symbol : undefined;
-    const valueSearchScore = symbol ? valueSearchScoreBySymbol.get(symbol) : undefined;
-    const pct = valueSearchScore?.totalPossiblePoints
-      ? valueSearchScore.calculatedScorePercentage
-      : -1;
-    return { doc, symbol, valueSearchScore, sortPct: pct };
-  });
-  withScore.sort((a, b) => {
-    const aiA = typeof a.doc.aiRatingScore === "number" ? a.doc.aiRatingScore : -1;
-    const aiB = typeof b.doc.aiRatingScore === "number" ? b.doc.aiRatingScore : -1;
-    if (aiA !== aiB) return aiB - aiA;
-    if (a.sortPct !== b.sortPct) return b.sortPct - a.sortPct;
-    const nameA = typeof a.doc.name === "string" ? a.doc.name : "";
-    const nameB = typeof b.doc.name === "string" ? b.doc.name : "";
-    const nameCmp = nameA.localeCompare(nameB);
-    if (nameCmp !== 0) return nameCmp;
-    const symA = typeof a.doc.symbol === "string" ? a.doc.symbol : "";
-    const symB = typeof b.doc.symbol === "string" ? b.doc.symbol : "";
-    return symA.localeCompare(symB);
-  });
-
-  const values = withScore.map(({ doc, symbol, valueSearchScore }) => {
+    const valueSearchScore = doc.valueSearchScore as ValueSearchScoreDisplay | undefined;
     let normalized: ValueSearchScoreDisplay | undefined;
     if (valueSearchScore) {
       const totalPossiblePoints = Number(valueSearchScore.totalPossiblePoints);
