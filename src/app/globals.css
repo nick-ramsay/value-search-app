@@ -506,6 +506,82 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: var(--glass-shadow);
 }
 
+/* Filters toggle */
+.filter-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.filter-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 999px;
+  backdrop-filter: blur(var(--glass-blur));
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.filter-toggle-slider::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--glass-bg-strong);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.filter-toggle-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.filter-toggle-input:checked + .filter-toggle-label .filter-toggle-slider {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: var(--glass-shadow);
+}
+
+.filter-toggle-input:checked + .filter-toggle-label .filter-toggle-slider::before {
+  transform: translateX(20px);
+  background: var(--accent);
+}
+
+.filter-toggle-input:checked + .filter-toggle-label .filter-toggle-text::before {
+  content: "Enabled";
+}
+
+.filter-toggle-input:not(:checked) + .filter-toggle-label .filter-toggle-text::before {
+  content: "Disabled";
+}
+
+.filter-toggle-input:focus-visible + .filter-toggle-label .filter-toggle-slider {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Theme switcher */
 .theme-switcher-btn {
   background: var(--glass-bg-subtle) !important;

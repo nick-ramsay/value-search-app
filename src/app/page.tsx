@@ -47,6 +47,7 @@ type ValueRecord = {
 };
 
 const PAGE_SIZE = 25;
+const EXCLUDED_ETF_INDUSTRY = "Exchange Traded Fund";
 
 type FilterOptions = {
   industries: string[];
@@ -61,6 +62,7 @@ function FiltersSection({
   selectedIndustry,
   selectedSector,
   selectedCountry,
+  excludeEtfsEnabled,
 }: {
   filterOptions: FilterOptions;
   query: string;
@@ -68,6 +70,7 @@ function FiltersSection({
   selectedIndustry: string;
   selectedSector: string;
   selectedCountry: string;
+  excludeEtfsEnabled: boolean;
 }) {
   const { industries, sectors, countries } = filterOptions;
   return (
@@ -150,8 +153,28 @@ function FiltersSection({
                     ))}
                   </select>
                 </div>
+                <div className="col-md-4">
+                  <span className="form-label fw-semibold d-block">
+                    Exclude ETFs
+                  </span>
+                  <div className="filter-toggle">
+                    <input type="hidden" name="excludeEtfs" value="0" />
+                    <input
+                      type="checkbox"
+                      id="excludeEtfs"
+                      name="excludeEtfs"
+                      value="1"
+                      className="filter-toggle-input"
+                      defaultChecked={excludeEtfsEnabled}
+                    />
+                    <label htmlFor="excludeEtfs" className="filter-toggle-label">
+                      <span className="filter-toggle-slider" aria-hidden />
+                      <span className="filter-toggle-text" />
+                    </label>
+                  </div>
+                </div>
                 <div className="col-12 d-flex justify-content-end gap-2 mt-2">
-                  {(selectedIndustry || selectedSector || selectedCountry) && (
+                  {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled) && (
                     <FilterClearButton className="btn btn-sm filter-clear-button" />
                   )}
                   <button
@@ -213,6 +236,7 @@ async function FiltersAsyncWrapper({
     industry?: string;
     sector?: string;
     country?: string;
+    excludeEtfs?: string | string[];
   }>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
@@ -224,6 +248,8 @@ async function FiltersAsyncWrapper({
   const selectedIndustry = resolvedSearchParams?.industry ?? "";
   const selectedSector = resolvedSearchParams?.sector ?? "";
   const selectedCountry = resolvedSearchParams?.country ?? "";
+  const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
+  const excludeEtfsEnabled = excludeEtfsParam !== "0";
   return (
     <FiltersSection
       filterOptions={filterOptions}
@@ -232,12 +258,20 @@ async function FiltersAsyncWrapper({
       selectedIndustry={selectedIndustry}
       selectedSector={selectedSector}
       selectedCountry={selectedCountry}
+      excludeEtfsEnabled={excludeEtfsEnabled}
     />
   );
 }
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getSearchParamValue(value?: string | string[]) {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+  return value;
 }
 
 function toTitleCase(value: string) {
@@ -326,13 +360,19 @@ async function getValues(
     industry,
     sector,
     country,
+    excludeEtfs,
   }: {
     symbolFilter?: string;
     industry?: string;
     sector?: string;
     country?: string;
+    excludeEtfs?: boolean;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
+  if (excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
+    return { values: [], hasMore: false };
+  }
+
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
   const aiAssessmentsCollection = process.env.MONGODB_AI_ASSESSMENTS_COLLECTION;
@@ -358,6 +398,8 @@ async function getValues(
 
   if (industry && industry.trim().length > 0) {
     filter.industry = industry;
+  } else if (excludeEtfs) {
+    filter.industry = { $ne: EXCLUDED_ETF_INDUSTRY };
   }
 
   if (sector && sector.trim().length > 0) {
@@ -417,12 +459,18 @@ async function getValuesCount({
   industry,
   sector,
   country,
+  excludeEtfs,
 }: {
   symbolFilter?: string;
   industry?: string;
   sector?: string;
   country?: string;
+  excludeEtfs?: boolean;
 }): Promise<number> {
+  if (excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
+    return 0;
+  }
+
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
   const aiAssessmentsCollection = process.env.MONGODB_AI_ASSESSMENTS_COLLECTION;
@@ -447,6 +495,8 @@ async function getValuesCount({
 
   if (industry && industry.trim().length > 0) {
     filter.industry = industry;
+  } else if (excludeEtfs) {
+    filter.industry = { $ne: EXCLUDED_ETF_INDUSTRY };
   }
 
   if (sector && sector.trim().length > 0) {
@@ -471,6 +521,7 @@ async function ResultsCard({
     industry?: string;
     sector?: string;
     country?: string;
+    excludeEtfs?: string | string[];
   }>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
@@ -484,6 +535,8 @@ async function ResultsCard({
   const selectedIndustry = resolvedSearchParams?.industry ?? "";
   const selectedSector = resolvedSearchParams?.sector ?? "";
   const selectedCountry = resolvedSearchParams?.country ?? "";
+  const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
+  const excludeEtfsEnabled = excludeEtfsParam !== "0";
   const isFiltered = isSelected && query.length > 0;
 
   const { industries, sectors, countries } = filterOptions;
@@ -493,6 +546,7 @@ async function ResultsCard({
     industry: selectedIndustry || undefined,
     sector: selectedSector || undefined,
     country: selectedCountry || undefined,
+    excludeEtfs: excludeEtfsEnabled,
   };
 
   const { values, hasMore } = await getValues(isFiltered ? 1 : currentPage, filterParams);
@@ -506,6 +560,7 @@ async function ResultsCard({
     if (selectedIndustry) params.set("industry", selectedIndustry);
     if (selectedSector) params.set("sector", selectedSector);
     if (selectedCountry) params.set("country", selectedCountry);
+    if (!excludeEtfsEnabled) params.set("excludeEtfs", "0");
     const search = params.toString();
     return search.length > 0 ? `/?${params.toString()}` : "/";
   };
@@ -519,6 +574,7 @@ async function ResultsCard({
             if (selectedIndustry) appliedFilters.push(`Industry: ${selectedIndustry}`);
             if (selectedSector) appliedFilters.push(`Sector: ${selectedSector}`);
             if (selectedCountry) appliedFilters.push(`Country: ${selectedCountry}`);
+            if (!excludeEtfsEnabled) appliedFilters.push("Include ETFs");
 
             const baseText = `${totalCount} ${totalCount === 1 ? "result" : "results"}`;
 
@@ -542,6 +598,7 @@ async function ResultsCard({
             selectedIndustry={selectedIndustry}
             selectedSector={selectedSector}
             selectedCountry={selectedCountry}
+            excludeEtfsEnabled={excludeEtfsEnabled}
           >
             {values.length === 0 ? (
               <p className="text-muted text-center mb-0">
@@ -711,6 +768,7 @@ export default async function Home({
     industry?: string;
     sector?: string;
     country?: string;
+    excludeEtfs?: string | string[];
   }>;
 }) {
   const resolvedSearchParams = await searchParams;
