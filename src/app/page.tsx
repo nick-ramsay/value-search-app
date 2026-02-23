@@ -75,7 +75,7 @@ function FiltersSection({
 }) {
   const { industries, sectors, countries } = filterOptions;
   return (
-    <section>
+    <section className="mt-3">
       <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
         <div className="accordion-item">
           <h2 className="accordion-header" id="filtersHeading">
@@ -180,7 +180,7 @@ function FiltersSection({
                   )}
                   <button
                     type="submit"
-                    className="btn btn-light btn-sm filter-apply-button"
+                    className="btn btn-sm filter-apply-button"
                   >
                     Apply
                   </button>
@@ -196,7 +196,7 @@ function FiltersSection({
 
 function FiltersLoadingFallback() {
   return (
-    <section>
+    <section className="mt-3">
       <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
         <div className="accordion-item">
           <h2 className="accordion-header" id="filtersHeading">
@@ -285,19 +285,21 @@ function toTitleCase(value: string) {
 }
 
 function getRatingBadgeClass(rating: string) {
-  switch (rating) {
+  const normalized = rating.trim().toUpperCase();
+
+  switch (normalized) {
     case "STRONG BUY":
-      return "badge bg-success text-white";
+      return "badge badge-rating-strong-buy";
     case "BUY":
-      return "badge bg-success-subtle text-success";
+      return "badge badge-rating-buy";
     case "NEUTRAL":
-      return "badge bg-primary text-white";
+      return "badge badge-rating-neutral";
     case "SELL":
-      return "badge bg-danger-subtle text-danger";
+      return "badge badge-rating-sell";
     case "STRONG SELL":
-      return "badge bg-danger text-white";
+      return "badge badge-rating-strong-sell";
     default:
-      return "badge bg-secondary text-white";
+      return "badge badge-rating-neutral";
   }
 }
 

@@ -9,8 +9,13 @@ function applyTheme(value: Theme) {
   const root = document.documentElement;
   if (value === "system") {
     root.removeAttribute("data-theme");
+    root.setAttribute(
+      "data-bs-theme",
+      window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    );
   } else {
     root.setAttribute("data-theme", value);
+    root.setAttribute("data-bs-theme", value);
   }
 }
 
