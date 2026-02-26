@@ -501,10 +501,16 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .filter-clear-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid var(--danger-clear) !important;
   background: var(--danger-clear) !important;
   color: #fff !important;
-  border: 1px solid var(--danger-clear) !important;
-  border-radius: 10px;
   backdrop-filter: blur(var(--glass-blur));
   transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
