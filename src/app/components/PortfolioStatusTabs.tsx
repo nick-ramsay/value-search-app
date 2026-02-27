@@ -16,7 +16,7 @@ export default function PortfolioStatusTabs() {
 
   useEffect(() => {
     fetch("/api/user-stock-counts")
-      .then((r) => (r.ok ? r.json() : {}))
+      .then((r) => (r.ok ? r.json() as Promise<Counts> : Promise.resolve(null)))
       .then((data) => setCounts(data))
       .catch(() => setCounts(null));
   }, []);
