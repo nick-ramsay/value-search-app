@@ -19,7 +19,12 @@ function applyTheme(value: Theme) {
   }
 }
 
-export default function ThemeSwitcher() {
+type ThemeSwitcherProps = {
+  /** When true, render only the theme options (for embedding inside another dropdown) */
+  inline?: boolean;
+};
+
+export default function ThemeSwitcher({ inline = false }: ThemeSwitcherProps) {
   const [theme, setThemeState] = useState<Theme>("system");
 
   const setTheme = useCallback((value: Theme) => {
@@ -40,6 +45,58 @@ export default function ThemeSwitcher() {
     applyTheme(initial);
   }, []);
 
+  const optionClass = "dropdown-item d-flex align-items-center gap-2";
+  const options = (
+    <>
+      <li>
+        <button
+          type="button"
+          className={optionClass}
+          onClick={() => setTheme("light")}
+        >
+          {theme === "light" ? (
+            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
+          ) : (
+            <span className="theme-dropdown-check-placeholder" aria-hidden />
+          )}
+          Light
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          className={optionClass}
+          onClick={() => setTheme("dark")}
+        >
+          {theme === "dark" ? (
+            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
+          ) : (
+            <span className="theme-dropdown-check-placeholder" aria-hidden />
+          )}
+          Dark
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          className={optionClass}
+          onClick={() => setTheme("system")}
+        >
+          {theme === "system" ? (
+            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
+          ) : (
+            <span className="theme-dropdown-check-placeholder" aria-hidden />
+          )}
+          System
+        </button>
+      </li>
+    </>
+  );
+
+  if (inline) {
+    return <>{options}</>;
+  }
+
   return (
     <div className="dropdown">
       <button
@@ -53,48 +110,7 @@ export default function ThemeSwitcher() {
         <i className="bi bi-circle-half" aria-hidden />
       </button>
       <ul className="dropdown-menu dropdown-menu-end theme-dropdown">
-        <li>
-          <button
-            type="button"
-            className="dropdown-item d-flex align-items-center gap-2"
-            onClick={() => setTheme("light")}
-          >
-            {theme === "light" ? (
-              <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-            ) : (
-              <span className="theme-dropdown-check-placeholder" aria-hidden />
-            )}
-            Light
-          </button>
-        </li>
-        <li>
-          <button
-            type="button"
-            className="dropdown-item d-flex align-items-center gap-2"
-            onClick={() => setTheme("dark")}
-          >
-            {theme === "dark" ? (
-              <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-            ) : (
-              <span className="theme-dropdown-check-placeholder" aria-hidden />
-            )}
-            Dark
-          </button>
-        </li>
-        <li>
-          <button
-            type="button"
-            className="dropdown-item d-flex align-items-center gap-2"
-            onClick={() => setTheme("system")}
-          >
-            {theme === "system" ? (
-              <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-            ) : (
-              <span className="theme-dropdown-check-placeholder" aria-hidden />
-            )}
-            System
-          </button>
-        </li>
+        {options}
       </ul>
     </div>
   );

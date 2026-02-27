@@ -96,7 +96,7 @@ export default function ScoreModalTrigger({
       <div className="d-flex align-items-center justify-content-center gap-2">
         <button
           type="button"
-          className={`${buttonClassName} result-card-badge border-0 text-decoration-none`}
+          className={`${buttonClassName} border-0 text-decoration-none`}
           data-bs-toggle="modal"
           data-bs-target={`#${modalId}`}
           aria-label="View score breakdown"

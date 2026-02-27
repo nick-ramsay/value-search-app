@@ -5,6 +5,8 @@ import BootstrapClient from "./bootstrap-client";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
 import ThemeInitScript from "./components/ThemeInitScript";
+import SessionProvider from "./components/SessionProvider";
+import LoginModal from "./components/LoginModal";
 
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
@@ -27,8 +29,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={plexMono.variable}>
         <ThemeInitScript />
-        <BootstrapClient />
-        {children}
+        <SessionProvider>
+          <BootstrapClient />
+          {children}
+          <LoginModal />
+        </SessionProvider>
       </body>
     </html>
   );

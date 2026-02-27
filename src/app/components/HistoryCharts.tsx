@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 
 type HistoryPoint = {
   date: string;
@@ -17,6 +16,10 @@ type HistoryResponse = {
 type HistoryChartsProps = {
   symbol?: string;
   name?: string;
+  /** Id for the collapse panel (must be unique per card). */
+  collapseId: string;
+  /** When true, use a smaller "View trends" button (e.g. in compact cards). */
+  compact?: boolean;
 };
 
 type ActiveView = "score" | "rating";
@@ -44,6 +47,7 @@ function Sparkline({
   valueSuffix,
   hideValueMeta,
   fixedDomain,
+  gradientId = "historyGradient",
 }: {
   data: HistoryPoint[];
   color: string;
@@ -51,6 +55,7 @@ function Sparkline({
   valueSuffix?: string;
   hideValueMeta?: boolean;
   fixedDomain?: { min: number; max: number };
+  gradientId?: string;
 }) {
   const width = 560; // will scale with viewBox + container width
 
@@ -113,7 +118,7 @@ function Sparkline({
     (valueSuffix ? valueSuffix : "");
 
   return (
-    <div>
+    <div className="stock-card__trends-chart-wrap">
       {!hideValueMeta && (
         <div className="d-flex justify-content-between align-items-baseline mb-2">
           <div className="d-flex align-items-baseline gap-2">
@@ -147,7 +152,7 @@ function Sparkline({
           style={{ width: "100%", height: `${height}px` }}
         >
           <defs>
-            <linearGradient id="historyGradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity="0.4" />
               <stop offset="100%" stopColor={color} stopOpacity="0" />
             </linearGradient>
@@ -156,7 +161,7 @@ function Sparkline({
           {points && (
             <polyline
               points={`${points} ${width},${height} 0,${height}`}
-              fill="url(#historyGradient)"
+              fill={`url(#${gradientId})`}
               stroke="none"
             />
           )}
@@ -225,18 +230,26 @@ function Sparkline({
   );
 }
 
-export default function HistoryCharts({ symbol, name }: HistoryChartsProps) {
-  const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
+export default function HistoryCharts({ symbol, name, collapseId, compact = false }: HistoryChartsProps) {
+  const [expanded, setExpanded] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("score");
   const [state, setState] = useState<FetchState>({ status: "idle" });
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onShown = () => setExpanded(true);
+    const onHidden = () => setExpanded(false);
+    el.addEventListener("shown.bs.collapse", onShown);
+    el.addEventListener("hidden.bs.collapse", onHidden);
+    return () => {
+      el.removeEventListener("shown.bs.collapse", onShown);
+      el.removeEventListener("hidden.bs.collapse", onHidden);
+    };
+  }, [collapseId]);
 
   useEffect(() => {
-    if (!open || !symbol) return;
+    if (!expanded || !symbol) return;
 
     const controller = new AbortController();
     let cancelled = false;
@@ -289,169 +302,125 @@ export default function HistoryCharts({ symbol, name }: HistoryChartsProps) {
       cancelled = true;
       controller.abort();
     };
-  }, [open, symbol]);
-
-  const handleOpen = () => {
-    if (!symbol) return;
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
+  }, [expanded, symbol]);
 
   const triggerDisabled = !symbol;
   const triggerTitle = symbol
     ? `View trends for ${symbol}`
     : "History is only available when a symbol is present.";
 
-  const content =
-    !open || !mounted
-      ? null
-      : createPortal(
-          <>
-            <div className="modal-backdrop fade show" />
-            <div
-              className="modal fade score-breakdown-modal show"
-              style={{ display: "block" }}
-              tabIndex={-1}
-              role="dialog"
-              aria-modal="true"
-            >
-              <div className="modal-dialog modal-dialog-centered modal-lg">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <div>
-                      <h5 className="modal-title mb-0">
-                        Trends for{" "}
-                        {name && symbol ? `${name} (${symbol})` : symbol ?? name}
-                      </h5>
-                      <p className="small text-muted mb-0">
-                        Explore how the value score and AI rating have evolved
-                        over time.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      aria-label="Close"
-                      onClick={handleClose}
-                      data-bs-dismiss="modal"
-                    />
-                  </div>
-                  <div className="modal-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div className="btn-group" role="group" aria-label="History view">
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${
-                            activeView === "score"
-                              ? "btn-primary"
-                              : "btn-outline-primary"
-                          }`}
-                          onClick={() => setActiveView("score")}
-                        >
-                          <i className="bi bi-graph-up me-1" aria-hidden />
-                          Score history
-                        </button>
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${
-                            activeView === "rating"
-                              ? "btn-primary"
-                              : "btn-outline-primary"
-                          }`}
-                          onClick={() => setActiveView("rating")}
-                        >
-                          <i className="bi bi-stars me-1" aria-hidden />
-                          AI rating history
-                        </button>
-                      </div>
-                    </div>
-
-                    {state.status === "loading" && (
-                      <div className="d-flex flex-column align-items-center justify-content-center py-4">
-                        <span className="spinner-border" aria-hidden />
-                        <span className="small text-muted mt-2">
-                          Fetching history…
-                        </span>
-                      </div>
-                    )}
-
-                    {state.status === "error" && (
-                      <div className="alert alert-danger small mb-0" role="alert">
-                        {state.message}
-                      </div>
-                    )}
-
-                    {state.status === "success" && (
-                      <div>
-                        {state.data.scoreHistory.length === 0 &&
-                          state.data.ratingHistory.length === 0 && (
-                            <div className="alert alert-info small" role="status">
-                              No history data found yet for this symbol. Once the
-                              value score or AI rating has been recorded over
-                              time, trends will appear here.
-                            </div>
-                          )}
-                        {activeView === "score" ? (
-                          <div>
-                            <h6 className="fw-semibold mb-2">
-                              Value score over time
-                            </h6>
-                            <p className="small text-muted">
-                              The score is shown as a percentage from 0–100. A
-                              rising line suggests the company is ticking more
-                              boxes in your value checklist.
-                            </p>
-                            <Sparkline
-                              data={state.data.scoreHistory}
-                              color="var(--bs-success)"
-                              valueSuffix="%"
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <h6 className="fw-semibold mb-2">
-                              AI rating score over time
-                            </h6>
-                            <p className="small text-muted mb-2">
-                              This line shows the AI&apos;s raw rating score
-                              from -2 to 2, where -2 = Strong Sell, 0 = Neutral,
-                              and 2 = Strong Buy.
-                            </p>
-                            <Sparkline
-                              data={state.data.ratingHistory}
-                              color="var(--bs-info)"
-                              fixedDomain={{ min: -2, max: 2 }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+  const collapsePanel = (
+    <div
+      id={collapseId}
+      className="collapse stock-card__panel stock-card__trends-collapse"
+      aria-label="Trends"
+    >
+      <div className="stock-card__panel-inner stock-card__trends-panel">
+          <p className="stock-card__trends-intro small text-muted mb-3">
+            Explore how the value score and AI rating have evolved over time.
+          </p>
+          <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <div className="btn-group btn-group-sm" role="group" aria-label="History view">
+              <button
+                type="button"
+                className={`btn ${activeView === "score" ? "btn-primary" : "btn-outline-primary"}`}
+                onClick={() => setActiveView("score")}
+              >
+                <i className="bi bi-graph-up me-1" aria-hidden />
+                Score history
+              </button>
+              <button
+                type="button"
+                className={`btn ${activeView === "rating" ? "btn-primary" : "btn-outline-primary"}`}
+                onClick={() => setActiveView("rating")}
+              >
+                <i className="bi bi-stars me-1" aria-hidden />
+                AI rating history
+              </button>
             </div>
-          </>,
-          document.body,
-        );
+          </div>
+
+          {state.status === "loading" && (
+            <div className="d-flex flex-column align-items-center justify-content-center py-4">
+              <span className="spinner-border" aria-hidden />
+              <span className="small text-muted mt-2">Fetching history…</span>
+            </div>
+          )}
+
+          {state.status === "error" && (
+            <div className="alert alert-danger small mb-0" role="alert">
+              {state.message}
+            </div>
+          )}
+
+          {state.status === "success" && (
+            <div className="stock-card__trends-chart-content w-100">
+              {state.data.scoreHistory.length === 0 &&
+                state.data.ratingHistory.length === 0 && (
+                  <div className="alert alert-info small" role="status">
+                    No history data found yet for this symbol. Once the value
+                    score or AI rating has been recorded over time, trends will
+                    appear here.
+                  </div>
+                )}
+              {activeView === "score" ? (
+                <div>
+                  <h6 className="fw-semibold mb-2">Value score over time</h6>
+                  <p className="small text-muted mb-2">
+                    The score is shown as a percentage from 0–100. A rising line
+                    suggests the company is ticking more boxes in your value
+                    checklist.
+                  </p>
+                  <Sparkline
+                    data={state.data.scoreHistory}
+                    color="var(--bs-success)"
+                    valueSuffix="%"
+                    gradientId={`${collapseId}-score-gradient`}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <h6 className="fw-semibold mb-2">
+                    AI rating score over time
+                  </h6>
+                  <p className="small text-muted mb-2">
+                    This line shows the AI&apos;s raw rating score from -2 to 2,
+                    where -2 = Strong Sell, 0 = Neutral, and 2 = Strong Buy.
+                  </p>
+                  <Sparkline
+                    data={state.data.ratingHistory}
+                    color="var(--bs-info)"
+                    fixedDomain={{ min: -2, max: 2 }}
+                    gradientId={`${collapseId}-rating-gradient`}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+  );
 
   return (
     <>
-      <div className="d-flex justify-content-center gap-2 mt-3">
-        <button
-          type="button"
-          className="btn btn-sm result-card-badge border-0 text-decoration-none view-trends-btn"
-          onClick={handleOpen}
-          disabled={triggerDisabled}
-          title={triggerTitle}
-        >
-          <i className="bi bi-activity me-1" aria-hidden />
-          View trends
-        </button>
-      </div>
-      {content}
+      <button
+        type="button"
+        className={`stock-card__action stock-card__action--primary${compact ? " stock-card__action--compact" : ""}`}
+        data-bs-toggle="collapse"
+        data-bs-target={`#${collapseId}`}
+        aria-expanded={expanded}
+        aria-controls={collapseId}
+        disabled={triggerDisabled}
+        title={triggerTitle}
+      >
+        <i className="bi bi-graph-up stock-card__action-icon" aria-hidden />
+        <span className="stock-card__action-label">View trends</span>
+        <i
+          className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
+          aria-hidden
+        />
+      </button>
+      {collapsePanel}
     </>
   );
 }

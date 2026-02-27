@@ -9,6 +9,8 @@ type Suggestion = {
 
 type SearchBarProps = {
   initialQuery?: string;
+  /** Form submit URL (default "/"). Use "/portfolio" so search stays on portfolio. */
+  formAction?: string;
 };
 
 function formatSuggestionLabel(suggestion: Suggestion) {
@@ -22,7 +24,10 @@ function pickSearchValue(suggestion: Suggestion) {
   return suggestion.symbol ?? suggestion.name ?? "";
 }
 
-export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
+export default function SearchBar({
+  initialQuery = "",
+  formAction = "/",
+}: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -116,7 +121,7 @@ export default function SearchBar({ initialQuery = "" }: SearchBarProps) {
       ref={formRef}
       className="d-flex gap-2 position-relative w-100"
       role="search"
-      action="/"
+      action={formAction}
       method="GET"
       autoComplete="off"
     >
