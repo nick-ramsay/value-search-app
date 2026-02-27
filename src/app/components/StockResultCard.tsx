@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
 import ScoreModalTrigger from "./ScoreModalTrigger";
 import HistoryCharts from "./HistoryCharts";
@@ -49,8 +49,10 @@ export default function StockResultCard({
   item,
   compact = false,
 }: StockResultCardProps) {
-  const collapseId = `collapse-${item._id}`;
-  const trendsCollapseId = `trends-${item._id}`;
+  const instanceId = useId();
+  const cardDomId = `${item._id}-${instanceId}`;
+  const collapseId = `collapse-${cardDomId}`;
+  const trendsCollapseId = `trends-${cardDomId}`;
 
   const [hasAnyOpen, setHasAnyOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
@@ -181,7 +183,7 @@ export default function StockResultCard({
         <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle assessment" />
         <div
           className="stock-card__actions-slot"
-          id={`stock-card-actions-slot-${item._id}`}
+          id={`stock-card-actions-slot-${cardDomId}`}
           aria-hidden="true"
         />
       </div>
@@ -202,9 +204,10 @@ export default function StockResultCard({
       {/* User status + notes (when logged in) */}
       <CardUserActions
         symbol={item.symbol}
-        cardId={item._id}
+        cardId={cardDomId}
+        recordId={item._id}
         compact={compact}
-        actionBarSlotId={`stock-card-actions-slot-${item._id}`}
+        actionBarSlotId={`stock-card-actions-slot-${cardDomId}`}
       />
 
       {/* Close all accordions – fixed to bottom when any is open */}

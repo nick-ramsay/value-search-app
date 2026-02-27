@@ -110,6 +110,16 @@ export default function SearchBar({
     if (selectedRef.current) {
       selectedRef.current.value = "1";
     }
+    if (formAction === "/portfolio") {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("portfolioSymbolSelected", {
+            detail: { symbol: value },
+          }),
+        );
+      }
+      return;
+    }
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("clearSearchInput", "1");
     }
@@ -124,6 +134,21 @@ export default function SearchBar({
       action={formAction}
       method="GET"
       autoComplete="off"
+      onSubmit={(event) => {
+        if (formAction === "/portfolio") {
+          event.preventDefault();
+          const value = trimmedQuery;
+          if (!value) return;
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("portfolioSymbolSelected", {
+                detail: { symbol: value },
+              }),
+            );
+          }
+          return;
+        }
+      }}
     >
       <input
         ref={inputRef}

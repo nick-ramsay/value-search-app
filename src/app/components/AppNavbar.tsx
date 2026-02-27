@@ -100,24 +100,28 @@ export default function AppNavbar({
                   className="dropdown-menu dropdown-menu-end user-dropdown-menu"
                   aria-labelledby="userDropdown"
                 >
-                  <li>
-                    <Link
-                      href="/portfolio"
-                      className="dropdown-item d-flex align-items-center gap-2 py-2"
-                    >
-                      <i className="bi bi-grid" aria-hidden />
-                      Portfolio
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/"
-                      className="dropdown-item d-flex align-items-center gap-2 py-2"
-                    >
-                      <i className="bi bi-house" aria-hidden />
-                      Home
-                    </Link>
-                  </li>
+                  {pathname !== "/portfolio" && (
+                    <li>
+                      <Link
+                        href="/portfolio"
+                        className="dropdown-item d-flex align-items-center gap-2 py-2"
+                      >
+                        <i className="bi bi-grid" aria-hidden />
+                        Portfolio
+                      </Link>
+                    </li>
+                  )}
+                  {pathname !== "/" && (
+                    <li>
+                      <Link
+                        href="/"
+                        className="dropdown-item d-flex align-items-center gap-2 py-2"
+                      >
+                        <i className="bi bi-house" aria-hidden />
+                        Home
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <hr className="dropdown-divider my-2" />
                   </li>

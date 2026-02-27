@@ -597,33 +597,11 @@ button.accordion-button.ai-accordion-button:focus-visible {
   line-height: 1.2;
 }
 
-/* Whole pill uses status color */
-.stock-card__user-pill--avoid {
-  background: var(--danger-glass);
-  border-color: rgba(255, 69, 58, 0.35);
-  color: var(--danger);
-}
-
-.stock-card__user-pill--watch {
-  background: var(--accent-soft);
-  border-color: rgba(10, 132, 255, 0.35);
-  color: var(--accent);
-}
-
-.stock-card__user-pill--own,
-.stock-card__user-pill--hold {
-  background: var(--success-glass);
-  border-color: rgba(52, 199, 89, 0.35);
-  color: var(--success);
-}
-
 .stock-card__user-pill .stock-card__status-badge {
   margin: 0;
   font-size: 0.6875rem !important;
   line-height: 1.2 !important;
   padding: 0.15rem 0.35rem !important;
-  background: transparent !important;
-  color: inherit !important;
 }
 
 .stock-card__user-pill .stock-card__action--inside-pill {
@@ -717,6 +695,12 @@ button.accordion-button.ai-accordion-button:focus-visible {
 .stock-card__panel-inner {
   padding: 0.85rem 1.25rem 1rem;
   background: var(--glass-bg-subtle);
+}
+
+/* Smoother accordion transitions (cards + other Bootstrap collapse elements) */
+.collapsing {
+  transition: height var(--transition-smooth) !important;
+  will-change: height;
 }
 
 .stock-card__trends-panel {
@@ -1053,9 +1037,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 /* Light theme: increase input contrast against bright background */
 [data-theme="light"] .search-input-glass {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.18) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: #f9fafb !important;
+  border-color: rgba(15, 23, 42, 0.22) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
 }
 
 /* Suggestions dropdown – taskboard-style glass */
@@ -1245,6 +1229,16 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary) !important;
 }
 
+/* Light theme: make neutral buttons and pills stand out more against bright background */
+[data-theme="light"] .theme-switcher-btn,
+[data-theme="light"] .glass-btn-secondary,
+[data-theme="light"] .stock-card__action--secondary,
+[data-theme="light"] .stock-card__user-pill {
+  background: #eef2ff !important;
+  border-color: rgba(79, 70, 229, 0.26) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
 /* Card edit button – more contrast on light theme */
 [data-theme="light"] .card-edit-btn {
   background: rgba(0, 0, 0, 0.08) !important;
@@ -1336,9 +1330,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 [data-theme="light"] .form-select.glass-select {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.18);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: #f9fafb !important;
+  border-color: rgba(15, 23, 42, 0.22);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
 }
 
 .form-label {

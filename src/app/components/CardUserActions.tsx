@@ -17,6 +17,8 @@ const STATUS_LABELS: Record<string, string> = {
 type CardUserActionsProps = {
   symbol: string | undefined;
   cardId: string;
+  /** Stable identifier for the underlying stock record (e.g. database _id). */
+  recordId?: string;
   compact?: boolean;
   /** When set, status + edit button are portaled into this element so they sit in the action row. */
   actionBarSlotId?: string;
@@ -25,6 +27,7 @@ type CardUserActionsProps = {
 export default function CardUserActions({
   symbol,
   cardId,
+  recordId,
   compact = false,
   actionBarSlotId,
 }: CardUserActionsProps) {
@@ -73,6 +76,24 @@ export default function CardUserActions({
   const statusLabel = (STATUS_LABELS[status] ?? status) || "No status";
 
   const pillStatusClass = status ? `stock-card__user-pill--${status.toLowerCase()}` : "";
+  const handleStatusChange = (next: string) => {
+    setStatus((prev) => {
+      if (typeof window !== "undefined" && symbol) {
+        window.dispatchEvent(
+          new CustomEvent("portfolioStatusChange", {
+            detail: {
+              symbol,
+              cardId,
+              recordId,
+              previousStatus: prev,
+              nextStatus: next,
+            },
+          }),
+        );
+      }
+      return next;
+    });
+  };
   const actionBarContent = (
     <div className={`stock-card__user-pill ${pillStatusClass}`}>
       {status ? (
@@ -115,7 +136,7 @@ export default function CardUserActions({
             symbol={symbol}
             compact={compact}
             initialStatus={status}
-            onStatusChange={setStatus}
+            onStatusChange={handleStatusChange}
           />
         </div>
         <div className="stock-card__comments-wrap">

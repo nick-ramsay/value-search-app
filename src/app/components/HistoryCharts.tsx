@@ -405,7 +405,7 @@ export default function HistoryCharts({ symbol, name, collapseId, compact = fals
     <>
       <button
         type="button"
-        className={`stock-card__action stock-card__action--primary${compact ? " stock-card__action--compact" : ""}`}
+        className={`stock-card__action stock-card__action--secondary${compact ? " stock-card__action--compact" : ""}`}
         data-bs-toggle="collapse"
         data-bs-target={`#${collapseId}`}
         aria-expanded={expanded}
