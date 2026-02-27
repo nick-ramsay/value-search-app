@@ -53,6 +53,9 @@
   /* Motion */
   --transition-fast: 0.2s ease;
   --transition-smooth: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Layout – fixed navbar height (for scroll-margin when scrolling card title into view) */
+  --navbar-height: 4.5rem;
 }
 
 /* System preference dark (when theme is "system" and OS is dark) */
@@ -349,32 +352,69 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary);
 }
 
-/* Result item cards – taskboard-style glass */
-.result-item-glass {
+/* ========== Stock card – reimagined layout ========== */
+.stock-card {
   background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 16px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
-/* Result card header – strong frosted blur */
-.result-card-header {
-  background: var(--glass-bg-subtle);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  padding: 1rem 1rem 0.5rem;
-  border-radius: 16px 16px 0 0;
+.stock-card--has-open {
+  padding-bottom: 3rem;
 }
 
-/* Card title link (Finviz) – slightly larger, fits glass UI */
-.result-card-title {
-  line-height: 1.35;
+.stock-card--compact {
+  font-size: 0.9rem;
 }
 
-.result-card-title-link {
-  font-size: 1.0625rem;
+.stock-card--compact .stock-card__title-text {
+  font-size: 0.95rem;
+}
+
+.stock-card--compact .stock-card__signals .stock-card__badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.stock-card--compact .stock-card__action {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.stock-card--compact .stock-card__user-pill {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  gap: 0.2rem;
+}
+
+.stock-card--compact .stock-card__user-pill .stock-card__status-badge {
+  font-size: 0.625rem !important;
+  padding: 0.12rem 0.3rem !important;
+}
+
+.stock-card--compact .stock-card__user-pill .stock-card__action--inside-pill {
+  padding: 0.2rem 0.3rem;
+}
+
+.stock-card--compact .stock-card__user-pill .stock-card__action--inside-pill .bi {
+  font-size: 0.75rem;
+}
+
+/* Head: symbol + name (scroll-margin so “scroll into view” doesn’t sit under fixed navbar) */
+.stock-card__head {
+  padding: 1rem 1.25rem 0.5rem;
+  scroll-margin-top: var(--navbar-height);
+}
+
+.stock-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   text-decoration: none;
@@ -382,18 +422,602 @@ button.accordion-button.ai-accordion-button:focus-visible {
   transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
 }
 
-.result-card-title-link:hover {
+.stock-card__title:hover {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 0.2em;
-  text-decoration-color: var(--accent-glass);
 }
 
-.result-card-title-link-icon {
-  font-size: 1.1em;
+.stock-card__title-icon {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* Signals: AI rating + score pills */
+.stock-card__signals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1.25rem 0.75rem;
+}
+
+.stock-card__badge {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  padding: 0.25rem 0.5rem !important;
+  border: none !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+/* Action bar: View trends, Assessment, Edit (when logged in) */
+.stock-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.25rem 0.75rem;
+}
+
+/* Smaller buttons on mobile; keep wrap so trends collapse gets its own full-width row */
+@media (max-width: 576px) {
+  .stock-card__actions {
+    gap: 0.35rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .stock-card__actions .stock-card__action {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .stock-card__actions .stock-card__action--icon {
+    padding: 0.3rem 0.4rem;
+  }
+
+  .stock-card__actions .stock-card__action--icon .bi {
+    font-size: 0.8rem;
+  }
+
+  .stock-card__actions .stock-card__action-label {
+    white-space: nowrap;
+  }
+
+  .stock-card__actions .stock-card__user-pill {
+    flex-shrink: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    gap: 0.2rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
+    font-size: 0.625rem !important;
+    padding: 0.12rem 0.3rem !important;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill {
+    padding: 0.2rem 0.3rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill .bi {
+    font-size: 0.75rem;
+  }
+}
+
+/* Trends collapse: full width, own row below action buttons (must wrap on mobile) */
+.stock-card__trends-collapse {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  order: 10;
+  box-sizing: border-box;
+}
+
+.stock-card__actions-slot {
+  display: contents;
+}
+
+.stock-card__actions-slot > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stock-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+  text-decoration: none;
+  color: inherit;
+}
+
+.stock-card__action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-card__action--primary {
+  background: var(--accent-glass);
+  color: var(--accent);
+}
+
+.stock-card__action--primary:hover:not(:disabled),
+.stock-card__action--primary:focus-visible {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.stock-card__action--secondary {
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border-subtle);
+}
+
+.stock-card__action--secondary:hover:not(:disabled),
+.stock-card__action--secondary:focus-visible {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.stock-card__action--icon {
+  padding: 0.4rem 0.5rem;
+}
+
+.stock-card__action--icon .bi {
+  font-size: 0.9rem;
+}
+
+/* Status + Edit inside one pill – same size as View trends / Assessment pill */
+.stock-card__user-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 999px;
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+/* Whole pill uses status color */
+.stock-card__user-pill--avoid {
+  background: var(--danger-glass);
+  border-color: rgba(255, 69, 58, 0.35);
+  color: var(--danger);
+}
+
+.stock-card__user-pill--watch {
+  background: var(--accent-soft);
+  border-color: rgba(10, 132, 255, 0.35);
+  color: var(--accent);
+}
+
+.stock-card__user-pill--own,
+.stock-card__user-pill--hold {
+  background: var(--success-glass);
+  border-color: rgba(52, 199, 89, 0.35);
+  color: var(--success);
+}
+
+.stock-card__user-pill .stock-card__status-badge {
+  margin: 0;
+  font-size: 0.6875rem !important;
+  line-height: 1.2 !important;
+  padding: 0.15rem 0.35rem !important;
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.stock-card__user-pill .stock-card__action--inside-pill {
+  margin: 0 -0.2rem 0 0;
+  padding: 0.25rem 0.35rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+.stock-card__user-pill .stock-card__action--inside-pill .bi {
+  font-size: 0.8rem;
+}
+
+.stock-card__user-pill .stock-card__action--inside-pill:hover:not(:disabled),
+.stock-card__user-pill .stock-card__action--inside-pill:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.stock-card__user-pill--avoid .stock-card__action--inside-pill:hover:not(:disabled),
+.stock-card__user-pill--avoid .stock-card__action--inside-pill:focus-visible {
+  background: rgba(255, 69, 58, 0.2);
+}
+
+.stock-card__user-pill--watch .stock-card__action--inside-pill:hover:not(:disabled),
+.stock-card__user-pill--watch .stock-card__action--inside-pill:focus-visible {
+  background: rgba(10, 132, 255, 0.2);
+}
+
+.stock-card__user-pill--own .stock-card__action--inside-pill:hover:not(:disabled),
+.stock-card__user-pill--own .stock-card__action--inside-pill:focus-visible,
+.stock-card__user-pill--hold .stock-card__action--inside-pill:hover:not(:disabled),
+.stock-card__user-pill--hold .stock-card__action--inside-pill:focus-visible {
+  background: rgba(52, 199, 89, 0.2);
+}
+
+.stock-card__action--compact {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.stock-card__action-label {
+  white-space: nowrap;
+}
+
+.stock-card__action-icon,
+.stock-card__action-chevron {
+  font-size: 0.95em;
+  opacity: 0.9;
+}
+
+/* Close-all accordions button – fixed to bottom of card when any open */
+.stock-card__close-all-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 0.5rem 1.25rem 0.75rem;
+  background: linear-gradient(to top, var(--glass-bg), transparent);
+  pointer-events: none;
+}
+.stock-card__close-all-wrap .stock-card__close-all {
+  pointer-events: auto;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.stock-card__close-all-wrap .stock-card__close-all:hover {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
+
+/* Collapse panels (assessment + user notes) */
+.stock-card__panel {
+  border-top: 1px solid var(--glass-border-subtle);
+}
+
+.stock-card__panel-inner {
+  padding: 0.85rem 1.25rem 1rem;
+  background: var(--glass-bg-subtle);
+}
+
+.stock-card__trends-panel {
+  min-height: 120px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.stock-card__trends-panel.stock-card__panel-inner {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stock-card__trends-panel .stock-card__trends-chart-content,
+.stock-card__trends-panel .stock-card__trends-chart-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.stock-card__trends-panel .stock-card__trends-chart-content > div {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.stock-card__trends-panel .stock-card__trends-chart-wrap .d-flex {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.stock-card__trends-panel .stock-card__trends-chart-wrap .d-flex > * {
+  min-width: 0;
+}
+
+.stock-card__trends-panel .position-relative {
+  min-height: 140px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.stock-card__trends-panel .position-relative svg {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 575.98px) {
+  .stock-card__trends-panel.stock-card__panel-inner {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+.stock-card__assessment-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* User row: status + edit */
+.stock-card__user {
+  border-top: 1px solid var(--glass-border-subtle);
+  padding: 0.6rem 1.25rem 0.85rem;
+  background: var(--glass-bg-subtle);
+}
+
+.stock-card__user-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stock-card__status-badge {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  padding: 0.2rem 0.45rem !important;
+  border-radius: 999px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.stock-card__status-badge--avoid {
+  background: var(--danger-glass) !important;
+  color: var(--danger) !important;
+}
+
+.stock-card__status-badge--watch {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+.stock-card__status-badge--own,
+.stock-card__status-badge--hold {
+  background: var(--success-glass) !important;
+  color: var(--success) !important;
+}
+
+.stock-card__user-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.stock-card__user-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Status dropdown – clearly clickable */
+.stock-card__status-select {
+  cursor: pointer;
+  border: 1px solid var(--glass-border-subtle) !important;
+  padding: 0.4rem 1.75rem 0.4rem 0.65rem;
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stock-card__status-select:hover:not(:disabled) {
+  background: var(--glass-bg-strong) !important;
+  border-color: var(--glass-border) !important;
+}
+
+.stock-card__status-select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-glass);
+  outline: none;
+}
+
+.stock-card__status-select--compact {
+  padding: 0.3rem 1.5rem 0.3rem 0.5rem;
+}
+
+.stock-card__comments-wrap {
+  margin-top: 0.5rem;
+}
+
+/* Disclosure (Comments) */
+.stock-card__disclosure {
+  margin-top: 0.5rem;
+}
+
+.stock-card__disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-secondary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.stock-card__disclosure-trigger:hover {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.stock-card__disclosure-trigger[aria-expanded="true"] {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: transparent;
+}
+
+.stock-card__disclosure-trigger::after {
+  display: none;
+}
+
+.stock-card__disclosure-icon {
+  font-size: 1em;
   opacity: 0.85;
-  vertical-align: middle;
-  margin-top: 0.08em;
+}
+
+.stock-card__disclosure-count {
+  margin-left: auto;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--glass-bg-subtle);
+  border-radius: 999px;
+}
+
+.stock-card__disclosure-chevron {
+  margin-left: 0.25rem;
+  font-size: 0.8em;
+  opacity: 0.8;
+  transition: transform var(--transition-fast);
+}
+
+.stock-card__disclosure-trigger[aria-expanded="true"] .stock-card__disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.stock-card__disclosure-panel {
+  border: 1px solid var(--glass-border-subtle);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.stock-card__disclosure-body {
+  padding: 0.75rem;
+  background: var(--glass-bg);
+}
+
+.stock-card__muted {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.stock-card__comment-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.stock-card__comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.35rem;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 8px;
+}
+
+.stock-card__comment-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-card__comment-text {
+  margin: 0 0 0.2rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.stock-card__comment-date {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.stock-card__comment-delete {
+  padding: 0.2rem;
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.stock-card__comment-delete:hover:not(:disabled) {
+  background: var(--danger-glass);
+}
+
+.stock-card__comment-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stock-card__comment-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 8px;
+  transition: border-color var(--transition-fast);
+}
+
+.stock-card__comment-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.stock-card__comment-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glass);
 }
 
 /* Search input – taskboard-style glass */
@@ -406,6 +1030,14 @@ button.accordion-button.ai-accordion-button:focus-visible {
   padding: 12px 16px;
   color: var(--text-primary) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Navbar: match search input height to theme/dropdown buttons */
+.liquid-navbar .search-input-glass {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 10px;
+  min-height: 2rem;
 }
 
 .search-input-glass::placeholder {
@@ -613,6 +1245,44 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary) !important;
 }
 
+/* Card edit button – more contrast on light theme */
+[data-theme="light"] .card-edit-btn {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .card-edit-btn:hover,
+[data-theme="light"] .card-edit-btn:focus {
+  background: rgba(0, 0, 0, 0.12) !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Status badge next to card edit button – smaller, no border */
+.card-status-badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  padding: 0.15rem 0.35rem;
+  background: var(--glass-bg-subtle);
+  border: none;
+  color: var(--text-secondary);
+}
+
+.card-status-badge--avoid {
+  background: var(--danger-glass);
+  color: var(--danger);
+}
+
+.card-status-badge--watch {
+  background: var(--accent-glass);
+  color: var(--accent);
+}
+
+.card-status-badge--own,
+.card-status-badge--hold {
+  background: var(--success-glass);
+  color: var(--success);
+}
+
 /* Theme dropdown – taskboard-style glass */
 .theme-dropdown {
   background: var(--dropdown-bg) !important;
@@ -767,71 +1437,67 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
   box-shadow: var(--glass-shadow);
 }
 
-/* AI Rating badges – differentiated, glass-like */
+/* AI Rating badges – differentiated, glass-like, no border on cards */
 .badge-rating-strong-sell {
   background-color: rgba(248, 113, 113, 0.26) !important;
-  border-color: rgba(248, 113, 113, 0.65) !important;
+  border: none !important;
   color: #7f1d1d !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-sell {
   background-color: rgba(248, 113, 113, 0.32) !important;
-  border-color: rgba(248, 113, 113, 0.75) !important;
   color: #fecaca !important;
 }
 
 .badge-rating-sell {
   background-color: rgba(251, 146, 60, 0.24) !important;
-  border-color: rgba(251, 146, 60, 0.6) !important;
+  border: none !important;
   color: #7c2d12 !important;
 }
 
 [data-theme="dark"] .badge-rating-sell {
   background-color: rgba(251, 146, 60, 0.3) !important;
-  border-color: rgba(251, 146, 60, 0.7) !important;
   color: #fed7aa !important;
 }
 
 .badge-rating-neutral {
   background-color: rgba(148, 163, 184, 0.22) !important;
-  border-color: rgba(148, 163, 184, 0.55) !important;
+  border: none !important;
   color: #0f172a !important;
 }
 
 [data-theme="dark"] .badge-rating-neutral {
   background-color: rgba(148, 163, 184, 0.3) !important;
-  border-color: rgba(148, 163, 184, 0.7) !important;
   color: #e5e7eb !important;
 }
 
 .badge-rating-buy {
   background-color: rgba(34, 197, 94, 0.16) !important;
-  border-color: rgba(34, 197, 94, 0.45) !important;
+  border: none !important;
   color: #14532d !important;
 }
 
 [data-theme="dark"] .badge-rating-buy {
   background-color: rgba(34, 197, 94, 0.24) !important;
-  border-color: rgba(34, 197, 94, 0.6) !important;
   color: #bbf7d0 !important;
 }
 
 .badge-rating-strong-buy {
   background-color: rgba(22, 163, 74, 0.34) !important;
-  border-color: rgba(22, 163, 74, 0.85) !important;
+  border: none !important;
   color: #14532d !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-buy {
   background-color: rgba(22, 163, 74, 0.42) !important;
-  border-color: rgba(22, 163, 74, 0.9) !important;
   color: #bbf7d0 !important;
 }
 
-/* Make Bootstrap semantic badge colors translucent over glass */
+/* Make Bootstrap semantic badge colors translucent over glass, no border */
 .badge.bg-success,
 .badge.bg-success-subtle {
   background-color: rgba(52, 199, 89, 0.2) !important;
+  border: none !important;
   color: #14532d !important;
 }
 
@@ -844,6 +1510,7 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
 .badge.bg-danger,
 .badge.bg-danger-subtle {
   background-color: rgba(255, 69, 58, 0.2) !important;
+  border: none !important;
   color: #b91c1c !important;
 }
 
@@ -855,6 +1522,7 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
 
 .badge.bg-warning {
   background-color: rgba(252, 211, 77, 0.22) !important;
+  border: none !important;
   color: #92400e !important;
 }
 
@@ -866,6 +1534,7 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
 .badge.bg-primary,
 .badge.bg-secondary {
   background-color: rgba(0, 113, 227, 0.2) !important;
+  border: none !important;
   color: var(--text-on-glass) !important;
 }
 
@@ -875,12 +1544,15 @@ nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
   color: var(--text-on-glass) !important;
 }
 
-/* Result card: AI Rating and Score labels – same size and weight */
+/* Result card: AI Rating and Score labels – smaller, no border */
 .result-card-badge,
 button.result-card-badge {
-  font-size: 0.8125rem !important;
+  font-size: 0.625rem !important;
   font-weight: 600 !important;
   line-height: 1.35 !important;
+  padding: 0.15rem 0.35rem !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* "View trends" button – taskboard-style accent chip */
@@ -934,4 +1606,207 @@ a:hover {
   border-radius: 0;
   border: none;
   border-top: none;
+}
+
+/* Portfolio status tabs – glass panel + pill tabs */
+.portfolio-tabs-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 0.85rem 1rem 1rem;
+  color: var(--text-primary);
+}
+
+.portfolio-tabs-glass .portfolio-tabs-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.portfolio-tabs-glass .portfolio-tab-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.portfolio-tabs-glass .portfolio-tab-btn:hover {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.portfolio-tabs-glass .portfolio-tab-btn.active {
+  background: var(--accent-glass);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.portfolio-tabs-glass .portfolio-tabpanel {
+  min-height: 2rem;
+}
+
+.portfolio-tabs-glass .portfolio-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Auth: glass panel, buttons, alerts, links, headings (taskboard-style) */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+}
+
+.glass-heading {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.glass-subheading {
+  color: var(--text-secondary);
+}
+
+.glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg-subtle);
+  color: var(--text-primary);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.glass-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.glass-btn-primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+}
+
+.glass-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+  color: #fff !important;
+}
+
+.glass-btn-secondary {
+  background: var(--glass-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.glass-btn-secondary:hover:not(:disabled) {
+  background: var(--glass-bg-strong) !important;
+  color: var(--text-primary) !important;
+}
+
+.glass-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.glass-alert-danger {
+  background: var(--danger-glass);
+  color: var(--danger);
+  border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+.glass-alert-success {
+  background: var(--success-glass);
+  color: var(--success);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.glass-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.glass-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* Auth modal – same as score modal glass */
+.login-modal .modal-content {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.login-modal .modal-header {
+  background: var(--glass-bg-subtle);
+  border-bottom: 1px solid var(--glass-border-subtle);
+  color: var(--text-primary);
+}
+
+.login-modal .modal-body {
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+}
+
+.login-modal .form-control {
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 10px;
+  color: var(--text-primary);
+}
+
+.login-modal .form-control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glass);
+  outline: none;
+}
+
+/* User dropdown in navbar */
+.user-dropdown-menu {
+  background: var(--dropdown-bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--dropdown-border) !important;
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow-floating);
+  padding: 0.5rem;
+}
+
+.user-dropdown-menu .dropdown-item {
+  color: var(--text-primary);
+  border-radius: 10px;
+}
+
+.user-dropdown-menu .dropdown-item:hover,
+.user-dropdown-menu .dropdown-item:focus {
+  background: var(--glass-bg) !important;
+  color: var(--text-primary) !important;
 }

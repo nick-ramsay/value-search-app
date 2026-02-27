@@ -2,13 +2,11 @@ import Link from "next/link";
 import { cache, Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
-import SearchBar from "../app/components/SearchBar";
+import AppNavbar from "../app/components/AppNavbar";
 import FilterClearButton from "../app/components/FilterClearButton";
-import ThemeSwitcher from "../app/components/ThemeSwitcher";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
-import ScoreModalTrigger from "../app/components/ScoreModalTrigger";
+import StockResultCard from "../app/components/StockResultCard";
 import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
-import HistoryCharts from "../app/components/HistoryCharts";
 
 type ValueSearchScoreDisplay = {
   calculatedScorePercentage: number;
@@ -273,40 +271,6 @@ function getSearchParamValue(value?: string | string[]) {
     return value[value.length - 1];
   }
   return value;
-}
-
-function toTitleCase(value: string) {
-  return value
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0].toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function getRatingBadgeClass(rating: string) {
-  const normalized = rating.trim().toUpperCase();
-
-  switch (normalized) {
-    case "STRONG BUY":
-      return "badge badge-rating-strong-buy";
-    case "BUY":
-      return "badge badge-rating-buy";
-    case "NEUTRAL":
-      return "badge badge-rating-neutral";
-    case "SELL":
-      return "badge badge-rating-sell";
-    case "STRONG SELL":
-      return "badge badge-rating-strong-sell";
-    default:
-      return "badge badge-rating-neutral";
-  }
-}
-
-function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
-  if (calculatedScorePercentage > 0.66) return "badge bg-success text-white";
-  if (calculatedScorePercentage >= 0.33) return "badge bg-warning text-dark";
-  return "badge bg-danger text-white";
 }
 
 const getFilterOptions = cache(async (): Promise<FilterOptions> => {
@@ -609,105 +573,9 @@ async function ResultsCard({
               </p>
             ) : (
               <div className="d-flex flex-column gap-3">
-                {values.map((item) => {
-                  const accordionId = `accordion-${item._id}`;
-                  const headingId = `heading-${item._id}`;
-                  const collapseId = `collapse-${item._id}`;
-
-                  return (
-                    <div key={item._id} className="card result-item-glass">
-                      <div className="card-body text-center p-0">
-                        <div className="result-card-header">
-                          <div className="result-card-title">
-                            {item.symbol ? (
-                              <a
-                                href={
-                                  "https://finviz.com/quote.ashx?t=" +
-                                  item.symbol.replace(".", "-") +
-                                  "&ty=l&ta=0&p=w"
-                                }
-                                target="_blank"
-                                rel="noreferrer"
-                                className="result-card-title-link"
-                              >
-                                {(item.name ? item.name : "") + (item.symbol ? " (" + item.symbol + ")" : "" + ")")}
-                                <i className="bi bi-link-45deg ms-1 result-card-title-link-icon" aria-hidden />
-                              </a>
-                            ) : (
-                              ""
-                            )}
-                          </div>
-                          <div className="text-secondary mt-2 mb-2 row g-2">
-                            <div
-                              className={
-                                item.valueSearchScore != null &&
-                                item.valueSearchScore.totalPossiblePoints > 0 &&
-                                typeof item.valueSearchScore.calculatedScorePercentage === "number"
-                                  ? "col-6 d-flex justify-content-center"
-                                  : "col-12 d-flex justify-content-center"
-                              }
-                            >
-                              {item.aiRating ? (
-                                <span className={`${getRatingBadgeClass(item.aiRating)} result-card-badge`}>
-                                  AI Rating: {toTitleCase(item.aiRating)}
-                                </span>
-                              ) : null}
-                            </div>
-                            {item.valueSearchScore != null &&
-                              item.valueSearchScore.totalPossiblePoints > 0 &&
-                              typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
-                              <div className="col-6 d-flex justify-content-center">
-                                <ScoreModalTrigger
-                                  modalId={`score-modal-${item._id}`}
-                                  name={item.name}
-                                  symbol={item.symbol}
-                                  valueSearchScore={item.valueSearchScore}
-                                  buttonClassName={getValueScoreBadgeClass(item.valueSearchScore.calculatedScorePercentage)}
-                                  buttonLabel={`Score: ${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
-                                />
-                              </div>
-                            ) : null}
-                          </div>
-                          <HistoryCharts symbol={item.symbol} name={item.name ?? item.symbol} />
-                        </div>
-                        <div className="px-3 pb-3">
-                        <div className="accordion" id={accordionId}>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id={headingId}>
-                              <button
-                                className="accordion-button collapsed ai-accordion-button fw-bold"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target={`#${collapseId}`}
-                                aria-expanded="false"
-                                aria-controls={collapseId}
-                              >
-                                Assessment
-                              </button>
-                            </h2>
-                            <div
-                              id={collapseId}
-                              className="accordion-collapse collapse"
-                              data-bs-parent={`#${accordionId}`}
-                              aria-labelledby={headingId}
-                            >
-                              <div className="accordion-body">
-                                {item.assessment ? (
-                                  <div className="text-secondary">
-                                    {item.assessment}
-                                  </div>
-                                ) : (
-                                  ""
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {values.map((item) => (
+                  <StockResultCard key={item._id} item={item} />
+                ))}
               </div>
             )}
           </PaginationWithLoader>
@@ -781,23 +649,10 @@ export default async function Home({
 
   return (
     <div className="min-vh-100">
-      <nav className="navbar navbar-expand-lg fixed-top w-100 liquid-navbar" style={{ padding: "0.5rem 0" }}>
-        <div className="container-fluid px-3">
-          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
-            <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0, fontWeight: 600 }}>
-              <Link href="/" style={{ color: "var(--text-primary)", textDecoration: "none" }}>
-                valuesearch.app
-              </Link>
-            </span>
-            <div className="ms-auto d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
-              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
-                <SearchBar initialQuery={isSelected ? "" : query} />
-              </div>
-              <ThemeSwitcher />
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar
+        searchInitialQuery={query}
+        searchSelected={isSelected}
+      />
       <main className="container pt-5 mt-4">
         <div className="row justify-content-center">
           <div className="col-lg-8">
