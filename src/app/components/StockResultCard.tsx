@@ -43,11 +43,14 @@ function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
 type StockResultCardProps = {
   item: ValueRecord;
   compact?: boolean;
+  /** Minimum height in pixels (e.g. for portfolio so card matches empty state size) */
+  minHeight?: number;
 };
 
 export default function StockResultCard({
   item,
   compact = false,
+  minHeight,
 }: StockResultCardProps) {
   const instanceId = useId();
   const cardDomId = `${item._id}-${instanceId}`;
@@ -121,7 +124,7 @@ export default function StockResultCard({
       ref={cardRef}
       className={`stock-card${compact ? " stock-card--compact" : ""}${hasAnyOpen ? " stock-card--has-open" : ""}`}
       data-symbol={item.symbol ?? undefined}
-      style={{ position: "relative" }}
+      style={{ position: "relative", ...(minHeight != null ? { minHeight: `${minHeight}px` } : {}) }}
     >
       {/* Identity */}
       <header className="stock-card__head">

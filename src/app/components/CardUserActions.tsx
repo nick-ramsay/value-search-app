@@ -33,6 +33,8 @@ export default function CardUserActions({
 }: CardUserActionsProps) {
   const { status: sessionStatus } = useSession();
   const [status, setStatus] = useState("");
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const commentsCollapseId = `comments-${cardId}`;
@@ -57,14 +59,21 @@ export default function CardUserActions({
 
   useEffect(() => {
     if (sessionStatus !== "authenticated" || !symbol) return;
+    setStatusLoading(true);
     let cancelled = false;
     fetch(`/api/user-stock-data?symbol=${encodeURIComponent(symbol)}`)
       .then((r) => (r.ok ? r.json() : { status: "", comments: [] }))
       .then((data) => {
-        if (!cancelled) setStatus(data.status ?? "");
+        if (!cancelled) {
+          setStatus(data.status ?? "");
+          setStatusLoading(false);
+        }
       })
       .catch(() => {
-        if (!cancelled) setStatus("");
+        if (!cancelled) {
+          setStatus("");
+          setStatusLoading(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -76,6 +85,7 @@ export default function CardUserActions({
   const statusLabel = (STATUS_LABELS[status] ?? status) || "No status";
 
   const pillStatusClass = status ? `stock-card__user-pill--${status.toLowerCase()}` : "";
+  const handleStatusChangeEnd = () => setStatusUpdating(false);
   const handleStatusChange = (next: string) => {
     setStatus((prev) => {
       if (typeof window !== "undefined" && symbol) {
@@ -94,9 +104,16 @@ export default function CardUserActions({
       return next;
     });
   };
+  const showStatusLoader = statusLoading || statusUpdating;
   const actionBarContent = (
     <div className={`stock-card__user-pill ${pillStatusClass}`}>
-      {status ? (
+      {showStatusLoader ? (
+        <span className="stock-card__status-loading" aria-hidden="true">
+          <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
+            <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
+          </span>
+        </span>
+      ) : status ? (
         <span
           className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
           aria-label={`Status: ${statusLabel}`}
@@ -114,7 +131,7 @@ export default function CardUserActions({
         aria-label="Edit status and comments"
         title="Edit status and comments"
       >
-        {!status && <span className="stock-card__action-label">Edit</span>}
+        {!showStatusLoader && !status && <span className="stock-card__action-label">Edit</span>}
         <i
           className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
           aria-hidden
@@ -137,6 +154,8 @@ export default function CardUserActions({
             compact={compact}
             initialStatus={status}
             onStatusChange={handleStatusChange}
+            onStatusUpdateStart={() => setStatusUpdating(true)}
+            onStatusUpdateEnd={handleStatusChangeEnd}
           />
         </div>
         <div className="stock-card__comments-wrap">

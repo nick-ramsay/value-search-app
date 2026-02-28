@@ -7,6 +7,7 @@ import FilterClearButton from "../app/components/FilterClearButton";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
 import StockResultCard from "../app/components/StockResultCard";
 import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
+import DisclosureModal from "../app/components/DisclosureModal";
 
 type ValueSearchScoreDisplay = {
   calculatedScorePercentage: number;
@@ -552,6 +553,9 @@ async function ResultsCard({
             return `${baseText} filtered by ${appliedFilters.join(", ")}`;
           })()}
         </p>
+        <p className="text-center small mb-0 mt-2">
+          <DisclosureModal />
+        </p>
       </section>
       <section className="card liquid-glass-card mb-4 pt-3">
         <div className="card-body pt-0">
@@ -591,6 +595,9 @@ function ResultsLoadingFallback() {
       <section className="card-body pb-2">
         <p className="text-muted small mb-0 text-center">
           0 results
+        </p>
+        <p className="text-center small mb-0 mt-2">
+          <DisclosureModal />
         </p>
       </section>
       <section className="card liquid-glass-card mb-4 pt-3 page-loading-results-card flex-grow-1 d-flex flex-column">

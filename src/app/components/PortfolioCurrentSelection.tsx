@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ValueRecord } from "@/lib/value-search";
 import StockResultCard from "./StockResultCard";
+import DisclosureModal from "./DisclosureModal";
 
 type PortfolioCurrentSelectionProps = {
   initialSymbol: string | null;
@@ -90,29 +91,55 @@ export default function PortfolioCurrentSelection({
       </div>
       <div className="mb-4">
         {loading ? (
-          <article
-            className="stock-card stock-card--compact d-flex align-items-center justify-content-center"
-            style={{ minHeight: "220px" }}
-          >
-            <p className="text-muted mb-0 text-center px-3">
-              Loading selection…
-            </p>
+          <article className="stock-card stock-card--compact">
+            <header className="stock-card__head d-flex align-items-center justify-content-center text-center">
+              <p className="text-muted mb-0 w-100 px-2" style={{ fontSize: "0.95rem" }}>
+                Loading selection…
+              </p>
+            </header>
+            <div className="stock-card__signals invisible" aria-hidden="true">
+              <span className="stock-card__badge">AI: Neutral</span>
+              <span className="stock-card__badge">0%</span>
+            </div>
+            <div className="stock-card__actions invisible" aria-hidden="true">
+              <span className="stock-card__action stock-card__action--secondary">View trends</span>
+              <span className="stock-card__action stock-card__action--secondary">Assessment</span>
+            </div>
           </article>
         ) : stock ? (
           <StockResultCard item={stock} compact />
         ) : (
-          <article
-            className="stock-card stock-card--compact d-flex align-items-center justify-content-center"
-            style={{ minHeight: "220px" }}
-          >
-            <p className="text-muted mb-0 text-center px-3">
-              {hasSymbol
-                ? "No results found for that symbol."
-                : "Search for a stock above to view its card here."}
-            </p>
+          <article className="stock-card stock-card--compact position-relative">
+            <header className="stock-card__head">
+              <span style={{ fontSize: "0.95rem", visibility: "hidden" }} aria-hidden="true">
+                {/* Keeps head same height as when title is present */}
+                Placeholder
+              </span>
+            </header>
+            <div
+              className="position-absolute start-0 end-0 d-flex align-items-center justify-content-center px-3"
+              style={{ top: "50%", transform: "translateY(-50%)" }}
+            >
+              <p className="text-muted mb-0 text-center px-3" style={{ fontSize: "0.95rem" }}>
+                {hasSymbol
+                  ? "No results found for that symbol."
+                  : "Search for a stock above to view its card here."}
+              </p>
+            </div>
+            <div className="stock-card__signals invisible" aria-hidden="true">
+              <span className="stock-card__badge">AI: Neutral</span>
+              <span className="stock-card__badge">0%</span>
+            </div>
+            <div className="stock-card__actions invisible" aria-hidden="true">
+              <span className="stock-card__action stock-card__action--secondary">View trends</span>
+              <span className="stock-card__action stock-card__action--secondary">Assessment</span>
+            </div>
           </article>
         )}
       </div>
+      <p className="text-center small mb-0 mt-2">
+        <DisclosureModal />
+      </p>
     </>
   );
 }

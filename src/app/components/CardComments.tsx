@@ -104,10 +104,31 @@ export default function CardComments({
     if (!deleteModal) return;
     const el = document.getElementById(deleteModalId);
     if (!el) return;
-    const onHidden = () => setDeleteModal(null);
+    const onHidden = () => {
+      restoreBodyScroll();
+      setDeleteModal(null);
+    };
     el.addEventListener("hidden.bs.modal", onHidden);
     return () => el.removeEventListener("hidden.bs.modal", onHidden);
   }, [deleteModal, deleteModalId]);
+
+  /** Restore body scroll when modals/collapse leave it stuck */
+  const restoreBodyScroll = () => {
+    if (typeof document === "undefined") return;
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+    document.body.removeAttribute("inert");
+    document.querySelectorAll("[inert]").forEach((el) => el.removeAttribute("inert"));
+  };
+
+  useEffect(() => {
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onCollapseHidden = () => restoreBodyScroll();
+    el.addEventListener("hidden.bs.collapse", onCollapseHidden);
+    return () => el.removeEventListener("hidden.bs.collapse", onCollapseHidden);
+  }, [collapseId]);
 
   const handleModalHidden = () => setDeleteModal(null);
 
@@ -130,6 +151,8 @@ export default function CardComments({
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
+  const startExpanded = !loading && comments.length > 0;
+
   return (
     <>
       <div className="stock-card__disclosure">
@@ -138,7 +161,7 @@ export default function CardComments({
           className="stock-card__disclosure-trigger"
           data-bs-toggle="collapse"
           data-bs-target={`#${collapseId}`}
-          aria-expanded="false"
+          aria-expanded={startExpanded}
           aria-controls={collapseId}
           id={`${collapseId}-label`}
         >
@@ -151,7 +174,7 @@ export default function CardComments({
         </button>
         <div
           id={collapseId}
-          className="collapse stock-card__disclosure-panel"
+          className={`collapse stock-card__disclosure-panel ${startExpanded ? "show" : ""}`}
           aria-labelledby={`${collapseId}-label`}
         >
           <div className="stock-card__disclosure-body">
@@ -258,10 +281,11 @@ export default function CardComments({
                         const el = document.getElementById(deleteModalId);
                         if (el) {
                           el.classList.remove("show");
+                          el.setAttribute("aria-hidden", "true");
                           el.style.display = "none";
-                          document.body.classList.remove("modal-open");
                           const backdrop = document.querySelector(".modal-backdrop");
                           if (backdrop) backdrop.remove();
+                          restoreBodyScroll();
                         }
                       }}
                       disabled={submitting}

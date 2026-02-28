@@ -17,6 +17,10 @@ type CardStatusSelectProps = {
   initialStatus?: string;
   /** Called when status is updated (after load when not using initialStatus, or after PATCH). */
   onStatusChange?: (status: string) => void;
+  /** Called when a PATCH to change status has started (so parent can show loader). */
+  onStatusUpdateStart?: () => void;
+  /** Called when the PATCH completes (success or failure), so parent can hide loader. */
+  onStatusUpdateEnd?: () => void;
 };
 
 export default function CardStatusSelect({
@@ -24,6 +28,8 @@ export default function CardStatusSelect({
   compact = false,
   initialStatus,
   onStatusChange,
+  onStatusUpdateStart,
+  onStatusUpdateEnd,
 }: CardStatusSelectProps) {
   const [status, setStatus] = useState(initialStatus ?? "");
   const [loading, setLoading] = useState(typeof initialStatus === "undefined");
@@ -63,6 +69,7 @@ export default function CardStatusSelect({
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value as "" | "Avoid" | "Watch" | "Own" | "Hold";
     setSaving(true);
+    onStatusUpdateStart?.();
     fetch("/api/user-stock-data", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -74,7 +81,10 @@ export default function CardStatusSelect({
         setStatus(s);
         onStatusChange?.(s);
       })
-      .finally(() => setSaving(false));
+      .finally(() => {
+        setSaving(false);
+        onStatusUpdateEnd?.();
+      });
   };
 
   if (loading) return null;
