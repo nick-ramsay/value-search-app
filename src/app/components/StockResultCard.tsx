@@ -40,6 +40,25 @@ function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   return "badge bg-danger text-white";
 }
 
+function formatLastUpdated(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  try {
+    const datePart = date.toLocaleDateString(undefined, {
+      dateStyle: "medium",
+    });
+    const timePart = date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${datePart} ${timePart}`;
+  } catch {
+    return date.toISOString();
+  }
+}
+
 type StockResultCardProps = {
   item: ValueRecord;
   compact?: boolean;
@@ -59,6 +78,8 @@ export default function StockResultCard({
 
   const [hasAnyOpen, setHasAnyOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
+  const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
+  const [showAssessmentLastUpdated, setShowAssessmentLastUpdated] = useState(false);
 
   const updateAnyOpen = useCallback(() => {
     const card = cardRef.current;
@@ -83,6 +104,10 @@ export default function StockResultCard({
   const handleCloseAll = useCallback(async () => {
     const card = cardRef.current;
     if (!card) return;
+
+    // Immediately hide the "Close all" button while accordions animate closed
+    setHasAnyOpen(false);
+
     const bootstrap = await import(
       "bootstrap/dist/js/bootstrap.bundle.min.js"
     );
@@ -151,9 +176,38 @@ export default function StockResultCard({
       {/* Current price – row below name/symbol (from stock-quotes, quote.price) */}
       {typeof item.price === "number" && !Number.isNaN(item.price) ? (
         <div className="stock-card__price-row">
-          <p className="stock-card__subheader" aria-label={`Price: $${item.price.toFixed(2)} USD`}>
-            {`$${item.price.toFixed(2)} USD`}
-          </p>
+          <div className="stock-card__price-row-inner">
+            <p
+              className="stock-card__subheader"
+              aria-label={`Price: $${item.price.toFixed(2)} USD`}
+            >
+              {`$${item.price.toFixed(2)} USD`}
+            </p>
+            {item.priceLastUpdated ? (
+              <>
+                <button
+                  type="button"
+                  className="stock-card__time-btn"
+                  onClick={() => setShowPriceLastUpdated((prev) => !prev)}
+                  aria-label={
+                    showPriceLastUpdated
+                      ? "Hide last updated time for this quote"
+                      : "Show last updated time for this quote"
+                  }
+                >
+                  <i
+                    className="bi bi-clock-history stock-card__time-icon"
+                    aria-hidden
+                  />
+                </button>
+                {showPriceLastUpdated ? (
+                  <span className="stock-card__time-text">
+                    {formatLastUpdated(item.priceLastUpdated)}
+                  </span>
+                ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -163,7 +217,31 @@ export default function StockResultCard({
           <span
             className={`${getRatingBadgeClass(item.aiRating)} stock-card__badge`}
           >
-            AI: {toTitleCase(item.aiRating)}
+            <span>AI: {toTitleCase(item.aiRating)}</span>
+            <button
+              type="button"
+              className="stock-card__time-btn ms-1"
+              onClick={() =>
+                setShowAssessmentLastUpdated((prev) => !prev)
+              }
+              aria-label={
+                showAssessmentLastUpdated
+                  ? "Hide last generated time for this AI assessment"
+                  : "Show last generated time for this AI assessment"
+              }
+            >
+              <i
+                className="bi bi-clock-history stock-card__time-icon"
+                aria-hidden
+              />
+            </button>
+            {showAssessmentLastUpdated ? (
+              <span className="stock-card__time-text ms-1">
+                {item.aiAssessmentLastUpdated
+                  ? formatLastUpdated(item.aiAssessmentLastUpdated)
+                  : "Last generated time not available"}
+              </span>
+            ) : null}
           </span>
         ) : null}
         {item.valueSearchScore != null &&
@@ -188,6 +266,13 @@ export default function StockResultCard({
           aria-hidden="true"
         />
       </div>
+
+      {/* Inline labels row below rating/score */}
+      <div
+        className="stock-card__labels-slot"
+        id={`stock-card-labels-slot-${cardDomId}`}
+        aria-hidden="true"
+      />
 
       {/* Primary actions: View trends, Assessment, Edit (when logged in) */}
       <div className="stock-card__actions">
@@ -215,6 +300,12 @@ export default function StockResultCard({
           {item.assessment ? (
             <p className="stock-card__assessment-text">{item.assessment}</p>
           ) : null}
+          {item.aiAssessmentLastUpdated ? (
+            <p className="stock-card__assessment-updated">
+              - Last updated{" "}
+              <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -226,6 +317,7 @@ export default function StockResultCard({
         compact={compact}
         actionBarSlotId={`stock-card-actions-slot-${cardDomId}`}
         targetPillSlotId={`stock-card-signals-slot-${cardDomId}`}
+        labelsSlotId={`stock-card-labels-slot-${cardDomId}`}
         currentPrice={typeof item.price === "number" && !Number.isNaN(item.price) ? item.price : undefined}
       />
 

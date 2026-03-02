@@ -11,6 +11,8 @@ export type ValueSearchScoreDisplay = {
 export type ValueRecordMetrics = {
   /** Current stock price */
   price?: number;
+  /** When the current stock price/quote was last updated (ISO string). */
+  priceLastUpdated?: string;
   /** P/E ratio */
   peRatio?: number;
   /** Forward P/E ratio */
@@ -41,6 +43,8 @@ export type ValueRecord = {
   name?: string;
   aiRating?: string;
   aiRatingScore?: number;
+  /** When the AI assessment was last generated/updated (ISO string). */
+  aiAssessmentLastUpdated?: string;
   assessment?: string;
   industry?: string;
   sector?: string;
@@ -59,6 +63,92 @@ function toNumber(v: unknown): number | undefined {
     const n = parseFloat(v);
     if (!Number.isNaN(n)) return n;
   }
+  return undefined;
+}
+
+/** Coerce a value to an ISO date-time string if possible. Accepts Date, ISO string, or epoch seconds/ms. */
+function toDateString(v: unknown): string | undefined {
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? undefined : v.toISOString();
+  }
+  if (typeof v === "number" && Number.isFinite(v)) {
+    const ms = v > 1e12 ? v : v * 1000;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+  }
+  if (typeof v === "string") {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+  }
+  return undefined;
+}
+
+/** Read a quote last-updated timestamp from either the assessment doc or nested quote/quotes objects. */
+function readQuoteLastUpdatedFromAny(
+  doc: Record<string, unknown>,
+): string | undefined {
+  const sources: Record<string, unknown>[] = [];
+  const quote = doc.quote ?? (doc as { quotes?: unknown }).quotes;
+  if (quote && typeof quote === "object") {
+    sources.push(quote as Record<string, unknown>);
+  }
+  sources.push(doc);
+
+  const candidateKeys = [
+    "lastUpdated",
+    "lastUpdate",
+    "updatedAt",
+    "updated_at",
+    "priceUpdatedAt",
+    "price_updated_at",
+    "timestamp",
+  ];
+
+  for (const src of sources) {
+    for (const key of candidateKeys) {
+      if (key in src) {
+        const iso = toDateString(src[key]);
+        if (iso) return iso;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/** Read an AI assessment last-updated timestamp from the assessment document itself. */
+function readAssessmentLastUpdatedFromAny(
+  doc: Record<string, unknown>,
+): string | undefined {
+  // Prefer the explicit lastUpdatedAssessment field on the stock-ai-assessments document
+  const direct = toDateString(
+    (doc as { lastUpdatedAssessment?: unknown }).lastUpdatedAssessment,
+  );
+  if (direct) return direct;
+
+  const sources: Record<string, unknown>[] = [doc];
+
+  const candidateKeys = [
+    // Legacy / alternate field names kept as fallbacks
+    "assessmentUpdatedAt",
+    "assessmentLastUpdated",
+    "aiUpdatedAt",
+    "aiLastUpdated",
+    "aiGeneratedAt",
+    "generatedAt",
+    "updatedAt",
+    "updated_at",
+  ];
+
+  for (const src of sources) {
+    for (const key of candidateKeys) {
+      if (key in src) {
+        const iso = toDateString(src[key]);
+        if (iso) return iso;
+      }
+    }
+  }
+
   return undefined;
 }
 
@@ -133,6 +223,8 @@ export function docToValueRecord(doc: DocInput): ValueRecord {
     sector: typeof doc.sector === "string" ? doc.sector : undefined,
     country: typeof doc.country === "string" ? doc.country : undefined,
     valueSearchScore: normalized,
+    aiAssessmentLastUpdated: readAssessmentLastUpdatedFromAny(d),
+    priceLastUpdated: readQuoteLastUpdatedFromAny(d),
     price: readNumber(d, "price", "currentPrice", "regularMarketPrice", "current_price", "close"),
     peRatio: readNumber(d, "peRatio", "pe", "trailingPE", "trailingPe", "peRatio", "pe_ratio"),
     forwardPeRatio: readNumber(d, "forwardPeRatio", "forwardPE", "forwardPe", "forwardPE", "fwdPe", "forward_pe"),
@@ -159,6 +251,20 @@ function readPriceFromQuoteDoc(doc: Record<string, unknown>): number | undefined
   const obj = quote as Record<string, unknown>;
   if (!("price" in obj)) return undefined;
   return toNumber(obj.price);
+}
+
+/** Read last-updated timestamp from a stock-quotes document, if present. */
+function readLastUpdatedFromQuoteDoc(
+  doc: Record<string, unknown>,
+): string | undefined {
+  // Prefer the explicit lastUpdatedQuote field on the stock_quote document
+  const preferred = toDateString(
+    (doc as { lastUpdatedQuote?: unknown }).lastUpdatedQuote,
+  );
+  if (preferred) return preferred;
+
+  // Fallback to other common timestamp fields, including any nested quote/quotes objects
+  return readQuoteLastUpdatedFromAny(doc);
 }
 
 /** Fetch price from stock-quotes collection (quote.price) for one symbol. */
@@ -188,9 +294,14 @@ async function getPriceFromStockQuotes(
 }
 
 /** Fetch prices from stock-quotes (quote.price) for many symbols. Returns map of uppercase symbol -> price. */
+export type QuotePriceSnapshot = {
+  price: number;
+  lastUpdated?: string;
+};
+
 export async function getPricesBySymbols(
   symbols: string[]
-): Promise<Record<string, number>> {
+): Promise<Record<string, QuotePriceSnapshot>> {
   const unique = [...new Set(symbols.map((s) => s.trim()).filter(Boolean))];
   if (unique.length === 0) return {};
 
@@ -217,13 +328,18 @@ export async function getPricesBySymbols(
   }
   const docs = await db.collection(coll).find({ $or: orClauses }).toArray();
 
-  const map: Record<string, number> = {};
+  const map: Record<string, QuotePriceSnapshot> = {};
   for (const doc of docs) {
     const d = doc as Record<string, unknown>;
     const sym = (typeof d.symbol === "string" ? d.symbol : typeof d.ticker === "string" ? d.ticker : typeof (d as { Symbol?: string }).Symbol === "string" ? (d as { Symbol: string }).Symbol : "") as string;
     if (!sym) continue;
     const num = readPriceFromQuoteDoc(d);
-    if (num !== undefined) map[sym.toUpperCase()] = num;
+    if (num !== undefined) {
+      const lastUpdated = readLastUpdatedFromQuoteDoc(d);
+      map[sym.toUpperCase()] = lastUpdated
+        ? { price: num, lastUpdated }
+        : { price: num };
+    }
   }
   return map;
 }

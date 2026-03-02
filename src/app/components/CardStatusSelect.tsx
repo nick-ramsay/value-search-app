@@ -92,7 +92,6 @@ export default function CardStatusSelect({
   return (
     <select
       className={`form-select form-select-sm glass-select stock-card__status-select ${compact ? "py-1 stock-card__status-select--compact" : ""}`}
-      style={{ width: "auto", minWidth: compact ? "6rem" : "7rem", fontSize: compact ? "0.75rem" : "0.8rem" }}
       value={status}
       onChange={handleChange}
       disabled={saving}

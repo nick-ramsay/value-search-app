@@ -41,10 +41,10 @@
   --text-tertiary: rgba(0, 0, 0, 0.52);
   --text-on-glass: rgba(0, 0, 0, 0.92);
 
-  /* Background gradient (light – warm paper → soft cloud → muted sky) */
-  --bg-start: #f2ebe3; /* warm paper */
-  --bg-mid: #dde4f0;   /* soft cloud blue-gray */
-  --bg-end: #c8d7e8;   /* muted sky */
+  /* Background gradient (light – soft sunrise) */
+  --bg-start: #fff5e6; /* pale sunrise peach */
+  --bg-mid: #ffe9f0;   /* soft morning pink */
+  --bg-end: #e6f3ff;   /* cool daylight blue */
 
   /* Dropdown (light) */
   --dropdown-bg: rgba(255, 255, 255, 0.85);
@@ -208,6 +208,12 @@ body {
   box-shadow: none !important;
 }
 
+[data-theme="light"] .ai-accordion-button {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(15, 23, 42, 0.18) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
 .ai-accordion-button.collapsed,
 .ai-accordion-button:not(.collapsed) {
   background: var(--glass-bg) !important;
@@ -228,6 +234,14 @@ button.accordion-button.ai-accordion-button:focus-visible {
   border: 1px solid var(--glass-border-subtle) !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+[data-theme="light"] button.accordion-button.ai-accordion-button:hover,
+[data-theme="light"] button.accordion-button.ai-accordion-button:focus,
+[data-theme="light"] button.accordion-button.ai-accordion-button:focus-visible {
+  background: rgba(248, 250, 252, 0.98) !important;
+  border-color: rgba(15, 23, 42, 0.26) !important;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
 }
 
 /* All modals – clean rounded edges, no dividers */
@@ -347,6 +361,11 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary);
 }
 
+[data-theme="light"] .accordion-body {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
 /* Cards – taskboard-style glass panels */
 .card.liquid-glass-card {
   background: var(--glass-bg);
@@ -373,6 +392,12 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: var(--glass-shadow);
   border-radius: 14px;
   overflow: hidden;
+}
+
+[data-theme="light"] .stock-card {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(15, 23, 42, 0.22);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
 }
 
 .stock-card--has-open {
@@ -455,10 +480,51 @@ button.accordion-button.ai-accordion-button:focus-visible {
   margin: 0;
 }
 
+.stock-card__price-row-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stock-card__time-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  margin-left: 0.45rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.stock-card__time-btn:hover,
+.stock-card__time-btn:focus-visible {
+  background: var(--glass-bg-subtle);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+.stock-card__time-icon {
+  font-size: 0.6rem;
+}
+
+.stock-card__time-text {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
 /* Price subheader text */
 .stock-card__subheader {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
@@ -520,8 +586,17 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__signals-slot {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.stock-card__labels-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
+  margin-bottom: 0.25rem;
 }
 
 .stock-card__badge {
@@ -876,9 +951,28 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary);
 }
 
+[data-theme="light"] .stock-card__close-all-wrap {
+  background: linear-gradient(
+    to top,
+    rgba(249, 250, 251, 0.98),
+    rgba(249, 250, 251, 0.5),
+    transparent
+  );
+}
+
+[data-theme="light"] .stock-card__close-all-wrap .stock-card__close-all {
+  background: #f3f4f6; /* match neutral light grey buttons */
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #111827;
+}
+
 /* Collapse panels (assessment + user notes) */
 .stock-card__panel {
   border-top: 1px solid var(--glass-border-subtle);
+}
+
+[data-theme="light"] .stock-card__panel {
+  border-top-color: rgba(15, 23, 42, 0.16);
 }
 
 .stock-card__panel-inner {
@@ -957,11 +1051,23 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-secondary);
 }
 
+.stock-card__assessment-updated {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
 /* User row: status + edit */
 .stock-card__user {
   border-top: 1px solid var(--glass-border-subtle);
   padding: var(--stock-card-row-gap) var(--stock-card-side-padding) var(--stock-card-row-gap);
   background: var(--glass-bg-subtle);
+}
+
+[data-theme="light"] .stock-card__user {
+  background: rgba(249, 250, 251, 0.96);
+  border-top-color: rgba(15, 23, 42, 0.16);
 }
 
 .stock-card__user-row {
@@ -998,9 +1104,11 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__user-form {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.85rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .stock-card__user-label {
@@ -1017,6 +1125,13 @@ button.accordion-button.ai-accordion-button:focus-visible {
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Edit accordion: make status, label, and target rows share a common width */
+.stock-card__user-form select,
+.stock-card__user-form .stock-card__target-row {
+  width: 100%;
+  max-width: 14rem;
+}
+
 .stock-card__status-select:hover:not(:disabled) {
   background: var(--glass-bg-strong) !important;
   border-color: var(--glass-border) !important;
@@ -1030,19 +1145,106 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 /* Buy / Sell target inputs – taskboard-style glass, aligned with status and comments */
 .stock-card__user-form--target {
-  align-items: flex-start;
-  flex-direction: column;
+  width: 100%;
+}
+
+.stock-card__user-form--labels {
+  width: 100%;
+}
+
+
+.stock-card__target-row {
+  display: flex;
+  align-items: center;
   gap: 0.35rem;
 }
 
 .stock-card__target-input-wrap {
   display: inline-flex;
   align-items: center;
+  flex: 1 1 auto;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border-subtle);
   border-radius: 10px;
   overflow: hidden;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stock-card__labels-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.stock-card__labels-editor {
+  width: 100%;
+  max-width: 14rem;
+  margin-top: 0.35rem;
+}
+
+.stock-card__labels-empty {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.stock-card__label-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  cursor: default;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.stock-card__labels-list .stock-card__label-pill {
+  cursor: pointer;
+}
+
+[data-theme="light"] .stock-card__labels-list .stock-card__label-pill {
+  background: #eef2ff;
+  border-color: rgba(79, 70, 229, 0.26);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.stock-card__labels-list .stock-card__label-pill:hover:not(:disabled),
+.stock-card__labels-list .stock-card__label-pill:focus-visible:not(:disabled) {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+.stock-card__label-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-card__label-pill-text {
+  line-height: 1.2;
+}
+
+.stock-card__label-pill-icon {
+  font-size: 0.75rem;
+}
+
+.stock-card__labels-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex-basis: 100%;
+  margin-top: 0.1rem;
+}
+
+[data-theme="light"] .stock-card__labels-inline .stock-card__label-pill {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: var(--text-secondary);
+  box-shadow: none;
 }
 
 .stock-card__target-input-wrap:focus-within {
@@ -1052,8 +1254,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__target-input-prefix {
-  padding: 0.4rem 0.5rem 0.4rem 0.65rem;
-  font-size: 0.8125rem;
+  padding: 0.3rem 0.45rem 0.3rem 0.55rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-secondary);
   background: var(--glass-bg-subtle);
@@ -1061,16 +1263,40 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__target-input {
-  width: 6rem;
-  min-width: 4rem;
-  padding: 0.4rem 0.65rem;
-  font-size: 0.8125rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
   color: var(--text-primary);
   background: transparent !important;
   border: none !important;
   border-radius: 0;
   transition: box-shadow var(--transition-fast);
 }
+
+.stock-card__target-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem 0 0.25rem;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.stock-card__target-clear-btn:hover:not(:disabled),
+.stock-card__target-clear-btn:focus-visible:not(:disabled) {
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+}
+
+.stock-card__target-clear-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 .stock-card__target-input::placeholder {
   color: var(--text-tertiary);
@@ -1091,7 +1317,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__comments-wrap {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--glass-border-subtle);
 }
 
 /* Disclosure (Comments) – same glass aesthetic, stronger contrast */
@@ -1575,9 +1803,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 [data-theme="light"] .glass-btn-secondary,
 [data-theme="light"] .stock-card__action--secondary,
 [data-theme="light"] .stock-card__user-pill {
-  background: #eef2ff !important;
-  border-color: rgba(79, 70, 229, 0.26) !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  background: #f3f4f6 !important; /* light neutral grey */
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 /* Card edit button – more contrast on light theme */
@@ -1674,6 +1902,14 @@ button.accordion-button.ai-accordion-button:focus-visible {
   background: #f9fafb !important;
   border-color: rgba(15, 23, 42, 0.22);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+}
+
+/* Light theme: stronger outlining for accordion inputs */
+[data-theme="light"] .stock-card__user-form select,
+[data-theme="light"] .stock-card__user-form .stock-card__target-input-wrap,
+[data-theme="light"] .stock-card__user-form .stock-card__comment-input {
+  border-color: rgba(15, 23, 42, 0.32) !important;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
 .form-label {
@@ -1992,6 +2228,11 @@ a:hover {
   color: var(--text-secondary);
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.portfolio-tabs-glass .portfolio-tab-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .portfolio-tabs-glass .portfolio-tab-btn:hover {

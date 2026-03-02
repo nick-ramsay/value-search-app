@@ -17,6 +17,10 @@ export interface IUserStockData extends mongoose.Document {
   buyTarget?: number;
   /** Dollar amount at which to consider selling (for Own/Hold). */
   sellTarget?: number;
+  /** Single label selected from the dropdown. */
+  label?: string;
+  /** Labels array (for future multi-label support). */
+  labels?: string[];
 }
 
 const CommentSchema = new mongoose.Schema(
@@ -40,6 +44,8 @@ const UserStockDataSchema = new mongoose.Schema<IUserStockData>(
     comments: { type: [CommentSchema], default: [] },
     buyTarget: { type: Number },
     sellTarget: { type: Number },
+    label: { type: String },
+    labels: { type: [String], default: [] },
   },
   { timestamps: true }
 );

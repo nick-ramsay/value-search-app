@@ -54,8 +54,13 @@ export async function GET(request: Request) {
       if (raw) {
         const sym = raw.toUpperCase();
         const baseSym = sym.includes(".") ? sym.split(".")[0] : sym;
-        const price = priceBySymbol[sym] ?? priceBySymbol[baseSym];
-        if (price !== undefined) record.price = price;
+        const snapshot = priceBySymbol[sym] ?? priceBySymbol[baseSym];
+        if (snapshot?.price !== undefined) {
+          record.price = snapshot.price;
+          if (snapshot.lastUpdated) {
+            record.priceLastUpdated = snapshot.lastUpdated;
+          }
+        }
       }
       return record;
     });

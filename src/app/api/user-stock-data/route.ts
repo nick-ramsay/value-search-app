@@ -25,11 +25,26 @@ export async function GET(request: Request) {
     userId: session.user.id,
     symbol,
   });
+
+  const rawLabel =
+    typeof doc?.label === "string" ? doc.label.trim() : "";
+  const rawLabels = Array.isArray(doc?.labels) ? doc.labels : [];
+  const labels: string[] =
+    rawLabels.length > 0
+      ? (rawLabels as unknown[]).filter(
+          (l): l is string => typeof l === "string",
+        )
+      : rawLabel
+        ? [rawLabel]
+        : [];
+
   return NextResponse.json({
     status: doc?.status ?? "",
     comments: doc?.comments ?? [],
     buyTarget: doc?.buyTarget ?? undefined,
     sellTarget: doc?.sellTarget ?? undefined,
+    label: rawLabel || undefined,
+    labels,
   });
 }
 
@@ -39,6 +54,8 @@ type PatchBody = {
   comments?: IComment[];
   buyTarget?: number | null;
   sellTarget?: number | null;
+  label?: string | null;
+  labels?: string[];
 };
 
 export async function PATCH(request: Request) {
@@ -75,12 +92,30 @@ export async function PATCH(request: Request) {
     comments: IComment[];
     buyTarget?: number | null;
     sellTarget?: number | null;
+    label?: string | null;
+    labels?: string[];
   }> = {};
   if (body.status !== undefined) update.status = body.status as StatusType;
   if (body.comments !== undefined) update.comments = body.comments;
   if (body.buyTarget !== undefined) update.buyTarget = body.buyTarget;
   if (body.sellTarget !== undefined) update.sellTarget = body.sellTarget;
-
+  if (Array.isArray(body.labels)) {
+    const normalized = Array.from(
+      new Set(
+        body.labels
+          .map((l) => (typeof l === "string" ? l.trim() : ""))
+          .filter(Boolean),
+      ),
+    );
+    update.labels = normalized;
+    update.label = normalized[0] ?? null;
+  } else if (body.label !== undefined) {
+    const trimmed =
+      typeof body.label === "string" ? body.label.trim() : "";
+    const arr = trimmed ? [trimmed] : [];
+    update.label = trimmed || null;
+    update.labels = arr;
+  }
   const doc = await UserStockData.findOneAndUpdate(
     { userId: session.user.id, symbol },
     { $set: update },
@@ -91,5 +126,11 @@ export async function PATCH(request: Request) {
     comments: doc.comments,
     buyTarget: doc.buyTarget ?? undefined,
     sellTarget: doc.sellTarget ?? undefined,
+    label: typeof doc.label === "string" ? doc.label : undefined,
+    labels: Array.isArray(doc.labels)
+      ? (doc.labels as unknown[]).filter(
+          (l): l is string => typeof l === "string",
+        )
+      : [],
   });
 }

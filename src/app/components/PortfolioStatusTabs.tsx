@@ -117,7 +117,12 @@ export default function PortfolioStatusTabs() {
           <button
             type="button"
             className={`portfolio-tab-btn ${activeStatus === status ? "active" : ""}`}
-            onClick={() => setActiveStatus(status)}
+            onClick={() => {
+              if (!loading) {
+                setActiveStatus(status);
+              }
+            }}
+            disabled={loading}
             role="tab"
             aria-selected={activeStatus === status}
             key={status}
@@ -135,7 +140,10 @@ export default function PortfolioStatusTabs() {
         aria-label={`${activeStatus} stocks`}
       >
         {loading ? (
-          <p className="text-muted small mb-0 text-center py-3">Loading…</p>
+          <div className="d-flex justify-content-center py-3" role="status" aria-live="polite">
+            <span className="spinner-border" aria-hidden />
+            <span className="visually-hidden">Loading…</span>
+          </div>
         ) : stocks.length === 0 ? (
           <p className="text-muted small mb-0 text-center py-4">
             No stocks with status &quot;{activeStatus}&quot;.
