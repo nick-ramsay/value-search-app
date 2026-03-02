@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
 import UserStockData from "@/models/UserStockData";
-import { docToValueRecord, type ValueRecord } from "@/lib/value-search";
+import { docToValueRecord, getPricesBySymbols, type ValueRecord } from "@/lib/value-search";
 import mongoose from "mongoose";
 
 const STATUSES = ["Avoid", "Watch", "Own", "Hold"] as const;
@@ -47,7 +47,18 @@ export async function GET(request: Request) {
       .collection(collName)
       .find({ symbol: { $in: symbols } })
       .toArray();
-    const stocks = assessments.map((doc) => docToValueRecord(doc));
+    const priceBySymbol = await getPricesBySymbols(symbols as string[]);
+    const stocks = assessments.map((doc) => {
+      const record = docToValueRecord(doc);
+      const raw = record.symbol?.trim();
+      if (raw) {
+        const sym = raw.toUpperCase();
+        const baseSym = sym.includes(".") ? sym.split(".")[0] : sym;
+        const price = priceBySymbol[sym] ?? priceBySymbol[baseSym];
+        if (price !== undefined) record.price = price;
+      }
+      return record;
+    });
     stocks.sort((a, b) => (a.name ?? a.symbol ?? "").localeCompare(b.name ?? b.symbol ?? "", undefined, { sensitivity: "base" }));
     return NextResponse.json({ stocks });
   }

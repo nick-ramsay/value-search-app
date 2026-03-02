@@ -50,6 +50,7 @@ export default function CardComments({
     e.preventDefault();
     const text = newText.trim();
     if (!text || submitting) return;
+    const form = e.currentTarget as HTMLFormElement;
     setSubmitting(true);
     const newComment: Comment = {
       id: generateId(),
@@ -66,6 +67,8 @@ export default function CardComments({
       .then((data) => {
         if (data) setComments(data.comments);
         setNewText("");
+        const nextEl = form.querySelector<HTMLElement>("button[type='submit']");
+        nextEl?.focus();
       })
       .finally(() => setSubmitting(false));
   };
@@ -151,8 +154,6 @@ export default function CardComments({
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const startExpanded = !loading && comments.length > 0;
-
   return (
     <>
       <div className="stock-card__disclosure">
@@ -161,7 +162,7 @@ export default function CardComments({
           className="stock-card__disclosure-trigger"
           data-bs-toggle="collapse"
           data-bs-target={`#${collapseId}`}
-          aria-expanded={startExpanded}
+          aria-expanded={false}
           aria-controls={collapseId}
           id={`${collapseId}-label`}
         >
@@ -174,7 +175,7 @@ export default function CardComments({
         </button>
         <div
           id={collapseId}
-          className={`collapse stock-card__disclosure-panel ${startExpanded ? "show" : ""}`}
+          className="collapse stock-card__disclosure-panel"
           aria-labelledby={`${collapseId}-label`}
         >
           <div className="stock-card__disclosure-body">

@@ -148,7 +148,16 @@ export default function StockResultCard({
         ) : null}
       </header>
 
-      {/* At-a-glance signals */}
+      {/* Current price – row below name/symbol (from stock-quotes, quote.price) */}
+      {typeof item.price === "number" && !Number.isNaN(item.price) ? (
+        <div className="stock-card__price-row">
+          <p className="stock-card__subheader" aria-label={`Price: $${item.price.toFixed(2)} USD`}>
+            {`$${item.price.toFixed(2)} USD`}
+          </p>
+        </div>
+      ) : null}
+
+      {/* At-a-glance signals: AI rating, score, buy/sell target (when logged in) */}
       <div className="stock-card__signals">
         {item.aiRating ? (
           <span
@@ -173,6 +182,11 @@ export default function StockResultCard({
             buttonLabel={`${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
           />
         ) : null}
+        <div
+          className="stock-card__signals-slot"
+          id={`stock-card-signals-slot-${cardDomId}`}
+          aria-hidden="true"
+        />
       </div>
 
       {/* Primary actions: View trends, Assessment, Edit (when logged in) */}
@@ -211,6 +225,8 @@ export default function StockResultCard({
         recordId={item._id}
         compact={compact}
         actionBarSlotId={`stock-card-actions-slot-${cardDomId}`}
+        targetPillSlotId={`stock-card-signals-slot-${cardDomId}`}
+        currentPrice={typeof item.price === "number" && !Number.isNaN(item.price) ? item.price : undefined}
       />
 
       {/* Close all accordions – fixed to bottom when any is open */}

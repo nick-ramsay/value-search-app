@@ -101,11 +101,13 @@ export default function SearchBar({
       return;
     }
 
-    setQuery(value);
+    setSuggestions([]);
     setIsOpen(false);
+    setQuery(value);
     setIsSelectedMatch(true);
     if (inputRef.current) {
       inputRef.current.value = value;
+      inputRef.current.blur();
     }
     if (selectedRef.current) {
       selectedRef.current.value = "1";

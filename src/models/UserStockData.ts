@@ -13,6 +13,10 @@ export interface IUserStockData extends mongoose.Document {
   symbol: string;
   status: StatusType;
   comments: IComment[];
+  /** Dollar amount at which to consider buying (for Avoid/Watch). */
+  buyTarget?: number;
+  /** Dollar amount at which to consider selling (for Own/Hold). */
+  sellTarget?: number;
 }
 
 const CommentSchema = new mongoose.Schema(
@@ -34,6 +38,8 @@ const UserStockDataSchema = new mongoose.Schema<IUserStockData>(
       default: "",
     },
     comments: { type: [CommentSchema], default: [] },
+    buyTarget: { type: Number },
+    sellTarget: { type: Number },
   },
   { timestamps: true }
 );

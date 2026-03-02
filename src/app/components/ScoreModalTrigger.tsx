@@ -93,27 +93,16 @@ export default function ScoreModalTrigger({
 
   return (
     <>
-      <div className="d-flex align-items-center justify-content-center gap-2">
-        <button
-          type="button"
-          className={`${buttonClassName} border-0 text-decoration-none`}
-          data-bs-toggle="modal"
-          data-bs-target={`#${modalId}`}
-          aria-label="View score breakdown"
-        >
-          {buttonLabel}
-        </button>
-        <button
-          type="button"
-          className="btn btn-link p-0 border-0 align-baseline text-secondary score-info-btn"
-          data-bs-toggle="modal"
-          data-bs-target="#score-explanation-modal"
-          aria-label="What does the score mean?"
-          title="What does the score mean?"
-        >
-          <i className="bi bi-info-circle" style={{ fontSize: "0.9rem" }} aria-hidden />
-        </button>
-      </div>
+      <button
+        type="button"
+        className={`${buttonClassName} stock-card__score-pill border-0 text-decoration-none`}
+        data-bs-toggle="modal"
+        data-bs-target={`#${modalId}`}
+        aria-label="View score breakdown"
+      >
+        <span className="stock-card__score-pill-label">{buttonLabel}</span>
+        <i className="bi bi-info-circle stock-card__score-pill-icon" aria-hidden />
+      </button>
       {mounted && createPortal(modalEl, document.body)}
     </>
   );

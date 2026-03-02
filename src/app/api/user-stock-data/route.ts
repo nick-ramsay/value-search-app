@@ -28,6 +28,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     status: doc?.status ?? "",
     comments: doc?.comments ?? [],
+    buyTarget: doc?.buyTarget ?? undefined,
+    sellTarget: doc?.sellTarget ?? undefined,
   });
 }
 
@@ -35,6 +37,8 @@ type PatchBody = {
   symbol: string;
   status?: StatusType;
   comments?: IComment[];
+  buyTarget?: number | null;
+  sellTarget?: number | null;
 };
 
 export async function PATCH(request: Request) {
@@ -66,9 +70,16 @@ export async function PATCH(request: Request) {
     );
   }
   await connectDB();
-  const update: Partial<{ status: StatusType; comments: IComment[] }> = {};
+  const update: Partial<{
+    status: StatusType;
+    comments: IComment[];
+    buyTarget?: number | null;
+    sellTarget?: number | null;
+  }> = {};
   if (body.status !== undefined) update.status = body.status as StatusType;
   if (body.comments !== undefined) update.comments = body.comments;
+  if (body.buyTarget !== undefined) update.buyTarget = body.buyTarget;
+  if (body.sellTarget !== undefined) update.sellTarget = body.sellTarget;
 
   const doc = await UserStockData.findOneAndUpdate(
     { userId: session.user.id, symbol },
@@ -78,5 +89,7 @@ export async function PATCH(request: Request) {
   return NextResponse.json({
     status: doc.status,
     comments: doc.comments,
+    buyTarget: doc.buyTarget ?? undefined,
+    sellTarget: doc.sellTarget ?? undefined,
   });
 }

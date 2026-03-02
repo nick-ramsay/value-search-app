@@ -2,19 +2,13 @@ import Link from "next/link";
 import { cache, Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
+import { docToValueRecord, getPricesBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
 import AppNavbar from "../app/components/AppNavbar";
 import FilterClearButton from "../app/components/FilterClearButton";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
 import StockResultCard from "../app/components/StockResultCard";
 import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
 import DisclosureModal from "../app/components/DisclosureModal";
-
-type ValueSearchScoreDisplay = {
-  calculatedScorePercentage: number;
-  totalPossiblePoints: number;
-  totalCalculatedPoints?: number;
-  [key: string]: unknown;
-};
 
 const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyPE", label: "Healthy P/E (0–15)" },
@@ -32,19 +26,6 @@ const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "relativeStengthIndex", label: "Relative strength index (30–70)" },
   { key: "earningsPerShareGrowingNextYear", label: "EPS growing next year" },
 ];
-
-type ValueRecord = {
-  _id: string;
-  symbol?: string;
-  name?: string;
-  aiRating?: string;
-  aiRatingScore?: number;
-  assessment?: string;
-  industry?: string;
-  sector?: string;
-  country?: string;
-  valueSearchScore?: ValueSearchScoreDisplay;
-};
 
 const PAGE_SIZE = 25;
 const EXCLUDED_ETF_INDUSTRY = "Exchange Traded Fund";
@@ -390,33 +371,21 @@ async function getValues(
   const hasMore = docs.length > PAGE_SIZE;
   const pageDocs = docs.slice(0, PAGE_SIZE);
 
+  const symbols = pageDocs
+    .map((d) => (typeof d.symbol === "string" ? d.symbol : undefined))
+    .filter((s): s is string => Boolean(s));
+  const priceBySymbol = await getPricesBySymbols(symbols);
+
   const values = pageDocs.map((doc) => {
-    const symbol = typeof doc.symbol === "string" ? doc.symbol : undefined;
-    const valueSearchScore = doc.valueSearchScore as ValueSearchScoreDisplay | undefined;
-    let normalized: ValueSearchScoreDisplay | undefined;
-    if (valueSearchScore) {
-      const totalPossiblePoints = Number(valueSearchScore.totalPossiblePoints);
-      const calculatedScorePercentage = Number(valueSearchScore.calculatedScorePercentage);
-      if (totalPossiblePoints > 0 && !Number.isNaN(calculatedScorePercentage)) {
-        normalized = {
-          ...valueSearchScore,
-          calculatedScorePercentage,
-          totalPossiblePoints,
-        };
-      }
+    const record = docToValueRecord(doc as DocInput);
+    const raw = record.symbol?.trim();
+    if (raw) {
+      const sym = raw.toUpperCase();
+      const baseSym = sym.includes(".") ? sym.split(".")[0] : sym;
+      const price = priceBySymbol[sym] ?? priceBySymbol[baseSym];
+      if (price !== undefined) record.price = price;
     }
-    return {
-      _id: doc._id.toString(),
-      symbol,
-      aiRating: typeof doc.aiRating === "string" ? doc.aiRating : undefined,
-      aiRatingScore: typeof doc.aiRatingScore === "number" ? doc.aiRatingScore : undefined,
-      assessment: typeof doc.assessment === "string" ? doc.assessment : undefined,
-      name: typeof doc.name === "string" ? doc.name : undefined,
-      industry: typeof doc.industry === "string" ? doc.industry : undefined,
-      sector: typeof doc.sector === "string" ? doc.sector : undefined,
-      country: typeof doc.country === "string" ? doc.country : undefined,
-      valueSearchScore: normalized,
-    };
+    return record;
   });
 
   return { values, hasMore };
