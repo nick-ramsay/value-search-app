@@ -56,7 +56,7 @@ export default function SearchBar({
   }, []);
 
   useEffect(() => {
-    if (!hasQuery) {
+    if (!hasQuery || isSelectedMatch) {
       setSuggestions([]);
       setIsOpen(false);
       return;
@@ -93,7 +93,7 @@ export default function SearchBar({
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [hasQuery, trimmedQuery]);
+  }, [hasQuery, trimmedQuery, isSelectedMatch]);
 
   const handleSelect = (suggestion: Suggestion) => {
     const value = pickSearchValue(suggestion);
@@ -103,24 +103,33 @@ export default function SearchBar({
 
     setSuggestions([]);
     setIsOpen(false);
-    setQuery(value);
-    setIsSelectedMatch(true);
     if (inputRef.current) {
-      inputRef.current.value = value;
       inputRef.current.blur();
     }
-    if (selectedRef.current) {
-      selectedRef.current.value = "1";
-    }
+
     if (formAction === "/portfolio") {
+      // Keep existing (working) portfolio behavior
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("portfolioSymbolSelected", {
             detail: { symbol: value },
           }),
         );
+        setQuery("");
+        if (inputRef.current) {
+          inputRef.current.value = "";
+        }
+        setIsSelectedMatch(false);
       }
       return;
+    }
+
+    // Homepage and other non-portfolio forms:
+    // submit with the *selected* symbol as the exact match.
+    setQuery(value);
+    setIsSelectedMatch(true);
+    if (selectedRef.current) {
+      selectedRef.current.value = "1";
     }
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("clearSearchInput", "1");
@@ -137,18 +146,44 @@ export default function SearchBar({
       method="GET"
       autoComplete="off"
       onSubmit={(event) => {
+        const value = trimmedQuery;
+        if (!value) {
+          event.preventDefault();
+          return;
+        }
+
+        // Common UX for both homepage and portfolio:
+        // close dropdown and dismiss keyboard.
+        setSuggestions([]);
+        setIsOpen(false);
+        setIsSelectedMatch(true);
+        if (inputRef.current) {
+          inputRef.current.blur();
+        }
+
         if (formAction === "/portfolio") {
           event.preventDefault();
-          const value = trimmedQuery;
-          if (!value) return;
           if (typeof window !== "undefined") {
             window.dispatchEvent(
               new CustomEvent("portfolioSymbolSelected", {
                 detail: { symbol: value },
               }),
             );
+            // Clear the input after hitting Enter in the portfolio view
+            setQuery("");
+            if (inputRef.current) {
+              inputRef.current.value = "";
+            }
+            setIsSelectedMatch(false);
           }
           return;
+        }
+
+        // Homepage (and other non-portfolio forms):
+        // Submit normally so the typed value is used for the query,
+        // then clear the input on the next load.
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("clearSearchInput", "1");
         }
       }}
     >
