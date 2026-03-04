@@ -77,6 +77,7 @@ export default function StockResultCard({
   const trendsCollapseId = `trends-${cardDomId}`;
 
   const [hasAnyOpen, setHasAnyOpen] = useState(false);
+  const [openCount, setOpenCount] = useState(0);
   const cardRef = useRef<HTMLElement>(null);
   const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
   const [showAssessmentLastUpdated, setShowAssessmentLastUpdated] = useState(false);
@@ -84,14 +85,16 @@ export default function StockResultCard({
   const updateAnyOpen = useCallback(() => {
     const card = cardRef.current;
     if (!card) return;
-    const anyOpen = card.querySelector(".collapse.show") != null;
-    setHasAnyOpen(anyOpen);
+    const openPanels = card.querySelectorAll(".collapse.show");
+    const count = openPanels.length;
+    setOpenCount(count);
+    setHasAnyOpen(count > 0);
   }, []);
 
   useEffect(() => {
     const card = cardRef.current;
     if (!card) return;
-    const onShown = () => setHasAnyOpen(true);
+    const onShown = () => updateAnyOpen();
     const onHidden = () => updateAnyOpen();
     card.addEventListener("shown.bs.collapse", onShown);
     card.addEventListener("hidden.bs.collapse", onHidden);
@@ -105,8 +108,9 @@ export default function StockResultCard({
     const card = cardRef.current;
     if (!card) return;
 
-    // Immediately hide the "Close all" button while accordions animate closed
+    // Immediately hide the "Close all" buttons while accordions animate closed
     setHasAnyOpen(false);
+    setOpenCount(0);
 
     const bootstrap = await import(
       "bootstrap/dist/js/bootstrap.bundle.min.js"
@@ -142,6 +146,17 @@ export default function StockResultCard({
         window.scrollTo({ top: Math.max(0, targetScrollY), behavior: "smooth" });
       }
     }
+  }, []);
+
+  const handleClosePanel = useCallback(async (panelId: string) => {
+    const el = document.getElementById(panelId);
+    if (!el) return;
+    const bootstrap = await import(
+      "bootstrap/dist/js/bootstrap.bundle.min.js"
+    );
+    const Collapse = (bootstrap as { Collapse?: { getInstance: (el: Element) => { hide: () => void } | null } }).Collapse;
+    const instance = Collapse?.getInstance(el);
+    instance?.hide();
   }, []);
 
   return (
@@ -281,8 +296,10 @@ export default function StockResultCard({
           name={item.name ?? item.symbol}
           collapseId={trendsCollapseId}
           compact={compact}
+          showInlineCloseAll={openCount >= 2}
+          onCloseThisPanel={() => handleClosePanel(trendsCollapseId)}
         />
-        <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle assessment" />
+        <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle AI assessment" />
         <div
           className="stock-card__actions-slot"
           id={`stock-card-actions-slot-${cardDomId}`}
@@ -290,13 +307,27 @@ export default function StockResultCard({
         />
       </div>
 
-      {/* Assessment panel */}
+      {/* AI Assessment panel */}
       <div
         id={collapseId}
         className="collapse stock-card__panel"
-        aria-label="Assessment"
+        aria-label="AI Assessment"
       >
         <div className="stock-card__panel-inner">
+          <div className="stock-card__close-all-inline-wrap">
+            <span className="stock-card__panel-heading">AI Assessment</span>
+            {openCount >= 2 ? (
+              <button
+                type="button"
+                className="stock-card__close-all-inline"
+                onClick={() => handleClosePanel(collapseId)}
+                aria-label="Close this section"
+              >
+                <i className="bi bi-chevron-up" aria-hidden />
+                Close
+              </button>
+            ) : null}
+          </div>
           {item.assessment ? (
             <p className="stock-card__assessment-text">{item.assessment}</p>
           ) : null}
@@ -319,6 +350,8 @@ export default function StockResultCard({
         targetPillSlotId={`stock-card-signals-slot-${cardDomId}`}
         labelsSlotId={`stock-card-labels-slot-${cardDomId}`}
         currentPrice={typeof item.price === "number" && !Number.isNaN(item.price) ? item.price : undefined}
+        showInlineCloseAll={openCount >= 2}
+        onCloseThisPanel={() => handleClosePanel(`user-actions-${cardDomId}`)}
       />
 
       {/* Close all accordions – fixed to bottom when any is open */}

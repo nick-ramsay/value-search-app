@@ -36,7 +36,7 @@ export default function AssessmentPillButton({
       aria-label={ariaLabel}
       title={ariaLabel}
     >
-      <span className="stock-card__action-label">Assessment</span>
+      <span className="stock-card__action-label">AI Assessment</span>
       <i
         className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
         aria-hidden

@@ -47,6 +47,10 @@ type CardUserActionsProps = {
   labelsSlotId?: string;
   /** Current stock price (from quote); used to show fulfilled icon next to target pill. */
   currentPrice?: number;
+  /** When true and this panel is open, show a small "Close" button inside the panel. */
+  showInlineCloseAll?: boolean;
+  /** Called when the inline "Close" is clicked (closes only this panel). */
+  onCloseThisPanel?: () => void;
 };
 
 export default function CardUserActions({
@@ -58,6 +62,8 @@ export default function CardUserActions({
   targetPillSlotId,
   labelsSlotId,
   currentPrice,
+  showInlineCloseAll = false,
+  onCloseThisPanel,
 }: CardUserActionsProps) {
   const { status: sessionStatus } = useSession();
   const [status, setStatus] = useState("");
@@ -314,6 +320,20 @@ export default function CardUserActions({
       aria-label="Status and comments"
     >
       <div className="stock-card__panel-inner">
+        <div className="stock-card__close-all-inline-wrap">
+          <span className="stock-card__panel-heading">Edit Portfolio Entry</span>
+          {showInlineCloseAll && onCloseThisPanel ? (
+            <button
+              type="button"
+              className="stock-card__close-all-inline"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+              Close
+            </button>
+          ) : null}
+        </div>
         <div className="stock-card__user-form">
           <span className="stock-card__user-label">Status</span>
           <CardStatusSelect

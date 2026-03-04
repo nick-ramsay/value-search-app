@@ -20,6 +20,10 @@ type HistoryChartsProps = {
   collapseId: string;
   /** When true, use a smaller "View trends" button (e.g. in compact cards). */
   compact?: boolean;
+  /** When true and this panel is open, show a small "Close" button inside the panel. */
+  showInlineCloseAll?: boolean;
+  /** Called when the inline "Close" is clicked (closes only this panel). */
+  onCloseThisPanel?: () => void;
 };
 
 type ActiveView = "score" | "rating";
@@ -230,7 +234,14 @@ function Sparkline({
   );
 }
 
-export default function HistoryCharts({ symbol, name, collapseId, compact = false }: HistoryChartsProps) {
+export default function HistoryCharts({
+  symbol,
+  name,
+  collapseId,
+  compact = false,
+  showInlineCloseAll = false,
+  onCloseThisPanel,
+}: HistoryChartsProps) {
   const [expanded, setExpanded] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("score");
   const [state, setState] = useState<FetchState>({ status: "idle" });
@@ -316,6 +327,20 @@ export default function HistoryCharts({ symbol, name, collapseId, compact = fals
       aria-label="Trends"
     >
       <div className="stock-card__panel-inner stock-card__trends-panel">
+          <div className="stock-card__close-all-inline-wrap">
+            <span className="stock-card__panel-heading">Trends</span>
+            {showInlineCloseAll && onCloseThisPanel ? (
+              <button
+                type="button"
+                className="stock-card__close-all-inline"
+                onClick={onCloseThisPanel}
+                aria-label="Close this section"
+              >
+                <i className="bi bi-chevron-up" aria-hidden />
+                Close
+              </button>
+            ) : null}
+          </div>
           <p className="stock-card__trends-intro small text-muted mb-3">
             Explore how the value score and AI rating have evolved over time.
           </p>

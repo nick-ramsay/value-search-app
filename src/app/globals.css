@@ -669,11 +669,15 @@ button.accordion-button.ai-accordion-button:focus-visible {
   }
 }
 
-/* Trends collapse: full width, own row below action buttons (must wrap on mobile) */
+/* Trends collapse: full width, own row below action buttons (must wrap on mobile).
+   Cancel out .stock-card__actions horizontal padding so this section aligns with
+   Assessment and user-actions panels (they are not inside the actions row). */
 .stock-card__trends-collapse {
   flex: 0 0 100%;
-  width: 100%;
+  width: calc(100% + 2 * var(--stock-card-side-padding));
   min-width: 0;
+  margin-left: calc(-1 * var(--stock-card-side-padding));
+  margin-right: calc(-1 * var(--stock-card-side-padding));
   order: 10;
   box-sizing: border-box;
 }
@@ -929,6 +933,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
   background: linear-gradient(to top, var(--glass-bg), transparent);
   pointer-events: none;
 }
+
 .stock-card__close-all-wrap .stock-card__close-all {
   pointer-events: auto;
   width: 100%;
@@ -960,8 +965,50 @@ button.accordion-button.ai-accordion-button:focus-visible {
   );
 }
 
+
 [data-theme="light"] .stock-card__close-all-wrap .stock-card__close-all {
   background: #f3f4f6; /* match neutral light grey buttons */
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #111827;
+}
+
+/* Small "Close" at top of each open panel when 2+ accordions are open */
+.stock-card__close-all-inline-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.stock-card__panel-heading {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+[data-theme="light"] .stock-card__panel-heading {
+  color: #374151;
+}
+.stock-card__close-all-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.stock-card__close-all-inline:hover {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
+[data-theme="light"] .stock-card__close-all-inline {
+  background: #f3f4f6;
   border-color: rgba(15, 23, 42, 0.08);
   color: #111827;
 }
@@ -1037,12 +1084,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-sizing: border-box;
 }
 
-@media (max-width: 575.98px) {
-  .stock-card__trends-panel.stock-card__panel-inner {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-}
 
 .stock-card__assessment-text {
   margin: 0;
@@ -1318,8 +1359,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__comments-wrap {
   margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--glass-border-subtle);
+  padding-top: 0;
+  border-top: none;
 }
 
 /* Disclosure (Comments) – same glass aesthetic, stronger contrast */
