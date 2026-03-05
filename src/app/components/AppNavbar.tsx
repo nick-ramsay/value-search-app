@@ -62,10 +62,7 @@ export default function AppNavbar({
           >
             <Link
               href={headerHref}
-              style={{
-                color: "var(--text-primary)",
-                textDecoration: "none",
-              }}
+              className="navbar-brand-link"
             >
               valuesearch.app
             </Link>

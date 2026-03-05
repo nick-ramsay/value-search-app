@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
 import ScoreModalTrigger from "./ScoreModalTrigger";
-import HistoryCharts from "./HistoryCharts";
+import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
 
@@ -291,13 +291,10 @@ export default function StockResultCard({
 
       {/* Primary actions: View trends, Assessment, Edit (when logged in) */}
       <div className="stock-card__actions">
-        <HistoryCharts
-          symbol={item.symbol}
-          name={item.name ?? item.symbol}
+        <HistoryChartsTrigger
           collapseId={trendsCollapseId}
+          symbol={item.symbol}
           compact={compact}
-          showInlineCloseAll={openCount >= 2}
-          onCloseThisPanel={() => handleClosePanel(trendsCollapseId)}
         />
         <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle AI assessment" />
         <div
@@ -306,6 +303,14 @@ export default function StockResultCard({
           aria-hidden="true"
         />
       </div>
+
+      {/* Trends panel – same level as other panels so it spans full card width */}
+      <HistoryChartsPanel
+        collapseId={trendsCollapseId}
+        symbol={item.symbol}
+        showInlineCloseAll
+        onCloseThisPanel={() => handleClosePanel(trendsCollapseId)}
+      />
 
       {/* AI Assessment panel */}
       <div
@@ -316,17 +321,15 @@ export default function StockResultCard({
         <div className="stock-card__panel-inner">
           <div className="stock-card__close-all-inline-wrap">
             <span className="stock-card__panel-heading">AI Assessment</span>
-            {openCount >= 2 ? (
-              <button
-                type="button"
-                className="stock-card__close-all-inline"
-                onClick={() => handleClosePanel(collapseId)}
-                aria-label="Close this section"
-              >
-                <i className="bi bi-chevron-up" aria-hidden />
-                Close
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="stock-card__close-all-inline"
+              onClick={() => handleClosePanel(collapseId)}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+              Close
+            </button>
           </div>
           {item.assessment ? (
             <p className="stock-card__assessment-text">{item.assessment}</p>
@@ -350,7 +353,7 @@ export default function StockResultCard({
         targetPillSlotId={`stock-card-signals-slot-${cardDomId}`}
         labelsSlotId={`stock-card-labels-slot-${cardDomId}`}
         currentPrice={typeof item.price === "number" && !Number.isNaN(item.price) ? item.price : undefined}
-        showInlineCloseAll={openCount >= 2}
+        showInlineCloseAll
         onCloseThisPanel={() => handleClosePanel(`user-actions-${cardDomId}`)}
       />
 

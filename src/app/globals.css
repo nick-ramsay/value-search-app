@@ -196,6 +196,12 @@ body {
   z-index: 1030;
 }
 
+/* Navbar brand link – class-based to avoid hydration mismatch from inline style */
+.liquid-navbar .navbar-brand-link {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
 /* Accordion – taskboard-style glass */
 .ai-accordion-button {
   padding: 0.5rem 0.75rem;
@@ -609,77 +615,109 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: none !important;
 }
 
-/* Action bar: View trends, Assessment, Edit (when logged in) */
+/* Action bar: View trends, Assessment, Edit (when logged in) – always one row */
 .stock-card__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 2vw, 0.5rem);
   padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
+  min-width: 0;
 }
 
-/* Smaller buttons on mobile; keep wrap so trends collapse gets its own full-width row */
+/* Allow action buttons and user pill to shrink so they fit in one row */
+.stock-card__actions .stock-card__action,
+.stock-card__actions .stock-card__user-actions-row,
+.stock-card__actions .stock-card__user-pill {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.stock-card__actions .stock-card__user-actions-row {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.stock-card__actions .stock-card__action-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive sizing so three buttons fit on narrow viewports */
 @media (max-width: 576px) {
   .stock-card {
     --stock-card-side-padding: 1rem;
     --stock-card-row-gap: 0.65rem;
   }
 
-  .stock-card__actions {
-    gap: 0.35rem;
-  }
-
   .stock-card__actions .stock-card__action {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-    gap: 0.25rem;
-    flex-shrink: 0;
-  }
-
-  .stock-card__actions .stock-card__action--icon {
-    padding: 0.3rem 0.4rem;
-  }
-
-  .stock-card__actions .stock-card__action--icon .bi {
-    font-size: 0.8rem;
-  }
-
-  .stock-card__actions .stock-card__action-label {
-    white-space: nowrap;
-  }
-
-  .stock-card__actions .stock-card__user-pill {
-    flex-shrink: 0;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.7rem;
     gap: 0.2rem;
   }
 
+  .stock-card__actions .stock-card__action--icon {
+    padding: 0.25rem 0.35rem;
+  }
+
+  .stock-card__actions .stock-card__action--icon .bi {
+    font-size: 0.75rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.7rem;
+    gap: 0.15rem;
+  }
+
   .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: 0.625rem !important;
-    padding: 0.12rem 0.3rem !important;
+    font-size: 0.5625rem !important;
+    padding: 0.1rem 0.25rem !important;
   }
 
   .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill {
-    padding: 0.2rem 0.3rem;
+    padding: 0.15rem 0.25rem;
   }
 
   .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill .bi {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 }
 
-/* Trends collapse: full width, own row below action buttons (must wrap on mobile).
-   Cancel out .stock-card__actions horizontal padding so this section aligns with
-   Assessment and user-actions panels (they are not inside the actions row). */
-.stock-card__trends-collapse {
-  flex: 0 0 100%;
-  width: calc(100% + 2 * var(--stock-card-side-padding));
-  min-width: 0;
-  margin-left: calc(-1 * var(--stock-card-side-padding));
-  margin-right: calc(-1 * var(--stock-card-side-padding));
-  order: 10;
-  box-sizing: border-box;
+@media (max-width: 380px) {
+  .stock-card__actions .stock-card__action {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.625rem;
+    gap: 0.15rem;
+  }
+
+  .stock-card__actions .stock-card__action-icon,
+  .stock-card__actions .stock-card__action-chevron {
+    font-size: 0.65rem;
+  }
+
+  .stock-card__actions .stock-card__action--icon .bi {
+    font-size: 0.65rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill {
+    padding: 0.2rem 0.28rem;
+    font-size: 0.625rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
+    font-size: 0.5rem !important;
+    padding: 0.08rem 0.2rem !important;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill {
+    padding: 0.12rem 0.2rem;
+  }
+
+  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill .bi {
+    font-size: 0.625rem;
+  }
 }
 
 .stock-card__actions-slot {
@@ -1042,21 +1080,29 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-sizing: border-box;
 }
 
+/* Trends panel uses same .stock-card__panel-inner as other panels; no extra width rules needed */
 .stock-card__trends-panel.stock-card__panel-inner {
-  width: 100%;
   box-sizing: border-box;
 }
 
-.stock-card__trends-panel .stock-card__trends-chart-content,
-.stock-card__trends-panel .stock-card__trends-chart-wrap {
+.stock-card__trends-panel .stock-card__trends-chart-content {
   width: 100%;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
 
+.stock-card__trends-panel .stock-card__trends-chart-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
 .stock-card__trends-panel .stock-card__trends-chart-content > div {
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -1076,10 +1122,13 @@ button.accordion-button.ai-accordion-button:focus-visible {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  display: block;
 }
 
 .stock-card__trends-panel .position-relative svg {
+  display: block;
   width: 100%;
+  min-width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
