@@ -45,3 +45,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### MongoDB Atlas and "Server selection timed out"
+
+If you see `MongoServerSelectionError: Server selection timed out after 30000 ms` on Vercel, the app cannot reach your MongoDB Atlas cluster. Vercel runs on dynamic IPs, so Atlas must allow connections from anywhere:
+
+1. In [MongoDB Atlas](https://cloud.mongodb.com/) go to **Network Access**.
+2. Click **Add IP Address**.
+3. Choose **Allow Access from Anywhere** (adds `0.0.0.0/0`).
+4. Confirm.
+
+Use a strong database username and password; access is still protected by credentials. Ensure `MONGODB_URI` and any other required env vars are set in your Vercel project **Settings → Environment Variables**.
