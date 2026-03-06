@@ -278,38 +278,43 @@ export default function CardUserActions({
   const actionBarContent = (
     <div className="stock-card__user-actions-row">
       {!targetPillSlotId && targetPillContent}
-      <div className={`stock-card__user-pill ${pillStatusClass}`}>
-      {showStatusLoader ? (
-        <span className="stock-card__status-loading" aria-hidden="true">
-          <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
-            <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
-          </span>
-        </span>
-      ) : status ? (
-        <span
-          className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
-          aria-label={`Status: ${statusLabel}`}
-        >
-          {statusLabel}
-        </span>
-      ) : null}
       <button
         type="button"
-        className={`stock-card__action stock-card__action--secondary stock-card__action--inside-pill ${status ? "stock-card__action--icon" : ""}`}
+        className={`stock-card__user-pill stock-card__user-pill-trigger ${pillStatusClass}`}
         data-bs-toggle="collapse"
         data-bs-target={`#${userActionsCollapseId}`}
         aria-expanded={expanded}
         aria-controls={userActionsCollapseId}
         aria-label="Edit status and comments"
         title="Edit status and comments"
+        disabled={showStatusLoader}
+        onClick={() => setExpanded((prev) => !prev)}
       >
-        {!showStatusLoader && !status && <span className="stock-card__action-label">Edit</span>}
-        <i
-          className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
-          aria-hidden
-        />
+        {showStatusLoader ? (
+          <span className="stock-card__status-loading" aria-hidden="true">
+            <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
+              <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
+            </span>
+          </span>
+        ) : (
+          <>
+            {status ? (
+              <span
+                className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
+                aria-hidden
+              >
+                {statusLabel}
+              </span>
+            ) : (
+              <span className="stock-card__action-label">Edit</span>
+            )}
+            <i
+              className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
+              aria-hidden
+            />
+          </>
+        )}
       </button>
-    </div>
     </div>
   );
 

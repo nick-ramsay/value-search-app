@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
-import ScoreModalTrigger from "./ScoreModalTrigger";
+import ScoreModalTrigger, { VALUE_SCORE_MA_SUPPORT_KEY } from "./ScoreModalTrigger";
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
@@ -40,15 +40,16 @@ function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   return "badge bg-danger text-white";
 }
 
+/** Format date/time with a fixed locale so server and client render the same (avoids hydration mismatch). */
 function formatLastUpdated(value?: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   try {
-    const datePart = date.toLocaleDateString(undefined, {
+    const datePart = date.toLocaleDateString("en-US", {
       dateStyle: "medium",
     });
-    const timePart = date.toLocaleTimeString(undefined, {
+    const timePart = date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -262,18 +263,41 @@ export default function StockResultCard({
         {item.valueSearchScore != null &&
           item.valueSearchScore.totalPossiblePoints > 0 &&
           typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
-          <ScoreModalTrigger
-            modalId={`score-modal-${item._id}`}
-            name={item.name}
-            symbol={item.symbol}
-            valueSearchScore={
-              item.valueSearchScore as ValueSearchScoreDisplay
-            }
-            buttonClassName={`${getValueScoreBadgeClass(
-              item.valueSearchScore.calculatedScorePercentage
-            )} stock-card__badge`}
-            buttonLabel={`${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
-          />
+          <span className="stock-card__score-and-ma-wrap">
+            <ScoreModalTrigger
+              modalId={`score-modal-${item._id}`}
+              name={item.name}
+              symbol={item.symbol}
+              valueSearchScore={
+                item.valueSearchScore as ValueSearchScoreDisplay
+              }
+              buttonClassName={`${getValueScoreBadgeClass(
+                item.valueSearchScore.calculatedScorePercentage
+              )} stock-card__badge`}
+              buttonLabel={`${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
+            />
+            {(() => {
+              const vs = item.valueSearchScore as Record<string, unknown>;
+              const breakdown = vs.breakdown as Record<string, unknown> | undefined;
+              const raw =
+                vs[VALUE_SCORE_MA_SUPPORT_KEY] ??
+                vs.moving_average_support ??
+                breakdown?.[VALUE_SCORE_MA_SUPPORT_KEY] ??
+                breakdown?.moving_average_support;
+              const maSupport =
+                raw === true ? 1 : typeof raw === "number" ? raw : Number(raw);
+              const hasSupport = !Number.isNaN(maSupport) && maSupport >= 1;
+              return hasSupport ? (
+                <span
+                  className="badge stock-card__badge stock-card__ma-support-pill"
+                  title="Stock may have found moving average support"
+                  aria-label="Stock may have found moving average support"
+                >
+                  <i className="bi bi-graph-up-arrow" aria-hidden />
+                </span>
+              ) : null;
+            })()}
+          </span>
         ) : null}
         <div
           className="stock-card__signals-slot"

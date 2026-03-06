@@ -439,11 +439,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
   padding: 0.12rem 0.3rem !important;
 }
 
-.stock-card--compact .stock-card__user-pill .stock-card__action--inside-pill {
-  padding: 0.2rem 0.3rem;
-}
-
-.stock-card--compact .stock-card__user-pill .stock-card__action--inside-pill .bi {
+.stock-card--compact .stock-card__user-pill-trigger .stock-card__action-chevron {
   font-size: 0.75rem;
 }
 
@@ -476,20 +472,26 @@ button.accordion-button.ai-accordion-button:focus-visible {
   opacity: 0.7;
 }
 
-/* Price row – below name/symbol (tighter gap from title) */
+/* Price row – below name/symbol (tighter gap from title, less space before signals) */
 .stock-card__price-row {
-  margin-top: -0.25rem;
-  padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
+  margin-top: -0.5rem;
+  padding: 0 var(--stock-card-side-padding) 0.4rem;
 }
 
 .stock-card__price-row .stock-card__subheader {
   margin: 0;
+  line-height: 1.35;
 }
 
 .stock-card__price-row-inner {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.stock-card__price-row .stock-card__price-row-inner {
+  gap: 0.1rem;
+  align-items: center;
 }
 
 .stock-card__time-btn {
@@ -520,6 +522,23 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__time-icon {
   font-size: 0.6rem;
+}
+
+/* Price row only: larger clock icon and tap target for mobile, tight to price, vertically aligned */
+.stock-card__price-row .stock-card__time-btn {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.35rem;
+  margin-left: 0.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stock-card__price-row .stock-card__time-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  display: block;
 }
 
 .stock-card__time-text {
@@ -615,6 +634,29 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: none !important;
 }
 
+/* Wrapper so score pill and MA support pill stay side-by-side */
+.stock-card__score-and-ma-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+/* Moving average support pill – same dimensions as rating/score pills, transparent background */
+.stock-card__ma-support-pill {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.stock-card__ma-support-pill .bi {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 /* Action bar: View trends, Assessment, Edit (when logged in) – always one row */
 .stock-card__actions {
   display: flex;
@@ -676,11 +718,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
     padding: 0.1rem 0.25rem !important;
   }
 
-  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill {
-    padding: 0.15rem 0.25rem;
-  }
-
-  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill .bi {
+  .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
     font-size: 0.7rem;
   }
 }
@@ -711,11 +749,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
     padding: 0.08rem 0.2rem !important;
   }
 
-  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill {
-    padding: 0.12rem 0.2rem;
-  }
-
-  .stock-card__actions .stock-card__user-pill .stock-card__action--inside-pill .bi {
+  .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
     font-size: 0.625rem;
   }
 }
@@ -866,6 +900,23 @@ button.accordion-button.ai-accordion-button:focus-visible {
   line-height: 1.2;
 }
 
+/* Whole pill is the trigger (button); reset button defaults */
+button.stock-card__user-pill-trigger {
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+}
+
+button.stock-card__user-pill-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+button.stock-card__user-pill-trigger .stock-card__action-chevron {
+  font-size: 0.8rem;
+  margin-left: 0.35rem;
+}
+
 .stock-card__user-pill .stock-card__status-badge {
   margin: 0;
   font-size: 0.6875rem !important;
@@ -880,68 +931,21 @@ button.accordion-button.ai-accordion-button:focus-visible {
   margin: 0;
 }
 
-.stock-card__user-pill .stock-card__action--inside-pill {
-  margin: 0 -0.2rem 0 0;
-  padding: 0.25rem 0.35rem;
-  border: none;
-  background: transparent;
-  color: inherit;
-}
-
-/* When no status is selected (pill shows "Edit" only), no separate background on the button – same as pill */
-.stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:focus-visible {
-  background: transparent !important;
-}
-
-[data-theme="dark"] .stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:hover:not(:disabled),
-[data-theme="dark"] .stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:focus-visible,
-:root:not([data-theme="light"]) .stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:hover:not(:disabled),
-:root:not([data-theme="light"]) .stock-card__user-pill:not(.stock-card__user-pill--avoid):not(.stock-card__user-pill--watch):not(.stock-card__user-pill--own):not(.stock-card__user-pill--hold) .stock-card__action--inside-pill:focus-visible {
-  background: transparent !important;
-}
-
-.stock-card__user-pill .stock-card__action--inside-pill .bi {
-  font-size: 0.8rem;
-}
-
-.stock-card__user-pill--avoid .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--avoid .stock-card__action--inside-pill:focus-visible {
+/* Hover/focus on the whole pill (it is the trigger button) */
+.stock-card__user-pill--avoid.stock-card__user-pill-trigger:hover:not(:disabled),
+.stock-card__user-pill--avoid.stock-card__user-pill-trigger:focus-visible {
   background: rgba(255, 69, 58, 0.2);
 }
 
-.stock-card__user-pill--watch .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--watch .stock-card__action--inside-pill:focus-visible {
+.stock-card__user-pill--watch.stock-card__user-pill-trigger:hover:not(:disabled),
+.stock-card__user-pill--watch.stock-card__user-pill-trigger:focus-visible {
   background: rgba(10, 132, 255, 0.2);
 }
 
-.stock-card__user-pill--own .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--own .stock-card__action--inside-pill:focus-visible,
-.stock-card__user-pill--hold .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--hold .stock-card__action--inside-pill:focus-visible {
-  background: rgba(52, 199, 89, 0.2);
-}
-
-.stock-card__user-pill--avoid .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--avoid .stock-card__action--inside-pill:focus-visible {
-  background: rgba(255, 69, 58, 0.2);
-}
-
-.stock-card__user-pill--watch .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--watch .stock-card__action--inside-pill:focus-visible {
-  background: rgba(10, 132, 255, 0.2);
-}
-
-.stock-card__user-pill--own .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--own .stock-card__action--inside-pill:focus-visible,
-.stock-card__user-pill--hold .stock-card__action--inside-pill:hover:not(:disabled),
-.stock-card__user-pill--hold .stock-card__action--inside-pill:focus-visible {
+.stock-card__user-pill--own.stock-card__user-pill-trigger:hover:not(:disabled),
+.stock-card__user-pill--own.stock-card__user-pill-trigger:focus-visible,
+.stock-card__user-pill--hold.stock-card__user-pill-trigger:hover:not(:disabled),
+.stock-card__user-pill--hold.stock-card__user-pill-trigger:focus-visible {
   background: rgba(52, 199, 89, 0.2);
 }
 
@@ -1133,6 +1137,27 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-sizing: border-box;
 }
 
+/* Score / AI rating history toggle – pill-shaped to match app aesthetic */
+.stock-card__trends-view-toggle.btn-group {
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--glass-border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.stock-card__trends-view-toggle.btn-group .btn {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.stock-card__trends-view-toggle.btn-group .btn:first-child {
+  border-radius: 999px 0 0 999px;
+  border-right-width: 0;
+}
+
+.stock-card__trends-view-toggle.btn-group .btn:last-child {
+  border-radius: 0 999px 999px 0;
+  border-left-width: 0;
+}
 
 .stock-card__assessment-text {
   margin: 0;
@@ -2321,27 +2346,31 @@ a:hover {
 
 .portfolio-tabs-glass .portfolio-tabs-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   margin-bottom: 0.85rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--glass-border-subtle);
+  min-width: 0;
 }
 
 .portfolio-tabs-glass .portfolio-tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem 0.9rem;
-  font-size: 0.8125rem;
+  padding: clamp(0.28rem, 1.5vw, 0.4rem) clamp(0.4rem, 2.5vw, 0.9rem);
+  font-size: clamp(0.65rem, 2.2vw, 0.8125rem);
   font-weight: 500;
   border-radius: 999px;
   border: 1px solid var(--glass-border-subtle);
   background: var(--glass-bg-subtle);
   color: var(--text-secondary);
   cursor: pointer;
+  white-space: nowrap;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 

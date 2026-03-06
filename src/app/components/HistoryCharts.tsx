@@ -34,10 +34,11 @@ type FetchState =
   | { status: "success"; data: HistoryResponse }
   | { status: "error"; message: string };
 
+/** Fixed locale so server and client match (avoids hydration mismatch). */
 function formatDateLabel(dateIso: string): string {
   const d = new Date(dateIso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString("en-US", {
     year: "2-digit",
     month: "short",
     day: "numeric",
@@ -389,7 +390,7 @@ export function HistoryChartsPanel({
           Explore how the value score and AI rating have evolved over time.
         </p>
         <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-          <div className="btn-group btn-group-sm" role="group" aria-label="History view">
+          <div className="stock-card__trends-view-toggle btn-group btn-group-sm" role="group" aria-label="History view">
             <button
               type="button"
               className={`btn ${activeView === "score" ? "btn-primary" : "btn-outline-primary"}`}
@@ -459,7 +460,7 @@ export function HistoryChartsPanel({
                 </p>
                 <TrendBarChart
                   data={state.data.ratingHistory}
-                  color="var(--bs-info)"
+                  color="#9ACD32"
                   fixedDomain={{ min: -2, max: 2 }}
                   gradientId={`${collapseId}-rating-gradient`}
                 />

@@ -21,15 +21,8 @@ export default function AppNavbar({
   const { data: session, status } = useSession();
   const formAction = pathname === "/portfolio" ? "/portfolio" : "/";
 
-  const isHome = pathname === "/";
   const isPortfolio = pathname === "/portfolio";
-  const headerHref = isHome
-    ? "/portfolio"
-    : isPortfolio
-      ? "/"
-      : session
-        ? "/portfolio"
-        : "/";
+  const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
