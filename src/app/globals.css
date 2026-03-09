@@ -389,8 +389,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 /* ========== Stock card – reimagined layout ========== */
 .stock-card {
-  --stock-card-row-gap: 0.75rem;
-  --stock-card-side-padding: 1.25rem;
+  --stock-card-row-gap: 0.5rem;
+  --stock-card-side-padding: 1.1rem;
   background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -445,8 +445,91 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 /* Head: symbol + name (scroll-margin so “scroll into view” doesn’t sit under fixed navbar) */
 .stock-card__head {
-  padding: 1rem var(--stock-card-side-padding) var(--stock-card-row-gap);
+  padding: 0.7rem var(--stock-card-side-padding) 0.4rem;
   scroll-margin-top: var(--navbar-height);
+}
+
+.stock-card__head-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.stock-card__head-row > .stock-card__title,
+.stock-card__head-row > .stock-card__title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-card__head-row .stock-card__title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Small screens: allow name/symbol to wrap onto multiple lines; keep icons at top when wrapped */
+@media (max-width: 576px) {
+  .stock-card__head-row {
+    align-items: flex-start;
+  }
+
+  .stock-card__head-row .stock-card__title {
+    align-items: flex-start;
+  }
+
+  .stock-card__head-row .stock-card__title .stock-card__title-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stock-card__head-row .stock-card__title-text {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+  }
+
+  .stock-card__head-row > .stock-card__title-text {
+    display: block;
+    min-width: 0;
+  }
+}
+
+.stock-card__company-info-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.stock-card__company-info-btn:hover,
+.stock-card__company-info-btn:focus-visible {
+  background: var(--glass-bg-strong);
+  color: var(--accent);
+}
+
+.stock-card__company-info-btn .bi {
+  font-size: 1.1rem;
+}
+
+[data-theme="light"] .stock-card__company-info-btn {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .stock-card__company-info-btn:hover,
+[data-theme="light"] .stock-card__company-info-btn:focus-visible {
+  background: rgba(15, 23, 42, 0.1);
+  color: var(--accent);
 }
 
 .stock-card__title {
@@ -458,6 +541,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary);
   text-decoration: none;
   letter-spacing: 0.01em;
+  min-width: 0;
+  flex: 1;
   transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
 }
 
@@ -468,14 +553,20 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__title-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
   font-size: 0.85em;
   opacity: 0.7;
 }
 
 /* Price row – below name/symbol (tighter gap from title, less space before signals) */
 .stock-card__price-row {
-  margin-top: -0.5rem;
-  padding: 0 var(--stock-card-side-padding) 0.4rem;
+  margin-top: -0.25rem;
+  padding: 0 var(--stock-card-side-padding) 0.25rem;
 }
 
 .stock-card__price-row .stock-card__subheader {
@@ -578,8 +669,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
+  gap: 0.35rem;
+  padding: 0 var(--stock-card-side-padding) 0.35rem;
 }
 
 /* Score pill – label + info icon inside same pill */
@@ -620,8 +711,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
-  margin-bottom: 0.25rem;
+  padding: 0 var(--stock-card-side-padding) 0.3rem;
+  margin-bottom: 0.15rem;
 }
 
 .stock-card__badge {
@@ -657,17 +748,17 @@ button.accordion-button.ai-accordion-button:focus-visible {
   line-height: 1;
 }
 
-/* Action bar: View trends, Assessment, Edit (when logged in) – always one row */
+/* Action bar: Company description, View trends, Assessment, Edit (when logged in) */
 .stock-card__actions {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: clamp(0.25rem, 2vw, 0.5rem);
-  padding: 0 var(--stock-card-side-padding) var(--stock-card-row-gap);
+  gap: clamp(0.2rem, 1.5vw, 0.5rem);
+  padding: 0 var(--stock-card-side-padding) 0.4rem;
   min-width: 0;
 }
 
-/* Allow action buttons and user pill to shrink so they fit in one row */
+/* Allow action buttons and user pill to shrink so they fit in one row on desktop */
 .stock-card__actions .stock-card__action,
 .stock-card__actions .stock-card__user-actions-row,
 .stock-card__actions .stock-card__user-pill {
@@ -680,77 +771,63 @@ button.accordion-button.ai-accordion-button:focus-visible {
   min-width: 0;
 }
 
-.stock-card__actions .stock-card__action-label {
+.stock-card__action-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Responsive sizing so three buttons fit on narrow viewports */
+/* Mobile: keep Trends, Assessment, Edit in one row; scale down responsively to fit */
 @media (max-width: 576px) {
   .stock-card {
     --stock-card-side-padding: 1rem;
-    --stock-card-row-gap: 0.65rem;
+    --stock-card-row-gap: 0.5rem;
+  }
+
+  .stock-card__actions {
+    flex-wrap: nowrap;
+    gap: clamp(0.2rem, 1.2vw, 0.4rem);
+  }
+
+  .stock-card__actions .stock-card__action,
+  .stock-card__actions .stock-card__user-actions-row,
+  .stock-card__actions .stock-card__user-pill {
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .stock-card__actions .stock-card__action {
-    padding: 0.3rem 0.45rem;
-    font-size: 0.7rem;
-    gap: 0.2rem;
+    padding: clamp(0.32rem, 1.8vw, 0.45rem) clamp(0.4rem, 2vw, 0.65rem);
+    font-size: clamp(0.6875rem, 2.2vw, 0.8125rem);
+    gap: clamp(0.15rem, 0.8vw, 0.3rem);
   }
 
   .stock-card__actions .stock-card__action--icon {
-    padding: 0.25rem 0.35rem;
+    padding: clamp(0.28rem, 1.5vw, 0.4rem) clamp(0.35rem, 1.8vw, 0.55rem);
   }
 
   .stock-card__actions .stock-card__action--icon .bi {
-    font-size: 0.75rem;
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
   }
 
   .stock-card__actions .stock-card__user-pill {
-    padding: 0.25rem 0.35rem;
-    font-size: 0.7rem;
-    gap: 0.15rem;
+    padding: clamp(0.28rem, 1.5vw, 0.35rem) clamp(0.35rem, 1.8vw, 0.5rem);
+    font-size: clamp(0.625rem, 1.9vw, 0.75rem);
+    gap: clamp(0.12rem, 0.6vw, 0.25rem);
   }
 
   .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: 0.5625rem !important;
-    padding: 0.1rem 0.25rem !important;
+    font-size: clamp(0.5rem, 1.6vw, 0.625rem) !important;
+    padding: 0.08rem clamp(0.2rem, 1vw, 0.3rem) !important;
   }
 
   .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
-    font-size: 0.7rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .stock-card__actions .stock-card__action {
-    padding: 0.25rem 0.35rem;
-    font-size: 0.625rem;
-    gap: 0.15rem;
+    font-size: clamp(0.65rem, 1.8vw, 0.8rem);
   }
 
   .stock-card__actions .stock-card__action-icon,
   .stock-card__actions .stock-card__action-chevron {
-    font-size: 0.65rem;
-  }
-
-  .stock-card__actions .stock-card__action--icon .bi {
-    font-size: 0.65rem;
-  }
-
-  .stock-card__actions .stock-card__user-pill {
-    padding: 0.2rem 0.28rem;
-    font-size: 0.625rem;
-  }
-
-  .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: 0.5rem !important;
-    padding: 0.08rem 0.2rem !important;
-  }
-
-  .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
-    font-size: 0.625rem;
+    font-size: clamp(0.7rem, 1.9vw, 0.85rem);
   }
 }
 
@@ -1019,8 +1096,8 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 .stock-card__panel-heading {
   font-size: 0.8125rem;
@@ -1030,6 +1107,7 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 [data-theme="light"] .stock-card__panel-heading {
   color: #374151;
 }
+
 .stock-card__close-all-inline {
   display: inline-flex;
   align-items: center;
@@ -1060,12 +1138,22 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   border-top: 1px solid var(--glass-border-subtle);
 }
 
+.stock-card__panel--company-desc {
+  border-top: none;
+  margin-top: -0.6rem;
+}
+
+.stock-card__panel-inner--company-desc {
+  padding-top: 0.1rem;
+  padding-bottom: 0.4rem;
+}
+
 [data-theme="light"] .stock-card__panel {
   border-top-color: rgba(15, 23, 42, 0.16);
 }
 
 .stock-card__panel-inner {
-  padding: var(--stock-card-row-gap) var(--stock-card-side-padding) var(--stock-card-row-gap);
+  padding: 0.5rem var(--stock-card-side-padding) 0.5rem;
   background: var(--glass-bg-subtle);
 }
 
@@ -1173,10 +1261,66 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   color: var(--text-tertiary);
 }
 
+/* Inner accordions (Company description, Data used for AI assessment) */
+.stock-card__inner-accordion .accordion-item {
+  background: transparent;
+  border: none;
+}
+
+.stock-card__inner-accordion .stock-card__inner-accordion-btn {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--glass-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.stock-card__inner-accordion .stock-card__inner-accordion-btn:not(.collapsed) {
+  background: var(--glass-bg-strong) !important;
+  border-radius: 8px 8px 0 0;
+}
+
+.stock-card__inner-accordion .stock-card__inner-accordion-body {
+  font-size: 0.8125rem;
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.stock-card__description-text {
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stock-card__detail-table {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.stock-card__detail-table th,
+.stock-card__detail-table td {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  vertical-align: top;
+}
+
+.stock-card__detail-table tbody tr {
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.stock-card__detail-table tbody tr:last-child {
+  border-bottom: none;
+}
+
 /* User row: status + edit */
 .stock-card__user {
   border-top: 1px solid var(--glass-border-subtle);
-  padding: var(--stock-card-row-gap) var(--stock-card-side-padding) var(--stock-card-row-gap);
+  padding: 0.45rem var(--stock-card-side-padding) 0.45rem;
   background: var(--glass-bg-subtle);
 }
 
@@ -1302,14 +1446,15 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   color: var(--text-tertiary);
 }
 
+/* Label pills – distinct from accordion buttons (grey/glass); use teal tint so they read as tags */
 .stock-card__label-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  border: 1px solid var(--glass-border-subtle);
-  background: var(--glass-bg-subtle);
+  border: 1px solid rgba(34, 140, 132, 0.35);
+  background: rgba(34, 140, 132, 0.18);
   color: var(--text-secondary);
   font-size: 0.7rem;
   cursor: default;
@@ -1321,10 +1466,10 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 }
 
 [data-theme="light"] .stock-card__labels-list .stock-card__label-pill {
-  background: #eef2ff;
-  border-color: rgba(79, 70, 229, 0.26);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  background: #c8f0ec;
+  border-color: rgba(34, 140, 132, 0.4);
+  color: #0d4d48;
+  box-shadow: 0 1px 2px rgba(34, 140, 132, 0.15);
 }
 
 .stock-card__labels-list .stock-card__label-pill:hover:not(:disabled),
@@ -1332,6 +1477,14 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   background: var(--glass-bg-strong);
   border-color: var(--glass-border);
   color: var(--text-primary);
+}
+
+/* Dark theme: label pills stay teal-tinted and distinct from grey accordion buttons */
+[data-theme="dark"] .stock-card__label-pill,
+:root:not([data-theme="light"]) .stock-card__label-pill {
+  background: rgba(45, 160, 155, 0.22);
+  border-color: rgba(45, 160, 155, 0.45);
+  color: rgba(200, 240, 238, 0.95);
 }
 
 .stock-card__label-pill:disabled {
@@ -1356,9 +1509,9 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 }
 
 [data-theme="light"] .stock-card__labels-inline .stock-card__label-pill {
-  background: rgba(15, 23, 42, 0.03);
-  border-color: rgba(15, 23, 42, 0.12);
-  color: var(--text-secondary);
+  background: #c8f0ec;
+  border-color: rgba(34, 140, 132, 0.4);
+  color: #0d4d48;
   box-shadow: none;
 }
 

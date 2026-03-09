@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useSession } from "next-auth/react";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
 import ScoreModalTrigger, { VALUE_SCORE_MA_SUPPORT_KEY } from "./ScoreModalTrigger";
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
@@ -40,6 +41,95 @@ function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   return "badge bg-danger text-white";
 }
 
+/** Renders the LLM input data as a table (context, quote, fundamentals). */
+function AssessmentDetailTable({
+  data,
+}: {
+  data: {
+    quote: Record<string, unknown> | null;
+    fundamentals: Record<string, unknown> | null;
+    industry: string | null;
+    sector: string | null;
+    country: string | null;
+    investmentDescription: string | null;
+  };
+}) {
+  const rows: { section: string; key: string; value: string }[] = [];
+
+  if (data.industry != null && data.industry !== "")
+    rows.push({ section: "Context", key: "Industry", value: String(data.industry) });
+  if (data.sector != null && data.sector !== "")
+    rows.push({ section: "Context", key: "Sector", value: String(data.sector) });
+  if (data.country != null && data.country !== "")
+    rows.push({ section: "Context", key: "Country", value: String(data.country) });
+  if (data.investmentDescription != null && data.investmentDescription !== "")
+    rows.push({
+      section: "Context",
+      key: "Investment description",
+      value: String(data.investmentDescription),
+    });
+
+  const quote = data.quote && typeof data.quote === "object" ? data.quote : null;
+  if (quote) {
+    for (const [k, v] of Object.entries(quote)) {
+      if (v === undefined || v === null) continue;
+      rows.push({
+        section: "Quote",
+        key: k,
+        value: typeof v === "object" ? JSON.stringify(v) : String(v),
+      });
+    }
+  }
+
+  const fund =
+    data.fundamentals && typeof data.fundamentals === "object"
+      ? data.fundamentals
+      : null;
+  if (fund) {
+    for (const [k, v] of Object.entries(fund)) {
+      if (v === undefined || v === null) continue;
+      rows.push({
+        section: "Fundamentals",
+        key: k,
+        value: typeof v === "object" ? JSON.stringify(v) : String(v),
+      });
+    }
+  }
+
+  if (rows.length === 0) {
+    return (
+      <p className="mb-0 small text-secondary">
+        No structured data available for this symbol.
+      </p>
+    );
+  }
+
+  return (
+    <div className="table-responsive">
+      <table className="table table-sm table-borderless mb-0 stock-card__detail-table">
+        <thead>
+          <tr>
+            <th scope="col" className="text-secondary small">Section</th>
+            <th scope="col" className="text-secondary small">Key</th>
+            <th scope="col" className="text-secondary small">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={`${row.section}-${row.key}-${i}`}>
+              <td className="small text-secondary">{row.section}</td>
+              <td className="small">{row.key}</td>
+              <td className="small text-break" style={{ maxWidth: "20rem" }}>
+                {row.value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** Format date/time with a fixed locale so server and client render the same (avoids hydration mismatch). */
 function formatLastUpdated(value?: string) {
   if (!value) return "";
@@ -76,12 +166,34 @@ export default function StockResultCard({
   const cardDomId = `${item._id}-${instanceId}`;
   const collapseId = `collapse-${cardDomId}`;
   const trendsCollapseId = `trends-${cardDomId}`;
+  const companyDescCollapseId = `company-desc-${cardDomId}`;
+  const assessmentDetailCollapseId = `assessment-detail-${cardDomId}`;
+  const [companyDescExpanded, setCompanyDescExpanded] = useState(false);
+
+  const { status: sessionStatus } = useSession();
+  const isLoggedIn = sessionStatus === "authenticated";
 
   const [hasAnyOpen, setHasAnyOpen] = useState(false);
   const [openCount, setOpenCount] = useState(0);
   const cardRef = useRef<HTMLElement>(null);
   const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
   const [showAssessmentLastUpdated, setShowAssessmentLastUpdated] = useState(false);
+
+  const [companyDesc, setCompanyDesc] = useState<{
+    status: "idle" | "loading" | "loaded" | "error";
+    text: string | null;
+  }>({ status: "idle", text: null });
+  const [assessmentDetail, setAssessmentDetail] = useState<{
+    status: "idle" | "loading" | "loaded" | "error";
+    data: {
+      quote: Record<string, unknown> | null;
+      fundamentals: Record<string, unknown> | null;
+      industry: string | null;
+      sector: string | null;
+      country: string | null;
+      investmentDescription: string | null;
+    } | null;
+  }>({ status: "idle", data: null });
 
   const updateAnyOpen = useCallback(() => {
     const card = cardRef.current;
@@ -104,6 +216,42 @@ export default function StockResultCard({
       card.removeEventListener("hidden.bs.collapse", onHidden);
     };
   }, [updateAnyOpen]);
+
+  useEffect(() => {
+    const el = document.getElementById(companyDescCollapseId);
+    if (!el) return;
+    const onShown = () => {
+      setCompanyDescExpanded(true);
+      if (companyDesc.status === "idle" && item.symbol) {
+        setCompanyDesc((s) => ({ ...s, status: "loading" }));
+        fetch(
+          `/api/company-description?symbol=${encodeURIComponent(item.symbol)}`
+        )
+          .then((r) => r.json())
+          .then(
+            (data: {
+              companyDescription?: string | null;
+              investmentDescription?: string | null;
+            }) => {
+              const text =
+                data.companyDescription ?? data.investmentDescription ?? null;
+              setCompanyDesc({
+                status: "loaded",
+                text: text ?? null,
+              });
+            }
+          )
+          .catch(() => setCompanyDesc((s) => ({ ...s, status: "error" })));
+      }
+    };
+    const onHidden = () => setCompanyDescExpanded(false);
+    el.addEventListener("shown.bs.collapse", onShown);
+    el.addEventListener("hidden.bs.collapse", onHidden);
+    return () => {
+      el.removeEventListener("shown.bs.collapse", onShown);
+      el.removeEventListener("hidden.bs.collapse", onHidden);
+    };
+  }, [companyDescCollapseId, item.symbol, companyDesc.status]);
 
   const handleCloseAll = useCallback(async () => {
     const card = cardRef.current;
@@ -167,27 +315,72 @@ export default function StockResultCard({
       data-symbol={item.symbol ?? undefined}
       style={{ position: "relative", ...(minHeight != null ? { minHeight: `${minHeight}px` } : {}) }}
     >
-      {/* Identity */}
+      {/* Identity: name/symbol + company info button */}
       <header className="stock-card__head">
-        {item.symbol ? (
-          <a
-            href={
-              "https://finviz.com/quote.ashx?t=" +
-              item.symbol.replace(".", "-") +
-              "&ty=l&ta=0&p=w"
-            }
-            target="_blank"
-            rel="noreferrer"
-            className="stock-card__title"
-          >
+        <div className="stock-card__head-row">
+          {item.symbol ? (
+            <a
+              href={
+                "https://finviz.com/quote.ashx?t=" +
+                item.symbol.replace(".", "-") +
+                "&ty=l&ta=0&p=w"
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="stock-card__title"
+            >
+              <span className="stock-card__title-text">
+                {item.name ?? item.symbol}
+                {item.symbol ? ` (${item.symbol})` : ""}
+              </span>
+              <i className="bi bi-box-arrow-up-right stock-card__title-icon" aria-hidden />
+            </a>
+          ) : (
             <span className="stock-card__title-text">
               {item.name ?? item.symbol}
-              {item.symbol ? ` (${item.symbol})` : ""}
             </span>
-            <i className="bi bi-box-arrow-up-right stock-card__title-icon" aria-hidden />
-          </a>
-        ) : null}
+          )}
+          <button
+            type="button"
+            className="stock-card__company-info-btn"
+            data-bs-toggle="collapse"
+            data-bs-target={`#${companyDescCollapseId}`}
+            aria-expanded={companyDescExpanded}
+            aria-label="Toggle company description"
+            title="Company description"
+          >
+            <i className="bi bi-info-circle" aria-hidden />
+          </button>
+        </div>
       </header>
+
+      {/* Company description panel – directly under name/symbol row */}
+      <div
+        id={companyDescCollapseId}
+        className="collapse stock-card__panel stock-card__panel--company-desc"
+        aria-label="Company description"
+      >
+        <div className="stock-card__panel-inner stock-card__panel-inner--company-desc">
+          {companyDesc.status === "loading" && (
+            <p className="mb-0 text-secondary small">Loading…</p>
+          )}
+          {companyDesc.status === "error" && (
+            <p className="mb-0 text-secondary small">
+              Could not load description.
+            </p>
+          )}
+          {companyDesc.status === "loaded" && (
+            <p className="mb-0 small stock-card__description-text">
+              {companyDesc.text || "No description available."}
+            </p>
+          )}
+          {companyDesc.status === "idle" && (
+            <p className="mb-0 text-secondary small">
+              Loading…
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* Current price – row below name/symbol (from stock-quotes, quote.price) */}
       {typeof item.price === "number" && !Number.isNaN(item.price) ? (
@@ -364,6 +557,92 @@ export default function StockResultCard({
               <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
             </p>
           ) : null}
+
+          {/* Data used for AI assessment – logged in only */}
+          {isLoggedIn && (
+          <div className="accordion mt-3 stock-card__inner-accordion" id={`accordion-detail-${cardDomId}`}>
+              <div className="accordion-item border-0">
+                <h3 className="accordion-header">
+                  <button
+                    type="button"
+                    className="accordion-button collapsed stock-card__inner-accordion-btn"
+                    data-bs-toggle="collapse"
+                    data-bs-target={`#${assessmentDetailCollapseId}`}
+                    aria-expanded="false"
+                    aria-controls={assessmentDetailCollapseId}
+                    onClick={() => {
+                      if (
+                        assessmentDetail.status === "idle" &&
+                        item.symbol
+                      ) {
+                        setAssessmentDetail((s) => ({ ...s, status: "loading" }));
+                        fetch(
+                          `/api/assessment-detail?symbol=${encodeURIComponent(item.symbol)}`
+                        )
+                          .then((r) => r.json())
+                          .then(
+                            (data: {
+                              quote?: Record<string, unknown> | null;
+                              fundamentals?: Record<string, unknown> | null;
+                              industry?: string | null;
+                              sector?: string | null;
+                              country?: string | null;
+                              investmentDescription?: string | null;
+                            }) => {
+                              setAssessmentDetail({
+                                status: "loaded",
+                                data: {
+                                  quote: data.quote ?? null,
+                                  fundamentals: data.fundamentals ?? null,
+                                  industry: data.industry ?? null,
+                                  sector: data.sector ?? null,
+                                  country: data.country ?? null,
+                                  investmentDescription:
+                                    data.investmentDescription ?? null,
+                                },
+                              });
+                            }
+                          )
+                          .catch(() =>
+                            setAssessmentDetail((s) => ({
+                              ...s,
+                              status: "error",
+                            }))
+                          );
+                      }
+                    }}
+                  >
+                    Data used for AI assessment
+                  </button>
+                </h3>
+                <div
+                  id={assessmentDetailCollapseId}
+                  className="accordion-collapse collapse"
+                  data-bs-parent={`#accordion-detail-${cardDomId}`}
+                >
+                  <div className="accordion-body stock-card__inner-accordion-body">
+                    {assessmentDetail.status === "loading" && (
+                      <p className="mb-0 text-secondary small">Loading…</p>
+                    )}
+                    {assessmentDetail.status === "error" && (
+                      <p className="mb-0 text-secondary small">
+                        Could not load data.
+                      </p>
+                    )}
+                    {assessmentDetail.status === "loaded" &&
+                      assessmentDetail.data && (
+                      <AssessmentDetailTable data={assessmentDetail.data} />
+                    )}
+                    {assessmentDetail.status === "idle" && (
+                      <p className="mb-0 text-secondary small">
+                        Open to view the data fed into the LLM.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            )}
         </div>
       </div>
 

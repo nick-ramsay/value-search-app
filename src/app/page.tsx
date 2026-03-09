@@ -595,7 +595,7 @@ async function ResultsCard({
                 No results found
               </p>
             ) : (
-              <div className="d-flex flex-column gap-3">
+              <div className="d-flex flex-column gap-2">
                 {values.map((item) => (
                   <StockResultCard key={item._id} item={item} compact />
                 ))}
