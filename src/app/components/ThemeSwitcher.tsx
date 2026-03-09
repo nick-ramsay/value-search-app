@@ -7,15 +7,18 @@ type Theme = "light" | "dark" | "system";
 
 function applyTheme(value: Theme) {
   const root = document.documentElement;
+  const resolved =
+    value === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : value;
+  root.setAttribute("data-theme", resolved);
+  root.setAttribute("data-bs-theme", resolved);
   if (value === "system") {
-    root.removeAttribute("data-theme");
-    root.setAttribute(
-      "data-bs-theme",
-      window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    );
+    root.setAttribute("data-theme-system", "true");
   } else {
-    root.setAttribute("data-theme", value);
-    root.setAttribute("data-bs-theme", value);
+    root.removeAttribute("data-theme-system");
   }
 }
 
