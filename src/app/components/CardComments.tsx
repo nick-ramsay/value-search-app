@@ -26,12 +26,26 @@ export default function CardComments({
   const [loading, setLoading] = useState(true);
   const [newText, setNewText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     commentId: string;
     commentText: string;
   } | null>(null);
   const openTriggerRef = useRef<HTMLButtonElement | null>(null);
   const deleteModalId = `${DELETE_MODAL_ID_PREFIX}${symbol}`;
+
+  useEffect(() => {
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onShown = () => setExpanded(true);
+    const onHidden = () => setExpanded(false);
+    el.addEventListener("shown.bs.collapse", onShown);
+    el.addEventListener("hidden.bs.collapse", onHidden);
+    return () => {
+      el.removeEventListener("shown.bs.collapse", onShown);
+      el.removeEventListener("hidden.bs.collapse", onHidden);
+    };
+  }, [collapseId]);
 
   const load = () => {
     if (!symbol) return;
@@ -156,29 +170,31 @@ export default function CardComments({
 
   return (
     <>
-      <div className="stock-card__disclosure">
+      <div className="stock-card__comments">
         <button
           type="button"
-          className="stock-card__disclosure-trigger"
+          className="stock-card__action stock-card__action--secondary stock-card__comments-trigger"
           data-bs-toggle="collapse"
           data-bs-target={`#${collapseId}`}
-          aria-expanded={false}
+          aria-expanded={expanded}
           aria-controls={collapseId}
           id={`${collapseId}-label`}
         >
-          <i className="bi bi-chat-dots stock-card__disclosure-icon" aria-hidden />
-          <span>Comments</span>
-          {comments.length > 0 && (
-            <span className="stock-card__disclosure-count">{comments.length}</span>
-          )}
-          <i className="bi bi-chevron-down stock-card__disclosure-chevron" aria-hidden />
+          <span className="stock-card__comments-trigger-left">
+            <span className="stock-card__action-label">Comments</span>
+            {comments.length > 0 && (
+              <span className="stock-card__comments-count">{comments.length}</span>
+            )}
+          </span>
+          <i className="bi bi-chevron-down stock-card__action-chevron stock-card__comments-chevron-down" aria-hidden />
+          <i className="bi bi-chevron-up stock-card__action-chevron stock-card__comments-chevron-up" aria-hidden />
         </button>
         <div
           id={collapseId}
-          className="collapse stock-card__disclosure-panel"
+          className="collapse stock-card__comments-panel"
           aria-labelledby={`${collapseId}-label`}
         >
-          <div className="stock-card__disclosure-body">
+          <div className="stock-card__comments-body">
             {loading ? (
               <p className="stock-card__muted">Loading…</p>
             ) : (

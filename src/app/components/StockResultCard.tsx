@@ -558,14 +558,17 @@ export default function StockResultCard({
             </p>
           ) : null}
 
-          {/* Data used for AI assessment – logged in only */}
+          {/* Data used for AI assessment – logged in only; header matches View trends / AI Assessment / Edit */}
           {isLoggedIn && (
-          <div className="accordion mt-3 stock-card__inner-accordion" id={`accordion-detail-${cardDomId}`}>
+          <div
+            className="accordion mt-3 stock-card__inner-accordion stock-card__assessment-data-accordion"
+            id={`accordion-detail-${cardDomId}`}
+          >
               <div className="accordion-item border-0">
                 <h3 className="accordion-header">
                   <button
                     type="button"
-                    className="accordion-button collapsed stock-card__inner-accordion-btn"
+                    className="accordion-button collapsed stock-card__action stock-card__action--secondary stock-card__assessment-data-trigger"
                     data-bs-toggle="collapse"
                     data-bs-target={`#${assessmentDetailCollapseId}`}
                     aria-expanded="false"
@@ -612,7 +615,9 @@ export default function StockResultCard({
                       }
                     }}
                   >
-                    Data used for AI assessment
+                    <span className="stock-card__action-label">Data used for AI assessment</span>
+                    <i className="bi bi-chevron-down stock-card__action-chevron stock-card__assessment-data-chevron-down" aria-hidden />
+                    <i className="bi bi-chevron-up stock-card__action-chevron stock-card__assessment-data-chevron-up" aria-hidden />
                   </button>
                 </h3>
                 <div

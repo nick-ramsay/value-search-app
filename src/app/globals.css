@@ -810,19 +810,20 @@ button.accordion-button.ai-accordion-button:focus-visible {
     font-size: clamp(0.75rem, 2vw, 0.9rem);
   }
 
+  /* Edit (user-pill): match View trends / AI Assessment size on mobile */
   .stock-card__actions .stock-card__user-pill {
-    padding: clamp(0.28rem, 1.5vw, 0.35rem) clamp(0.35rem, 1.8vw, 0.5rem);
-    font-size: clamp(0.625rem, 1.9vw, 0.75rem);
-    gap: clamp(0.12rem, 0.6vw, 0.25rem);
+    padding: clamp(0.32rem, 1.8vw, 0.45rem) clamp(0.4rem, 2vw, 0.65rem);
+    font-size: clamp(0.6875rem, 2.2vw, 0.8125rem);
+    gap: clamp(0.15rem, 0.8vw, 0.3rem);
   }
 
   .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: clamp(0.5rem, 1.6vw, 0.625rem) !important;
-    padding: 0.08rem clamp(0.2rem, 1vw, 0.3rem) !important;
+    font-size: clamp(0.55rem, 1.8vw, 0.65rem) !important;
+    padding: 0.08rem clamp(0.22rem, 1.1vw, 0.35rem) !important;
   }
 
   .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
-    font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+    font-size: clamp(0.7rem, 1.9vw, 0.85rem);
   }
 
   .stock-card__actions .stock-card__action-icon,
@@ -2635,6 +2636,168 @@ a:hover {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+/* Data used for AI assessment – header uses same format as View trends / AI Assessment / Edit */
+.stock-card__assessment-data-accordion .accordion-item {
+  background: transparent;
+  border: none;
+}
+
+/* Keep trigger a full pill when open: gap below it, body is its own rounded block */
+.stock-card__assessment-data-accordion .accordion-collapse {
+  margin-top: 0.4rem;
+}
+
+.stock-card__assessment-data-accordion .accordion-body.stock-card__inner-accordion-body {
+  border-radius: 10px;
+  border: 1px solid var(--glass-border-subtle);
+  border-top: 1px solid var(--glass-border-subtle);
+}
+
+/* Make accordion button look like stock-card__action--secondary (pill); hide Bootstrap accordion ::after */
+.stock-card__assessment-data-trigger.accordion-button,
+.stock-card__assessment-data-trigger.accordion-button:not(.collapsed) {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500;
+  border-radius: 999px !important; /* full pill even when expanded */
+  background: var(--glass-bg-subtle) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: none !important;
+}
+
+.stock-card__assessment-data-trigger.accordion-button::after {
+  display: none !important;
+}
+
+.stock-card__assessment-data-trigger:hover:not(:disabled),
+.stock-card__assessment-data-trigger:focus-visible {
+  background: var(--glass-bg-strong) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* Chevron: show down when collapsed, up when expanded (Bootstrap sets aria-expanded) */
+.stock-card__assessment-data-chevron-up {
+  display: none;
+}
+
+.stock-card__assessment-data-trigger[aria-expanded="true"] .stock-card__assessment-data-chevron-down {
+  display: none;
+}
+
+.stock-card__assessment-data-trigger[aria-expanded="true"] .stock-card__assessment-data-chevron-up {
+  display: inline-block;
+}
+
+[data-theme="light"] .stock-card__assessment-data-trigger.accordion-button {
+  background: #f3f4f6 !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .stock-card__assessment-data-trigger:hover:not(:disabled),
+[data-theme="light"] .stock-card__assessment-data-trigger:focus-visible {
+  background: #e5e7eb !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Comments accordion – same pill format as Data used for AI assessment / View trends / AI Assessment */
+.stock-card__comments {
+  margin-top: 0.5rem;
+}
+
+.stock-card__comments .stock-card__comments-trigger {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500;
+  border-radius: 999px !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  box-shadow: none !important;
+}
+
+.stock-card__comments-trigger-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.stock-card__comments-trigger:hover:not(:disabled),
+.stock-card__comments-trigger:focus-visible {
+  background: var(--glass-bg-strong) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+.stock-card__comments-count {
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 999px;
+}
+
+.stock-card__comments-chevron-up {
+  display: none;
+}
+
+.stock-card__comments-trigger[aria-expanded="true"] .stock-card__comments-chevron-down {
+  display: none;
+}
+
+.stock-card__comments-trigger[aria-expanded="true"] .stock-card__comments-chevron-up {
+  display: inline-block;
+}
+
+.stock-card__comments .stock-card__comments-panel {
+  margin-top: 0.4rem;
+}
+
+.stock-card__comments-body {
+  padding: 0.75rem;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 10px;
+}
+
+.stock-card__comments-body .stock-card__muted {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .stock-card__comments-trigger {
+  background: #f3f4f6 !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .stock-card__comments-trigger:hover:not(:disabled),
+[data-theme="light"] .stock-card__comments-trigger:focus-visible {
+  background: #e5e7eb !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .stock-card__comments-count {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .stock-card__comments-body {
+  background: rgba(255, 255, 255, 0.99) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
 }
 
 /* Portfolio status tabs – glass panel + pill-shaped tab row */
