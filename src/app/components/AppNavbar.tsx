@@ -132,9 +132,6 @@ export default function AppNavbar({
                       </Link>
                     </li>
                   )}
-                  <li>
-                    <hr className="dropdown-divider my-2" />
-                  </li>
                   <li className="px-2 py-1">
                     <span className="dropdown-item-text small fw-semibold text-muted">
                       Theme
@@ -144,6 +141,17 @@ export default function AppNavbar({
                   <li>
                     <hr className="dropdown-divider my-2" />
                   </li>
+                  {pathname !== "/about" && (
+                    <li>
+                      <Link
+                        href="/about"
+                        className="dropdown-item d-flex align-items-center gap-2 py-2"
+                      >
+                        <i className="bi bi-info-circle" aria-hidden />
+                        About
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <button
                       type="button"
@@ -159,6 +167,14 @@ export default function AppNavbar({
             ) : (
               <>
                 <ThemeSwitcher />
+                <Link
+                  href="/about"
+                  className="btn btn-sm theme-switcher-btn"
+                  aria-label="About valuesearch.app"
+                  title="About valuesearch.app"
+                >
+                  <i className="bi bi-info-circle" aria-hidden />
+                </Link>
                 <button
                   type="button"
                   className="btn btn-sm theme-switcher-btn"

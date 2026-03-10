@@ -1798,6 +1798,159 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-primary) !important;
 }
 
+/* About page – pill absolutely centered on row; back sits just left of pill */
+.about-header-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 40px;
+}
+
+.about-header-back-cell {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 0.5rem; /* gap between back and pill */
+}
+
+.about-header-spacer {
+  min-width: 0;
+}
+
+/* About page – centered back + title pill; theme-aware glass */
+.about-header-back {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+}
+
+.about-header-back:hover,
+.about-header-back:focus {
+  background: var(--glass-bg) !important;
+  border-color: var(--glass-border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.about-header-pill {
+  border-radius: 999px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+}
+
+.about-header-pill-text {
+  color: var(--text-on-glass);
+  letter-spacing: 0.04em;
+}
+
+[data-theme="light"] .about-header-back,
+[data-theme="light"] .about-header-pill {
+  background: #f3f4f6 !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .about-header-back:hover,
+[data-theme="light"] .about-header-back:focus {
+  background: #e5e7eb !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .about-header-pill-text {
+  color: var(--text-primary);
+}
+
+/* About page card – consistent prose inside liquid-glass-card */
+.about-page-card-body {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.about-page-card-body p {
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.about-page-card-body p:last-child {
+  margin-bottom: 0;
+}
+
+.about-page-lead {
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem !important;
+}
+
+.about-page-section {
+  margin-bottom: 1.25rem;
+}
+
+.about-page-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.about-page-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin: 0 0 0.6rem 0;
+}
+
+.about-page-section p:last-of-type:not(.about-page-note) {
+  margin-bottom: 0;
+}
+
+.about-page-list {
+  margin: 0 0 0.75rem 0;
+  padding-left: 1.25rem;
+  color: var(--text-primary);
+}
+
+.about-page-list li {
+  margin-bottom: 0.5rem;
+}
+
+.about-page-list li:last-child {
+  margin-bottom: 0;
+}
+
+.about-page-list strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.about-page-code {
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--text-primary);
+}
+
+.about-page-note {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+}
+
+.about-page-divider {
+  margin: 1.25rem 0;
+  border-color: var(--glass-border-subtle);
+  opacity: 1;
+}
+
 /* Light theme: make neutral buttons and pills stand out more against bright background */
 [data-theme="light"] .theme-switcher-btn,
 [data-theme="light"] .glass-btn-secondary,
@@ -2408,6 +2561,33 @@ a:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glass);
   outline: none;
+}
+
+/* Light theme: login modal inputs need solid fill + visible border (glass-subtle is too faint) */
+[data-theme="light"] .login-modal .modal-content,
+[data-theme="light"] .login-modal .modal-header,
+[data-theme="light"] .login-modal .modal-body {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] .login-modal .form-control {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.28) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .login-modal .form-control:focus {
+  border-color: var(--accent) !important;
+  box-shadow:
+    0 0 0 3px var(--accent-glass),
+    0 1px 3px rgba(15, 23, 42, 0.12);
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .login-modal .form-control::placeholder {
+  color: rgba(15, 23, 42, 0.5);
 }
 
 /* User dropdown in navbar */
