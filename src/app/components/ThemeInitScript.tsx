@@ -3,6 +3,6 @@
  * Reads localStorage.theme and sets data-theme + data-bs-theme on <html> (taskboard-style).
  */
 export default function ThemeInitScript() {
-  const script = `(function(){var t=localStorage.getItem('theme');var el=document.documentElement;if(t==='light'||t==='dark'){el.setAttribute('data-theme',t);el.setAttribute('data-bs-theme',t);}else{el.setAttribute('data-bs-theme',window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}})();`;
+  const script = `(function(){var t=localStorage.getItem('theme');var el=document.documentElement;var resolved;if(t==='light'||t==='dark'){resolved=t;el.removeAttribute('data-theme-system');}else{resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';el.setAttribute('data-theme-system','true');}el.setAttribute('data-theme',resolved);el.setAttribute('data-bs-theme',resolved);})();`;
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }

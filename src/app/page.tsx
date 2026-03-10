@@ -44,6 +44,7 @@ function FiltersSection({
   selectedSector,
   selectedCountry,
   excludeEtfsEnabled,
+  maSupportEnabled,
 }: {
   filterOptions: FilterOptions;
   query: string;
@@ -52,6 +53,7 @@ function FiltersSection({
   selectedSector: string;
   selectedCountry: string;
   excludeEtfsEnabled: boolean;
+  maSupportEnabled: boolean;
 }) {
   const { industries, sectors, countries } = filterOptions;
   return (
@@ -154,8 +156,28 @@ function FiltersSection({
                     </label>
                   </div>
                 </div>
+                <div className="col-md-4">
+                  <span className="form-label fw-semibold d-block">
+                    Moving average support
+                  </span>
+                  <div className="filter-toggle">
+                    <input type="hidden" name="maSupport" value="0" />
+                    <input
+                      type="checkbox"
+                      id="maSupport"
+                      name="maSupport"
+                      value="1"
+                      className="filter-toggle-input"
+                      defaultChecked={maSupportEnabled}
+                    />
+                    <label htmlFor="maSupport" className="filter-toggle-label">
+                      <span className="filter-toggle-slider" aria-hidden />
+                      <span className="filter-toggle-text" />
+                    </label>
+                  </div>
+                </div>
                 <div className="col-12 d-flex justify-content-end gap-2 mt-2">
-                  {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled) && (
+                  {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled || maSupportEnabled) && (
                     <FilterClearButton className="btn btn-sm filter-clear-button" />
                   )}
                   <button
@@ -218,6 +240,7 @@ async function FiltersAsyncWrapper({
     sector?: string;
     country?: string;
     excludeEtfs?: string | string[];
+    maSupport?: string | string[];
   }>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
@@ -231,6 +254,8 @@ async function FiltersAsyncWrapper({
   const selectedCountry = resolvedSearchParams?.country ?? "";
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
+  const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
+  const maSupportEnabled = maSupportParam === "1";
   return (
     <FiltersSection
       filterOptions={filterOptions}
@@ -240,6 +265,7 @@ async function FiltersAsyncWrapper({
       selectedSector={selectedSector}
       selectedCountry={selectedCountry}
       excludeEtfsEnabled={excludeEtfsEnabled}
+      maSupportEnabled={maSupportEnabled}
     />
   );
 }
@@ -310,12 +336,14 @@ async function getValues(
     sector,
     country,
     excludeEtfs,
+    maSupport,
   }: {
     symbolFilter?: string;
     industry?: string;
     sector?: string;
     country?: string;
     excludeEtfs?: boolean;
+    maSupport?: boolean;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
   if (excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
@@ -357,6 +385,10 @@ async function getValues(
 
   if (country && country.trim().length > 0) {
     filter.country = country;
+  }
+
+  if (maSupport) {
+    filter["valueSearchScore.movingAverageSupport"] = { $gte: 1 };
   }
 
   // Fetch a page of assessments sorted by aiRatingScore, name, symbol (no lookup yet)
@@ -402,12 +434,14 @@ async function getValuesCount({
   sector,
   country,
   excludeEtfs,
+  maSupport,
 }: {
   symbolFilter?: string;
   industry?: string;
   sector?: string;
   country?: string;
   excludeEtfs?: boolean;
+  maSupport?: boolean;
 }): Promise<number> {
   if (excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
     return 0;
@@ -449,6 +483,10 @@ async function getValuesCount({
     filter.country = country;
   }
 
+  if (maSupport) {
+    filter["valueSearchScore.movingAverageSupport"] = { $gte: 1 };
+  }
+
   const totalCount = await db.collection(aiAssessmentsCollection).countDocuments(filter);
   return totalCount;
 }
@@ -464,6 +502,7 @@ async function ResultsCard({
     sector?: string;
     country?: string;
     excludeEtfs?: string | string[];
+    maSupport?: string | string[];
   }>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
@@ -479,6 +518,8 @@ async function ResultsCard({
   const selectedCountry = resolvedSearchParams?.country ?? "";
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
+  const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
+  const maSupportEnabled = maSupportParam === "1";
   const isFiltered = isSelected && query.length > 0;
 
   const { industries, sectors, countries } = filterOptions;
@@ -489,6 +530,7 @@ async function ResultsCard({
     sector: selectedSector || undefined,
     country: selectedCountry || undefined,
     excludeEtfs: excludeEtfsEnabled,
+    maSupport: maSupportEnabled,
   };
 
   const { values, hasMore } = await getValues(isFiltered ? 1 : currentPage, filterParams);
@@ -503,6 +545,7 @@ async function ResultsCard({
     if (selectedSector) params.set("sector", selectedSector);
     if (selectedCountry) params.set("country", selectedCountry);
     if (!excludeEtfsEnabled) params.set("excludeEtfs", "0");
+    if (maSupportEnabled) params.set("maSupport", "1");
     const search = params.toString();
     return search.length > 0 ? `/?${params.toString()}` : "/";
   };
@@ -517,6 +560,7 @@ async function ResultsCard({
             if (selectedSector) appliedFilters.push(`Sector: ${selectedSector}`);
             if (selectedCountry) appliedFilters.push(`Country: ${selectedCountry}`);
             if (!excludeEtfsEnabled) appliedFilters.push("Include ETFs");
+            if (maSupportEnabled) appliedFilters.push("Moving average support");
 
             const baseText = `${totalCount} ${totalCount === 1 ? "result" : "results"}`;
 
@@ -544,13 +588,14 @@ async function ResultsCard({
             selectedSector={selectedSector}
             selectedCountry={selectedCountry}
             excludeEtfsEnabled={excludeEtfsEnabled}
+            maSupportEnabled={maSupportEnabled}
           >
             {values.length === 0 ? (
               <p className="text-muted text-center mb-0">
                 No results found
               </p>
             ) : (
-              <div className="d-flex flex-column gap-3">
+              <div className="d-flex flex-column gap-2">
                 {values.map((item) => (
                   <StockResultCard key={item._id} item={item} compact />
                 ))}

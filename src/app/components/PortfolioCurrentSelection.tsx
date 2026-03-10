@@ -103,7 +103,7 @@ export default function PortfolioCurrentSelection({
             </div>
             <div className="stock-card__actions invisible" aria-hidden="true">
               <span className="stock-card__action stock-card__action--secondary">View trends</span>
-              <span className="stock-card__action stock-card__action--secondary">Assessment</span>
+              <span className="stock-card__action stock-card__action--secondary">AI Assessment</span>
             </div>
           </article>
         ) : stock ? (
@@ -132,7 +132,7 @@ export default function PortfolioCurrentSelection({
             </div>
             <div className="stock-card__actions invisible" aria-hidden="true">
               <span className="stock-card__action stock-card__action--secondary">View trends</span>
-              <span className="stock-card__action stock-card__action--secondary">Assessment</span>
+              <span className="stock-card__action stock-card__action--secondary">AI Assessment</span>
             </div>
           </article>
         )}

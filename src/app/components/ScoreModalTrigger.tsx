@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+export const VALUE_SCORE_MA_SUPPORT_KEY = "movingAverageSupport";
+
 const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyPE", label: "Healthy P/E (0–15)" },
   { key: "healthyFuturePE", label: "Healthy Forward P/E (0–15)" },
@@ -12,7 +14,7 @@ const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyPriceBook", label: "Healthy P/B (0.95–1.1)" },
   { key: "healthyPriceSales", label: "Healthy P/S (0–2)" },
   { key: "movingAveragesGreaterThanPrice", label: "MAs > price & 200d > 50d" },
-  { key: "movingAverageSupport", label: "Moving average support" },
+  { key: VALUE_SCORE_MA_SUPPORT_KEY, label: "Moving average support" },
   { key: "returnOnEquity", label: "Return on equity" },
   { key: "returnOnInvestment", label: "Return on investment" },
   { key: "priceToEarningsGrowth", label: "Price/earnings growth" },

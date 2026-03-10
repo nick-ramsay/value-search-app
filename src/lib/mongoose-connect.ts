@@ -43,7 +43,11 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   if (!cached!.promise) {
     cached!.dbName = dbName;
-    cached!.promise = mongoose.connect(MONGODB_URI!, { dbName });
+    cached!.promise = mongoose.connect(MONGODB_URI!, {
+      dbName,
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+    });
   }
   cached!.conn = await cached!.promise;
   return cached!.conn;

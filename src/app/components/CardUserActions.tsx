@@ -47,6 +47,10 @@ type CardUserActionsProps = {
   labelsSlotId?: string;
   /** Current stock price (from quote); used to show fulfilled icon next to target pill. */
   currentPrice?: number;
+  /** When true and this panel is open, show a small "Close" button inside the panel. */
+  showInlineCloseAll?: boolean;
+  /** Called when the inline "Close" is clicked (closes only this panel). */
+  onCloseThisPanel?: () => void;
 };
 
 export default function CardUserActions({
@@ -58,6 +62,8 @@ export default function CardUserActions({
   targetPillSlotId,
   labelsSlotId,
   currentPrice,
+  showInlineCloseAll = false,
+  onCloseThisPanel,
 }: CardUserActionsProps) {
   const { status: sessionStatus } = useSession();
   const [status, setStatus] = useState("");
@@ -272,38 +278,43 @@ export default function CardUserActions({
   const actionBarContent = (
     <div className="stock-card__user-actions-row">
       {!targetPillSlotId && targetPillContent}
-      <div className={`stock-card__user-pill ${pillStatusClass}`}>
-      {showStatusLoader ? (
-        <span className="stock-card__status-loading" aria-hidden="true">
-          <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
-            <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
-          </span>
-        </span>
-      ) : status ? (
-        <span
-          className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
-          aria-label={`Status: ${statusLabel}`}
-        >
-          {statusLabel}
-        </span>
-      ) : null}
       <button
         type="button"
-        className={`stock-card__action stock-card__action--secondary stock-card__action--inside-pill ${status ? "stock-card__action--icon" : ""}`}
+        className={`stock-card__user-pill stock-card__user-pill-trigger ${pillStatusClass}`}
         data-bs-toggle="collapse"
         data-bs-target={`#${userActionsCollapseId}`}
         aria-expanded={expanded}
         aria-controls={userActionsCollapseId}
         aria-label="Edit status and comments"
         title="Edit status and comments"
+        disabled={showStatusLoader}
+        onClick={() => setExpanded((prev) => !prev)}
       >
-        {!showStatusLoader && !status && <span className="stock-card__action-label">Edit</span>}
-        <i
-          className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
-          aria-hidden
-        />
+        {showStatusLoader ? (
+          <span className="stock-card__status-loading" aria-hidden="true">
+            <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
+              <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
+            </span>
+          </span>
+        ) : (
+          <>
+            {status ? (
+              <span
+                className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
+                aria-hidden
+              >
+                {statusLabel}
+              </span>
+            ) : (
+              <span className="stock-card__action-label">Edit</span>
+            )}
+            <i
+              className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
+              aria-hidden
+            />
+          </>
+        )}
       </button>
-    </div>
     </div>
   );
 
@@ -314,6 +325,20 @@ export default function CardUserActions({
       aria-label="Status and comments"
     >
       <div className="stock-card__panel-inner">
+        <div className="stock-card__close-all-inline-wrap">
+          <span className="stock-card__panel-heading">Edit Portfolio Entry</span>
+          {showInlineCloseAll && onCloseThisPanel ? (
+            <button
+              type="button"
+              className="stock-card__close-all-inline"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+              Close
+            </button>
+          ) : null}
+        </div>
         <div className="stock-card__user-form">
           <span className="stock-card__user-label">Status</span>
           <CardStatusSelect
