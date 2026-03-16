@@ -352,6 +352,13 @@ export default function StockResultCard({
             <i className="bi bi-info-circle" aria-hidden />
           </button>
         </div>
+        {(item.industry ?? item.sector ?? item.country) && (
+          <p className="stock-card__meta-row mb-0">
+            {[item.industry, item.sector, item.country]
+              .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+              .join(" • ")}
+          </p>
+        )}
       </header>
 
       {/* Company description panel – directly under name/symbol row */}
@@ -420,7 +427,7 @@ export default function StockResultCard({
         </div>
       ) : null}
 
-      {/* At-a-glance signals: AI rating, score, buy/sell target (when logged in) */}
+      {/* At-a-glance signals: AI rating, score, labels, buy/sell target (when logged in) */}
       <div className="stock-card__signals">
         {item.aiRating ? (
           <span
@@ -456,55 +463,52 @@ export default function StockResultCard({
         {item.valueSearchScore != null &&
           item.valueSearchScore.totalPossiblePoints > 0 &&
           typeof item.valueSearchScore.calculatedScorePercentage === "number" ? (
-          <span className="stock-card__score-and-ma-wrap">
-            <ScoreModalTrigger
-              modalId={`score-modal-${item._id}`}
-              name={item.name}
-              symbol={item.symbol}
-              valueSearchScore={
-                item.valueSearchScore as ValueSearchScoreDisplay
-              }
-              buttonClassName={`${getValueScoreBadgeClass(
-                item.valueSearchScore.calculatedScorePercentage
-              )} stock-card__badge`}
-              buttonLabel={`${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
-            />
-            {(() => {
-              const vs = item.valueSearchScore as Record<string, unknown>;
-              const breakdown = vs.breakdown as Record<string, unknown> | undefined;
-              const raw =
-                vs[VALUE_SCORE_MA_SUPPORT_KEY] ??
-                vs.moving_average_support ??
-                breakdown?.[VALUE_SCORE_MA_SUPPORT_KEY] ??
-                breakdown?.moving_average_support;
-              const maSupport =
-                raw === true ? 1 : typeof raw === "number" ? raw : Number(raw);
-              const hasSupport = !Number.isNaN(maSupport) && maSupport >= 1;
-              return hasSupport ? (
-                <span
-                  className="badge stock-card__badge stock-card__ma-support-pill"
-                  title="Stock may have found moving average support"
-                  aria-label="Stock may have found moving average support"
-                >
-                  <i className="bi bi-graph-up-arrow" aria-hidden />
-                </span>
-              ) : null;
-            })()}
-          </span>
+          <ScoreModalTrigger
+            modalId={`score-modal-${item._id}`}
+            name={item.name}
+            symbol={item.symbol}
+            valueSearchScore={
+              item.valueSearchScore as ValueSearchScoreDisplay
+            }
+            buttonClassName={`${getValueScoreBadgeClass(
+              item.valueSearchScore.calculatedScorePercentage
+            )} stock-card__badge`}
+            buttonLabel={`${(item.valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%`}
+          />
         ) : null}
         <div
           className="stock-card__signals-slot"
           id={`stock-card-signals-slot-${cardDomId}`}
           aria-hidden="true"
         />
+        <div
+          className="stock-card__labels-slot"
+          id={`stock-card-labels-slot-${cardDomId}`}
+          aria-hidden="true"
+        />
+        {(() => {
+          const vs = item.valueSearchScore as Record<string, unknown> | undefined;
+          if (!vs) return null;
+          const breakdown = vs.breakdown as Record<string, unknown> | undefined;
+          const raw =
+            vs[VALUE_SCORE_MA_SUPPORT_KEY] ??
+            vs.moving_average_support ??
+            breakdown?.[VALUE_SCORE_MA_SUPPORT_KEY] ??
+            breakdown?.moving_average_support;
+          const maSupport =
+            raw === true ? 1 : typeof raw === "number" ? raw : Number(raw);
+          const hasSupport = !Number.isNaN(maSupport) && maSupport >= 1;
+          return hasSupport ? (
+            <span
+              className="badge stock-card__badge stock-card__ma-support-pill"
+              title="Stock may have found moving average support"
+              aria-label="Stock may have found moving average support"
+            >
+              <i className="bi bi-graph-up-arrow" aria-hidden />
+            </span>
+          ) : null;
+        })()}
       </div>
-
-      {/* Inline labels row below rating/score */}
-      <div
-        className="stock-card__labels-slot"
-        id={`stock-card-labels-slot-${cardDomId}`}
-        aria-hidden="true"
-      />
 
       {/* Primary actions: View trends, Assessment, Edit (when logged in) */}
       <div className="stock-card__actions">

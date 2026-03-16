@@ -259,7 +259,8 @@ export default function CardUserActions({
       <div className="stock-card__labels-inline">
         {labels.map((name) => (
           <span key={name} className="stock-card__label-pill">
-            {name}
+            <i className="bi bi-tag-fill stock-card__label-pill-icon" aria-hidden />
+            <span className="stock-card__label-pill-text">{name}</span>
           </span>
         ))}
       </div>
