@@ -2,38 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useSession } from "next-auth/react";
+import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
 import ScoreModalTrigger, { VALUE_SCORE_MA_SUPPORT_KEY } from "./ScoreModalTrigger";
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
-
-function toTitleCase(value: string) {
-  return value
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0].toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function getRatingBadgeClass(rating: string) {
-  const normalized = rating.trim().toUpperCase();
-  switch (normalized) {
-    case "STRONG BUY":
-      return "badge badge-rating-strong-buy";
-    case "BUY":
-      return "badge badge-rating-buy";
-    case "NEUTRAL":
-      return "badge badge-rating-neutral";
-    case "SELL":
-      return "badge badge-rating-sell";
-    case "STRONG SELL":
-      return "badge badge-rating-strong-sell";
-    default:
-      return "badge badge-rating-neutral";
-  }
-}
 
 function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   if (calculatedScorePercentage > 0.66) return "badge bg-success text-white";

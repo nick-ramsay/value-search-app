@@ -391,6 +391,11 @@ button.accordion-button.ai-accordion-button:focus-visible {
 .stock-card {
   --stock-card-row-gap: 0.5rem;
   --stock-card-side-padding: 1.1rem;
+  /* Action row pills + in-panel Score/AI history switch (matched height) */
+  --stock-card-action-pad-y: 0.3rem;
+  --stock-card-action-pad-x: 0.55rem;
+  --stock-card-action-font-size: 0.78rem;
+  --stock-card-action-line-height: 1.28;
   background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -424,13 +429,15 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card--compact .stock-card__action {
-  padding: 0.35rem 0.6rem;
-  font-size: 0.8rem;
+  padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
+  font-size: var(--stock-card-action-font-size);
+  line-height: var(--stock-card-action-line-height);
 }
 
 .stock-card--compact .stock-card__user-pill {
-  padding: 0.35rem 0.6rem;
-  font-size: 0.8rem;
+  padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
+  font-size: var(--stock-card-action-font-size);
+  line-height: var(--stock-card-action-line-height);
   gap: 0.2rem;
 }
 
@@ -802,8 +809,10 @@ button.accordion-button.ai-accordion-button:focus-visible {
   }
 
   .stock-card__actions .stock-card__action {
-    padding: clamp(0.32rem, 1.8vw, 0.45rem) clamp(0.4rem, 2vw, 0.65rem);
-    font-size: clamp(0.6875rem, 2.2vw, 0.8125rem);
+    padding: clamp(0.26rem, 1.8vw, var(--stock-card-action-pad-y))
+      clamp(0.38rem, 2vw, var(--stock-card-action-pad-x));
+    font-size: clamp(0.6875rem, 2.2vw, var(--stock-card-action-font-size));
+    line-height: var(--stock-card-action-line-height);
     gap: clamp(0.15rem, 0.8vw, 0.3rem);
   }
 
@@ -817,8 +826,10 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
   /* Edit (user-pill): match View trends / AI Assessment size on mobile */
   .stock-card__actions .stock-card__user-pill {
-    padding: clamp(0.32rem, 1.8vw, 0.45rem) clamp(0.4rem, 2vw, 0.65rem);
-    font-size: clamp(0.6875rem, 2.2vw, 0.8125rem);
+    padding: clamp(0.26rem, 1.8vw, var(--stock-card-action-pad-y))
+      clamp(0.38rem, 2vw, var(--stock-card-action-pad-x));
+    font-size: clamp(0.6875rem, 2.2vw, var(--stock-card-action-font-size));
+    line-height: var(--stock-card-action-line-height);
     gap: clamp(0.15rem, 0.8vw, 0.3rem);
   }
 
@@ -851,8 +862,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.32rem 0.65rem;
-  font-size: 0.75rem;
+  padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
+  font-size: var(--stock-card-action-font-size);
+  line-height: var(--stock-card-action-line-height);
   font-weight: 500;
   border: none;
   border-radius: 999px;
@@ -974,13 +986,13 @@ button.accordion-button.ai-accordion-button:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
-  padding: 0.32rem 0.65rem;
+  padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
   border: 1px solid var(--glass-border-subtle);
   border-radius: 999px;
   background: var(--glass-bg-subtle);
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  line-height: 1.2;
+  font-size: var(--stock-card-action-font-size);
+  line-height: var(--stock-card-action-line-height);
 }
 
 /* Whole pill is the trigger (button); reset button defaults */
@@ -1033,8 +1045,9 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 }
 
 .stock-card__action--compact {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
+  padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
+  font-size: var(--stock-card-action-font-size);
+  line-height: var(--stock-card-action-line-height);
 }
 
 .stock-card__action-label {
@@ -1065,10 +1078,11 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.8rem;
+  gap: 0.35rem;
+  padding: 0.26rem 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--danger-clear);
   background: var(--danger-glass);
   background: color-mix(in srgb, var(--danger-glass) 85%, var(--glass-bg-strong));
@@ -1081,6 +1095,12 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   transition: background var(--transition-fast), color var(--transition-fast),
     border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
+
+.stock-card__close-all-wrap .stock-card__close-all .bi {
+  font-size: 0.92em;
+  line-height: 1;
+}
+
 .stock-card__close-all-wrap .stock-card__close-all:hover {
   background: var(--glass-bg-strong);
   color: var(--danger-clear);
@@ -1111,12 +1131,12 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   border-color: rgba(198, 40, 40, 0.28);
 }
 
-/* Panel header row: title (flexes) + close (X) pinned top-right of section, never wraps below title */
+/* Panel header row: title (flexes) + close (X); geometric + optical vertical alignment */
 .stock-card__close-all-inline-wrap {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   width: 100%;
   min-width: 0;
@@ -1129,8 +1149,13 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.2;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  min-height: 1.5rem; /* match .stock-card__panel-close-btn */
+  /* Line boxes sit high vs. circular icon; nudge text to optical center */
+  transform: translateY(0.1rem);
 }
 [data-theme="light"] .stock-card__panel-heading {
   color: #374151;
@@ -1161,6 +1186,8 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   font-size: 0.8rem;
   line-height: 1;
   opacity: 0.95;
+  /* Bootstrap Icons x often sits a hair low in a circle */
+  transform: translateY(-0.06em);
 }
 .stock-card__panel-close-btn:hover {
   background: var(--glass-bg-strong);
@@ -1285,9 +1312,20 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   box-shadow: 0 0 0 1px var(--glass-border-subtle, rgba(0, 0, 0, 0.08));
 }
 
+/* Same metrics as .stock-card__action / .stock-card__user-pill (via --stock-card-action-*) */
 .stock-card__trends-view-toggle.btn-group .btn {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
+  --bs-btn-padding-y: var(--stock-card-action-pad-y);
+  --bs-btn-padding-x: var(--stock-card-action-pad-x);
+  --bs-btn-font-size: var(--stock-card-action-font-size);
+  --bs-btn-line-height: var(--stock-card-action-line-height);
+  padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+  font-size: var(--bs-btn-font-size);
+  line-height: var(--bs-btn-line-height);
+}
+
+.stock-card__trends-view-toggle.btn-group .btn .bi {
+  font-size: 0.9em;
+  vertical-align: -0.05em;
 }
 
 .stock-card__trends-view-toggle.btn-group .btn:first-child {

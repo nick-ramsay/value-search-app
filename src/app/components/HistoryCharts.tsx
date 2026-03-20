@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
+
 type HistoryPoint = {
   date: string;
   value: number;
@@ -45,98 +47,113 @@ function formatDateLabel(dateIso: string): string {
   });
 }
 
-type BarGeometry = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  value: number;
-  dateLabel: string;
-  tooltip: string;
-};
+/** Matches value score pill semantics on the card (0–100 scale). */
+function scoreBadgeClassForPercent(pct: number): string {
+  const p = Math.min(100, Math.max(0, pct));
+  if (p > 66) return "badge bg-success text-white stock-card__badge";
+  if (p >= 33) return "badge bg-warning text-dark stock-card__badge";
+  return "badge bg-danger text-white stock-card__badge";
+}
 
-function TrendBarChart({
+const SCORE_DOMAIN = { min: 0, max: 100 };
+
+const SCORE_Y_TICKS: { value: number; label: string }[] = [
+  { value: 100, label: "100%" },
+  { value: 75, label: "75%" },
+  { value: 50, label: "50%" },
+  { value: 25, label: "25%" },
+  { value: 0, label: "0%" },
+];
+
+const SCORE_BAND_ALPHA = [0.15, 0.09, 0.055, 0.03];
+
+function clampScorePercent(value: number): number {
+  return Math.min(SCORE_DOMAIN.max, Math.max(SCORE_DOMAIN.min, value));
+}
+
+function formatScoreTooltip(value: number, dateLabel: string, label?: string): string {
+  const trimmed = typeof label === "string" ? label.trim() : "";
+  const pct = `${clampScorePercent(value).toFixed(1).replace(/\.0$/, "")}%`;
+  if (trimmed.length > 0) return `${trimmed} (${pct}) — ${dateLabel}`;
+  return `${pct} — ${dateLabel}`;
+}
+
+function ValueScoreHistoryChart({
   data,
-  color,
-  height = 140,
-  valueSuffix,
-  hideValueMeta,
-  fixedDomain,
-  gradientId = "historyGradient",
+  gradientId = "valueScoreLineGrad",
 }: {
   data: HistoryPoint[];
-  color: string;
-  height?: number;
-  valueSuffix?: string;
-  hideValueMeta?: boolean;
-  fixedDomain?: { min: number; max: number };
   gradientId?: string;
 }) {
-  const width = 560; // will scale with viewBox + container width
+  const width = 560;
+  const height = 200;
+  const marginLeft = 52;
+  const marginRight = 14;
+  const marginTop = 10;
+  const marginBottom = 34;
 
-  const { bars, minY, maxY, zeroY } = useMemo(() => {
-    if (!data.length) {
-      return {
-        bars: [] as BarGeometry[],
-        minY: 0,
-        maxY: 0,
-        zeroY: null as number | null,
-      };
-    }
-    const values = data.map((d) => d.value);
-    let min = fixedDomain ? fixedDomain.min : Math.min(...values);
-    let max = fixedDomain ? fixedDomain.max : Math.max(...values);
-    if (!fixedDomain && min === max) {
-      min = min - 1;
-      max = max + 1;
-    }
+  const plotW = width - marginLeft - marginRight;
+  const plotH = height - marginTop - marginBottom;
 
-    const paddingTop = 10;
-    const paddingBottom = 20;
-    const chartHeight = height - paddingTop - paddingBottom;
+  const layout = useMemo(() => {
+    if (!data.length) return null;
+
+    const valueToY = (v: number) =>
+      marginTop +
+      ((SCORE_DOMAIN.max - clampScorePercent(v)) /
+        (SCORE_DOMAIN.max - SCORE_DOMAIN.min)) *
+        plotH;
+
     const n = data.length;
-    const gap = n > 1 ? 4 : 0;
-    const totalBarWidth = width - (n - 1) * gap;
-    const barWidth = Math.max(4, totalBarWidth / n);
+    const xAt = (index: number) =>
+      marginLeft + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW);
 
-    let baseline: number;
-    if (fixedDomain && min <= 0 && max >= 0) {
-      const zeroRatio = (0 - min) / (max - min || 1);
-      baseline = paddingTop + (1 - zeroRatio) * chartHeight;
-    } else {
-      baseline = height - paddingBottom;
+    const points = data.map((d, i) => ({
+      x: xAt(i),
+      y: valueToY(d.value),
+      dateLabel: formatDateLabel(d.date),
+      value: d.value,
+    }));
+
+    const lineD = points
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+      .join(" ");
+
+    const tickYs = SCORE_Y_TICKS.map((t) => ({
+      ...t,
+      y: valueToY(t.value),
+    }));
+
+    const bandRects: { y1: number; y2: number; key: string; alpha: number }[] = [];
+    for (let i = 0; i < SCORE_Y_TICKS.length - 1; i++) {
+      const hi = SCORE_Y_TICKS[i].value;
+      const lo = SCORE_Y_TICKS[i + 1].value;
+      const yTop = valueToY(hi);
+      const yBot = valueToY(lo);
+      bandRects.push({
+        y1: yTop,
+        y2: yBot,
+        key: `${hi}-${lo}`,
+        alpha: SCORE_BAND_ALPHA[i] ?? 0.04,
+      });
     }
 
-    const barsLocal: BarGeometry[] = data.map((d, index) => {
-      const ratio = (d.value - min) / (max - min || 1);
-      const valueY = paddingTop + (1 - ratio) * chartHeight;
-      const barY = Math.min(valueY, baseline);
-      const barHeight = Math.abs(baseline - valueY) || 2;
-      const x = index * (barWidth + gap);
-      const dateLabel = formatDateLabel(d.date);
-      const tooltip =
-        typeof d.label === "string" && d.label.trim().length > 0
-          ? `${d.label} – ${dateLabel}`
-          : dateLabel;
-      return {
-        x,
-        y: barY,
-        width: barWidth,
-        height: barHeight,
-        value: d.value,
-        dateLabel,
-        tooltip,
-      };
-    });
+    const xTickIndices =
+      n <= 1
+        ? [0]
+        : n <= 4
+          ? data.map((_, i) => i)
+          : (() => {
+              const want = Math.min(6, n);
+              const out: number[] = [];
+              for (let k = 0; k < want; k++) {
+                out.push(Math.round((k / (want - 1)) * (n - 1)));
+              }
+              return [...new Set(out)].sort((a, b) => a - b);
+            })();
 
-    let zeroY: number | null = null;
-    if (min <= 0 && max >= 0) {
-      const zeroRatio = (0 - min) / (max - min || 1);
-      zeroY = paddingTop + (1 - zeroRatio) * chartHeight;
-    }
-
-    return { bars: barsLocal, minY: min, maxY: max, zeroY };
-  }, [data, height, width, fixedDomain]);
+    return { points, lineD, tickYs, bandRects, xTickIndices };
+  }, [data, marginLeft, plotW, plotH, marginTop]);
 
   if (!data.length) {
     return (
@@ -146,96 +163,400 @@ function TrendBarChart({
     );
   }
 
-  const first = data[0];
+  if (!layout) return null;
+
   const last = data[data.length - 1];
-  const change = last.value - first.value;
-  const changeLabel =
-    (change >= 0 ? "+" : "") +
-    change.toFixed(1) +
-    (valueSuffix ? valueSuffix : "");
+  const lastPct = clampScorePercent(last.value);
+  const lastPctLabel = `${lastPct.toFixed(1).replace(/\.0$/, "")}%`;
+  const ariaLabel = `Value score over time from ${SCORE_DOMAIN.min}% to ${SCORE_DOMAIN.max}% scale, latest ${lastPctLabel}`;
+
+  const firstDateLabel = formatDateLabel(data[0].date);
+  const lastDateLabel = formatDateLabel(data[data.length - 1].date);
+  const rangeLabel =
+    firstDateLabel === lastDateLabel
+      ? firstDateLabel
+      : `${firstDateLabel} – ${lastDateLabel}`;
 
   return (
-    <div className="stock-card__trends-chart-wrap w-100">
-      {!hideValueMeta && (
-        <div className="d-flex justify-content-between align-items-baseline mb-2">
-          <div className="d-flex align-items-baseline gap-2">
-            <span className="fw-semibold">
-              {last.value.toFixed(1)}
-              {valueSuffix}
-            </span>
-            <span
-              className={`small ${
-                change > 0
-                  ? "text-success"
-                  : change < 0
-                    ? "text-danger"
-                    : "text-muted"
-              }`}
-            >
-              {changeLabel} from start
-            </span>
-          </div>
-          <span className="small text-muted">
-            {formatDateLabel(first.date)} – {formatDateLabel(last.date)}
-          </span>
-        </div>
-      )}
+    <div className="stock-card__trends-chart-wrap stock-card__score-history-chart w-100">
+      <div className="d-flex align-items-center flex-wrap gap-2 mb-2 small">
+        <span className={scoreBadgeClassForPercent(last.value)}>
+          <span>Latest: {lastPctLabel}</span>
+        </span>
+        <span className="text-muted" aria-hidden>
+          •
+        </span>
+        <span className="text-muted">{rangeLabel}</span>
+      </div>
+
       <div className="position-relative">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet"
           role="img"
-          aria-hidden="true"
-          style={{ width: "100%", height: `${height}px` }}
+          aria-label={ariaLabel}
+          className="stock-card__score-history-chart-svg"
+          style={{ width: "100%", height: "auto", minHeight: "200px" }}
         >
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.5" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.15" />
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#7c3aed" />
+              <stop offset="100%" stopColor="#8b5cf6" />
             </linearGradient>
           </defs>
-          {/* Zero baseline (e.g. AI rating 0) */}
-          {zeroY != null && (
-            <line
-              x1={0}
-              x2={width}
-              y1={zeroY}
-              y2={zeroY}
-              stroke="rgba(255, 255, 255, 0.35)"
-              strokeWidth={1}
-              strokeDasharray="4 4"
-            />
-          )}
-          {/* Bars */}
-          {bars.map((bar, index) => (
+
+          {layout.bandRects.map((b) => (
             <rect
-              key={index}
-              x={bar.x}
-              y={bar.y}
-              width={bar.width}
-              height={bar.height}
-              fill={`url(#${gradientId})`}
-              stroke={color}
-              strokeWidth={1}
-              rx={2}
-            >
-              <title>{bar.tooltip}</title>
-            </rect>
+              key={b.key}
+              x={marginLeft}
+              y={b.y1}
+              width={plotW}
+              height={Math.max(0.5, b.y2 - b.y1)}
+              fill={`rgba(139, 92, 246, ${b.alpha})`}
+            />
           ))}
+
+          {layout.tickYs.map((t) => {
+            const isBound = t.value === 0 || t.value === 100;
+            return (
+              <g key={t.value}>
+                <line
+                  x1={marginLeft}
+                  x2={marginLeft + plotW}
+                  y1={t.y}
+                  y2={t.y}
+                  stroke={
+                    isBound
+                      ? "rgba(148, 163, 184, 0.5)"
+                      : "rgba(148, 163, 184, 0.22)"
+                  }
+                  strokeWidth={isBound ? 1.15 : 0.75}
+                  strokeDasharray={isBound ? "5 4" : undefined}
+                />
+                <text
+                  x={marginLeft - 8}
+                  y={t.y}
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                  fill="currentColor"
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: isBound ? 600 : 400,
+                  }}
+                >
+                  {t.label}
+                </text>
+              </g>
+            );
+          })}
+
+          <path
+            d={layout.lineD}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {layout.points.map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={4}
+              fill="var(--bs-body-bg, #fff)"
+              stroke="#8b5cf6"
+              strokeWidth={2}
+            >
+              <title>
+                {formatScoreTooltip(data[i].value, p.dateLabel, data[i].label)}
+              </title>
+            </circle>
+          ))}
+
+          {layout.xTickIndices.map((i) => {
+            const p = layout.points[i];
+            return (
+              <text
+                key={`score-xt-${i}`}
+                x={p.x}
+                y={height - 8}
+                textAnchor="middle"
+                fill="currentColor"
+                style={{ fontSize: "10px", opacity: 0.75 }}
+              >
+                {p.dateLabel}
+              </text>
+            );
+          })}
         </svg>
       </div>
-      {!hideValueMeta && (
-        <div className="d-flex justify-content-between mt-1 small text-muted">
-          <span>
-            Min: {minY.toFixed(1)}
-            {valueSuffix}
-          </span>
-          <span>
-            Max: {maxY.toFixed(1)}
-            {valueSuffix}
-          </span>
-        </div>
-      )}
+    </div>
+  );
+}
+
+/** Internal scale for API values; not shown in the chart UI. */
+const RATING_DOMAIN = { min: -2, max: 2 };
+
+const RATING_TICKS: { value: number; name: string }[] = [
+  { value: 2, name: "Strong Buy" },
+  { value: 1, name: "Buy" },
+  { value: 0, name: "Neutral" },
+  { value: -1, name: "Sell" },
+  { value: -2, name: "Strong Sell" },
+];
+
+function clampRatingValue(value: number): number {
+  return Math.min(RATING_DOMAIN.max, Math.max(RATING_DOMAIN.min, value));
+}
+
+function displayRatingForPoint(value: number, label?: string): string {
+  const trimmed = typeof label === "string" ? label.trim() : "";
+  if (trimmed.length > 0) return trimmed;
+  const r = Math.round(clampRatingValue(value));
+  const tick = RATING_TICKS.find((t) => t.value === r);
+  return tick?.name ?? "Neutral";
+}
+
+function AiRatingHistoryChart({
+  data,
+  gradientId = "aiRatingLineGrad",
+}: {
+  data: HistoryPoint[];
+  gradientId?: string;
+}) {
+  const width = 560;
+  const height = 200;
+  const marginLeft = 102;
+  const marginRight = 14;
+  const marginTop = 10;
+  const marginBottom = 34;
+
+  const plotW = width - marginLeft - marginRight;
+  const plotH = height - marginTop - marginBottom;
+
+  const layout = useMemo(() => {
+    if (!data.length) return null;
+
+    const valueToY = (v: number) =>
+      marginTop +
+      ((RATING_DOMAIN.max - clampRatingValue(v)) / (RATING_DOMAIN.max - RATING_DOMAIN.min)) * plotH;
+
+    const n = data.length;
+    const xAt = (index: number) =>
+      marginLeft + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW);
+
+    const points = data.map((d, i) => ({
+      x: xAt(i),
+      y: valueToY(d.value),
+      dateLabel: formatDateLabel(d.date),
+      ratingText: displayRatingForPoint(d.value, d.label),
+    }));
+
+    const lineD = points
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+      .join(" ");
+
+    const tickYs = RATING_TICKS.map((t) => ({
+      ...t,
+      y: valueToY(t.value),
+    }));
+
+    const bandRects: {
+      y1: number;
+      y2: number;
+      key: string;
+      tone: "bull" | "weakBull" | "weakBear" | "bear";
+    }[] = [];
+    for (let i = 0; i < RATING_TICKS.length - 1; i++) {
+      const hi = RATING_TICKS[i].value;
+      const lo = RATING_TICKS[i + 1].value;
+      const yTop = valueToY(hi);
+      const yBot = valueToY(lo);
+      const key = `${hi}-${lo}`;
+      let tone: "bull" | "weakBull" | "weakBear" | "bear";
+      if (hi === 2) tone = "bull";
+      else if (lo === -2) tone = "bear";
+      else if (hi === 1) tone = "weakBull";
+      else tone = "weakBear";
+      bandRects.push({
+        y1: yTop,
+        y2: yBot,
+        key,
+        tone,
+      });
+    }
+
+    const first = data[0];
+    const last = data[data.length - 1];
+    const firstLabel = displayRatingForPoint(first.value, first.label);
+    const lastLabel = displayRatingForPoint(last.value, last.label);
+
+    const xTickIndices =
+      n <= 1
+        ? [0]
+        : n <= 4
+          ? data.map((_, i) => i)
+          : (() => {
+              const want = Math.min(6, n);
+              const out: number[] = [];
+              for (let k = 0; k < want; k++) {
+                out.push(Math.round((k / (want - 1)) * (n - 1)));
+              }
+              return [...new Set(out)].sort((a, b) => a - b);
+            })();
+
+    return {
+      points,
+      lineD,
+      tickYs,
+      bandRects,
+      firstLabel,
+      lastLabel,
+      xTickIndices,
+    };
+  }, [data, marginLeft, plotW, plotH, marginTop]);
+
+  if (!data.length) {
+    return (
+      <div className="text-center text-muted small py-4">
+        No history available yet for this metric.
+      </div>
+    );
+  }
+
+  if (!layout) return null;
+
+  const ariaLabel = `AI rating over time from ${layout.firstLabel} to ${layout.lastLabel}`;
+
+  const firstDateLabel = formatDateLabel(data[0].date);
+  const lastDateLabel = formatDateLabel(data[data.length - 1].date);
+  const rangeLabel =
+    firstDateLabel === lastDateLabel
+      ? firstDateLabel
+      : `${firstDateLabel} – ${lastDateLabel}`;
+
+  return (
+    <div className="stock-card__trends-chart-wrap stock-card__ai-rating-chart w-100">
+      <div className="d-flex align-items-center flex-wrap gap-2 mb-2 small">
+        <span
+          className={`${getRatingBadgeClass(layout.lastLabel)} stock-card__badge`}
+        >
+          <span>Latest: {toTitleCase(layout.lastLabel)}</span>
+        </span>
+        <span className="text-muted" aria-hidden>
+          •
+        </span>
+        <span className="text-muted">{rangeLabel}</span>
+      </div>
+
+      <div className="position-relative">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={ariaLabel}
+          className="stock-card__ai-rating-chart-svg"
+          style={{ width: "100%", height: "auto", minHeight: "200px" }}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#7cb342" />
+              <stop offset="100%" stopColor="#9ACD32" />
+            </linearGradient>
+          </defs>
+
+          {layout.bandRects.map((b) => (
+            <rect
+              key={b.key}
+              x={marginLeft}
+              y={b.y1}
+              width={plotW}
+              height={Math.max(0.5, b.y2 - b.y1)}
+              fill={
+                b.tone === "bull"
+                  ? "rgba(34, 197, 94, 0.14)"
+                  : b.tone === "weakBull"
+                    ? "rgba(34, 197, 94, 0.06)"
+                    : b.tone === "weakBear"
+                      ? "rgba(239, 68, 68, 0.06)"
+                      : "rgba(239, 68, 68, 0.12)"
+              }
+              className="stock-card__ai-rating-band"
+            />
+          ))}
+
+          {layout.tickYs.map((t) => (
+            <g key={t.value}>
+              <line
+                x1={marginLeft}
+                x2={marginLeft + plotW}
+                y1={t.y}
+                y2={t.y}
+                stroke={
+                  t.value === 0
+                    ? "rgba(148, 163, 184, 0.55)"
+                    : "rgba(148, 163, 184, 0.22)"
+                }
+                strokeWidth={t.value === 0 ? 1.25 : 0.75}
+                strokeDasharray={t.value === 0 ? "6 4" : undefined}
+              />
+              <text
+                x={marginLeft - 8}
+                y={t.y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                className="stock-card__ai-rating-y-label"
+                fill="currentColor"
+                style={{ fontSize: "11px", fontWeight: t.value === 0 ? 600 : 400 }}
+              >
+                {t.name}
+              </text>
+            </g>
+          ))}
+
+          <path
+            d={layout.lineD}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {layout.points.map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={4}
+              fill="var(--bs-body-bg, #fff)"
+              stroke="#9ACD32"
+              strokeWidth={2}
+            >
+              <title>{`${p.ratingText} — ${p.dateLabel}`}</title>
+            </circle>
+          ))}
+
+          {layout.xTickIndices.map((i) => {
+            const p = layout.points[i];
+            return (
+              <text
+                key={`xt-${i}`}
+                x={p.x}
+                y={height - 8}
+                textAnchor="middle"
+                fill="currentColor"
+                className="stock-card__ai-rating-x-label"
+                style={{ fontSize: "10px", opacity: 0.75 }}
+              >
+                {p.dateLabel}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -434,34 +755,18 @@ export function HistoryChartsPanel({
               )}
             {activeView === "score" ? (
               <div className="w-100">
-                <h6 className="fw-semibold mb-2">Value score over time</h6>
-                <p className="small text-muted mb-2">
-                  The score is shown as a percentage from 0–100. Rising bars
-                  suggest the company is ticking more boxes in your value
-                  checklist.
-                </p>
-                <TrendBarChart
+                <h6 className="fw-semibold mb-3">Value score over time</h6>
+                <ValueScoreHistoryChart
                   data={state.data.scoreHistory}
-                  color="#8b5cf6"
-                  valueSuffix="%"
-                  fixedDomain={{ min: 0, max: 100 }}
                   gradientId={`${collapseId}-score-gradient`}
                 />
               </div>
             ) : (
               <div className="w-100">
-                <h6 className="fw-semibold mb-2">
-                  AI rating score over time
-                </h6>
-                <p className="small text-muted mb-2">
-                  These bars show the AI&apos;s raw rating score from -2 to 2,
-                  where -2 = Strong Sell, 0 = Neutral, and 2 = Strong Buy.
-                </p>
-                <TrendBarChart
+                <h6 className="fw-semibold mb-3">AI rating over time</h6>
+                <AiRatingHistoryChart
                   data={state.data.ratingHistory}
-                  color="#9ACD32"
-                  fixedDomain={{ min: -2, max: 2 }}
-                  gradientId={`${collapseId}-rating-gradient`}
+                  gradientId={`${collapseId}-ai-rating-line`}
                 />
               </div>
             )}
