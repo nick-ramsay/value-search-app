@@ -377,12 +377,11 @@ export function HistoryChartsPanel({
           {showInlineCloseAll && onCloseThisPanel ? (
             <button
               type="button"
-              className="stock-card__close-all-inline"
+              className="stock-card__panel-close-btn"
               onClick={onCloseThisPanel}
               aria-label="Close this section"
             >
-              <i className="bi bi-chevron-up" aria-hidden />
-              Close
+              <i className="bi bi-x" aria-hidden />
             </button>
           ) : null}
         </div>

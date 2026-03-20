@@ -173,7 +173,8 @@ export default function StockResultCard({
   const { status: sessionStatus } = useSession();
   const isLoggedIn = sessionStatus === "authenticated";
 
-  const [hasAnyOpen, setHasAnyOpen] = useState(false);
+  /** Bottom "Close all" + card padding; hidden when only the company description panel is open (that panel uses the header info toggle). */
+  const [showFixedCloseAll, setShowFixedCloseAll] = useState(false);
   const [openCount, setOpenCount] = useState(0);
   const cardRef = useRef<HTMLElement>(null);
   const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
@@ -201,8 +202,12 @@ export default function StockResultCard({
     const openPanels = card.querySelectorAll(".collapse.show");
     const count = openPanels.length;
     setOpenCount(count);
-    setHasAnyOpen(count > 0);
-  }, []);
+    const onlyCompanyDescOpen =
+      count === 1 &&
+      openPanels[0] instanceof HTMLElement &&
+      openPanels[0].id === companyDescCollapseId;
+    setShowFixedCloseAll(count > 0 && !onlyCompanyDescOpen);
+  }, [companyDescCollapseId]);
 
   useEffect(() => {
     const card = cardRef.current;
@@ -258,7 +263,7 @@ export default function StockResultCard({
     if (!card) return;
 
     // Immediately hide the "Close all" buttons while accordions animate closed
-    setHasAnyOpen(false);
+    setShowFixedCloseAll(false);
     setOpenCount(0);
 
     const bootstrap = await import(
@@ -311,7 +316,7 @@ export default function StockResultCard({
   return (
     <article
       ref={cardRef}
-      className={`stock-card${compact ? " stock-card--compact" : ""}${hasAnyOpen ? " stock-card--has-open" : ""}`}
+      className={`stock-card${compact ? " stock-card--compact" : ""}${showFixedCloseAll ? " stock-card--has-open" : ""}`}
       data-symbol={item.symbol ?? undefined}
       style={{ position: "relative", ...(minHeight != null ? { minHeight: `${minHeight}px` } : {}) }}
     >
@@ -544,12 +549,11 @@ export default function StockResultCard({
             <span className="stock-card__panel-heading">AI Assessment</span>
             <button
               type="button"
-              className="stock-card__close-all-inline"
+              className="stock-card__panel-close-btn"
               onClick={() => handleClosePanel(collapseId)}
               aria-label="Close this section"
             >
-              <i className="bi bi-chevron-up" aria-hidden />
-              Close
+              <i className="bi bi-x" aria-hidden />
             </button>
           </div>
           {item.assessment ? (
@@ -670,7 +674,7 @@ export default function StockResultCard({
       />
 
       {/* Close all accordions – fixed to bottom when any is open */}
-      {hasAnyOpen ? (
+      {showFixedCloseAll ? (
         <div className="stock-card__close-all-wrap">
           <button
             type="button"
