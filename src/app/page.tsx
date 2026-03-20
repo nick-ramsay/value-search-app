@@ -623,21 +623,21 @@ function ResultsLoadingFallback() {
         <div className="card-body pt-0 page-loading-results-card-body d-flex flex-column">
           <nav
             aria-label="Results pages"
-            className="d-flex align-items-center justify-content-between mb-4"
+            className="d-flex align-items-center justify-content-between mb-3"
             aria-busy="true"
             aria-live="polite"
           >
             <span
               className="page-change-icon page-change-icon-disabled"
-              style={{ width: "40px" }}
+              style={{ width: "1.75rem" }}
               aria-hidden
             >
               <i className="bi bi-chevron-left" />
             </span>
-            <span className="align-self-center">Page 1</span>
+            <span className="pagination-page-label align-self-center">Page 1</span>
             <span
               className="page-change-icon page-change-icon-disabled"
-              style={{ width: "40px" }}
+              style={{ width: "1.75rem" }}
               aria-hidden
             >
               <i className="bi bi-chevron-right" />

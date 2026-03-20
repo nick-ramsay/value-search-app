@@ -90,9 +90,11 @@ export default function PaginationWithLoader({
           <i className="page-change-icon bi bi-chevron-left" aria-hidden />
         </button>
       ) : (
-        <span aria-hidden="true" style={{ width: "40px" }} />
+        <span aria-hidden="true" className="pagination-nav-spacer" />
       )}
-      <span className="align-self-center">Page {currentPage}</span>
+      <span className="pagination-page-label align-self-center">
+        Page {currentPage}
+      </span>
       {hasMore ? (
         <button
           type="button"
@@ -104,7 +106,7 @@ export default function PaginationWithLoader({
           <i className="page-change-icon bi bi-chevron-right" aria-hidden />
         </button>
       ) : (
-        <span aria-hidden="true" style={{ width: "40px" }} />
+        <span aria-hidden="true" className="pagination-nav-spacer" />
       )}
     </>
   );
@@ -124,7 +126,7 @@ export default function PaginationWithLoader({
       {!isFiltered ? (
         <nav
           aria-label="Results pages"
-          className="d-flex align-items-center justify-content-between mb-4"
+          className="d-flex align-items-center justify-content-between mb-3"
           style={{ pointerEvents: isPending ? "none" : undefined, opacity: isPending ? 0.7 : 1 }}
         >
           {navContent}
@@ -134,7 +136,7 @@ export default function PaginationWithLoader({
       {!isFiltered && hasMore ? (
         <nav
           aria-label="Results pages"
-          className="d-flex align-items-center justify-content-between mt-4"
+          className="d-flex align-items-center justify-content-between mt-3"
           style={{ pointerEvents: isPending ? "none" : undefined, opacity: isPending ? 0.7 : 1 }}
         >
           {navContent}

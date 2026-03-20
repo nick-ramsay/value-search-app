@@ -54,21 +54,23 @@ function PageLoadingContent() {
               <div className="card-body pt-0 page-loading-results-card-body">
                 <nav
                   aria-label="Results pages"
-                  className="d-flex align-items-center justify-content-between mb-4"
+                  className="d-flex align-items-center justify-content-between mb-3"
                   aria-busy="true"
                   aria-live="polite"
                 >
                   <span
                     className="page-change-icon page-change-icon-disabled"
-                    style={{ width: "40px", cursor: "not-allowed" }}
+                    style={{ width: "1.75rem", cursor: "not-allowed" }}
                     aria-hidden
                   >
                     <i className="bi bi-chevron-left" />
                   </span>
-                  <span className="align-self-center">Page {currentPage}</span>
+                  <span className="pagination-page-label align-self-center">
+                    Page {currentPage}
+                  </span>
                   <span
                     className="page-change-icon page-change-icon-disabled"
-                    style={{ width: "40px", cursor: "not-allowed" }}
+                    style={{ width: "1.75rem", cursor: "not-allowed" }}
                     aria-hidden
                   >
                     <i className="bi bi-chevron-right" />
@@ -134,20 +136,22 @@ function PageLoadingFallback() {
               <div className="card-body pt-0 page-loading-results-card-body">
                 <nav
                   aria-label="Results pages"
-                  className="d-flex align-items-center justify-content-between mb-4"
+                  className="d-flex align-items-center justify-content-between mb-3"
                   aria-busy="true"
                 >
                   <span
                     className="page-change-icon page-change-icon-disabled"
-                    style={{ width: "40px" }}
+                    style={{ width: "1.75rem" }}
                     aria-hidden
                   >
                     <i className="bi bi-chevron-left" />
                   </span>
-                  <span className="align-self-center">Page 1</span>
+                  <span className="pagination-page-label align-self-center">
+                    Page 1
+                  </span>
                   <span
                     className="page-change-icon page-change-icon-disabled"
-                    style={{ width: "40px" }}
+                    style={{ width: "1.75rem" }}
                     aria-hidden
                   >
                     <i className="bi bi-chevron-right" />

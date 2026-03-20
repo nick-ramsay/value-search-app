@@ -41,10 +41,10 @@
   --text-tertiary: rgba(0, 0, 0, 0.52);
   --text-on-glass: rgba(0, 0, 0, 0.92);
 
-  /* Background gradient (light – soft sunrise, taskboard-aligned) */
-  --bg-start: #f9efe0; /* focused sunrise */
-  --bg-mid: #d9f2f0;   /* calm teal */
-  --bg-end: #d6e9ff;   /* crisp sky */
+  /* Background (light) – alpine: mist → balsam haze → slate glade (linear base) */
+  --bg-start: #f5f8f7;
+  --bg-mid: #e7ede9;
+  --bg-end: #dbe4df;
 
   /* Dropdown (light) */
   --dropdown-bg: rgba(255, 255, 255, 0.85);
@@ -160,11 +160,34 @@ body {
 body {
   min-height: 100vh;
   background: linear-gradient(
-    135deg,
+    148deg,
     var(--bg-start) 0%,
-    var(--bg-mid) 40%,
+    var(--bg-mid) 42%,
     var(--bg-end) 100%
   );
+  background-attachment: fixed;
+}
+
+/* Light theme: layered “alpine forest” — ridge fog + evergreen glade */
+html[data-theme="light"] body {
+  background:
+    radial-gradient(
+      ellipse 92% 68% at 5% -10%,
+      rgba(232, 242, 246, 0.72) 0%,
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 88% 64% at 99% 104%,
+      rgba(150, 175, 162, 0.34) 0%,
+      rgba(175, 198, 186, 0.22) 44%,
+      transparent 58%
+    ),
+    linear-gradient(
+      151deg,
+      var(--bg-start) 0%,
+      var(--bg-mid) 45%,
+      var(--bg-end) 100%
+    );
   background-attachment: fixed;
 }
 
@@ -1175,25 +1198,32 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   background: color-mix(in srgb, var(--danger-glass) 85%, var(--glass-bg-strong));
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: 1px solid var(--glass-border);
+  border: none;
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   transition: background var(--transition-fast), color var(--transition-fast),
-    border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast);
 }
 .stock-card__panel-close-btn .bi {
-  font-size: 0.8rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 0;
   opacity: 0.95;
-  /* Bootstrap Icons x often sits a hair low in a circle */
-  transform: translateY(-0.06em);
+}
+/* Center glyph inside <i>; Bootstrap’s default ::before vertical-align skews optical centering */
+.stock-card__panel-close-btn .bi::before {
+  vertical-align: 0;
+  line-height: 1;
 }
 .stock-card__panel-close-btn:hover {
   background: var(--glass-bg-strong);
   color: var(--danger-clear);
-  border-color: var(--glass-border);
-  border-color: color-mix(in srgb, var(--danger-clear) 35%, var(--glass-border));
   box-shadow: var(--glass-shadow);
 }
 .stock-card__panel-close-btn:focus-visible {
@@ -1203,12 +1233,10 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 [data-theme="light"] .stock-card__panel-close-btn {
   background: rgba(255, 255, 255, 0.55);
   background: color-mix(in srgb, var(--danger-glass) 70%, rgba(255, 255, 255, 0.72));
-  border-color: rgba(15, 23, 42, 0.1);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 [data-theme="light"] .stock-card__panel-close-btn:hover {
   background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(198, 40, 40, 0.28);
 }
 
 /* Collapse panels (assessment + user notes) */
@@ -2430,9 +2458,23 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 /* Pagination / page nav */
 .page-change-icon {
   color: var(--text-primary);
-  font-size: 24px;
+  font-size: 1.125rem;
   opacity: 0.9;
   transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.pagination-page-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+/* Balance layout when prev/next chevron is missing (keeps “Page n” centered) */
+.pagination-nav-spacer {
+  display: inline-block;
+  width: 1.75rem;
+  flex-shrink: 0;
 }
 
 .page-change-icon:hover {
@@ -2474,7 +2516,7 @@ nav[aria-busy="true"][aria-label="Results pages"] {
   pointer-events: none;
 }
 
-nav[aria-busy="true"][aria-label="Results pages"] .align-self-center {
+nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   color: var(--text-secondary);
 }
 
@@ -2682,10 +2724,6 @@ a:hover {
   border-radius: 18px;
   overflow: hidden;
   box-shadow: var(--glass-shadow);
-}
-
-[data-theme="light"] .filters-accordion-glass .accordion-item {
-  background: rgba(255, 255, 255, 0.98);
 }
 
 .filters-accordion-glass .accordion-button {

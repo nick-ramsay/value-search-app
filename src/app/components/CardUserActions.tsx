@@ -86,6 +86,7 @@ export default function CardUserActions({
   useEffect(() => {
     const el = document.getElementById(userActionsCollapseId);
     if (!el) return;
+    setExpanded(el.classList.contains("show"));
     const onShown = () => setExpanded(true);
     const onHidden = () => setExpanded(false);
     el.addEventListener("shown.bs.collapse", onShown);
@@ -289,7 +290,6 @@ export default function CardUserActions({
         aria-label="Edit status and comments"
         title="Edit status and comments"
         disabled={showStatusLoader}
-        onClick={() => setExpanded((prev) => !prev)}
       >
         {showStatusLoader ? (
           <span className="stock-card__status-loading" aria-hidden="true">
