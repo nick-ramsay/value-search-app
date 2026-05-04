@@ -13,6 +13,13 @@ export MONGODB_DB="value_search"
 
 The home page reads from the `values` collection and renders up to 25 documents.
 
+### Monthly balances (signed-in users)
+
+The **Monthly balances** page (`/monthly-balances`) is protected the same way as **Portfolio**: unauthenticated visitors are redirected to `/login` (with a return URL). After you sign in, open it from the user menu in the navbar.
+
+- **Collection:** `usermonthlybalancesheets` (created automatically by Mongoose from the `UserMonthlyBalanceSheet` model).
+- **Behavior:** Each account has an ISO 4217 **currency**; asset balances are stored as positive numbers and debt balances as negative numbers. **Net** is formatted in that currency when every entered value in a month shares one currency; otherwise Net shows an em dash.
+
 First, run the development server:
 
 ```bash

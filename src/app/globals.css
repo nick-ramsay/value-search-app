@@ -3207,3 +3207,108 @@ a:hover {
     font-size: 16px !important;
   }
 }
+
+/* Monthly balances – wide glass table, sticky month + net columns */
+.monthly-balances-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg-subtle);
+}
+
+.monthly-balances-table {
+  --mb-sticky-bg: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.monthly-balances-table thead th {
+  border-bottom: 1px solid var(--glass-border-subtle);
+  vertical-align: top;
+  background: var(--mb-sticky-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.monthly-balances-table tbody th,
+.monthly-balances-table tbody td {
+  border-color: var(--glass-border-subtle);
+  vertical-align: middle;
+}
+
+.monthly-balances-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 9.5rem;
+  max-width: 12rem;
+  background: var(--mb-sticky-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 1px 0 0 var(--glass-border-subtle);
+}
+
+.monthly-balances-net-col {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: 5.5rem;
+  background: var(--mb-sticky-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: -1px 0 0 var(--glass-border-subtle);
+}
+
+.monthly-balances-month-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.monthly-balances-account-col {
+  min-width: 8.5rem;
+}
+
+.monthly-balances-cell-input {
+  min-width: 5rem;
+  max-width: 9rem;
+  margin: 0 auto;
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.monthly-balances-cell-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-glass) !important;
+  outline: none !important;
+}
+
+.monthly-balances-remove-btn {
+  font-size: 0.75rem;
+  text-decoration: none !important;
+}
+
+[data-theme="light"] .monthly-balances-table {
+  --mb-sticky-bg: rgba(255, 255, 255, 0.96);
+}
+
+[data-theme="light"] .monthly-balances-table-wrap {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .monthly-balances-cell-input {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* Monthly balances – searchable currency list */
+.monthly-balances-currency-list {
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+  z-index: 1050;
+}

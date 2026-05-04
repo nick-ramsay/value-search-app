@@ -22,6 +22,7 @@ export default function AppNavbar({
   const formAction = pathname === "/portfolio" ? "/portfolio" : "/";
 
   const isPortfolio = pathname === "/portfolio";
+  const isMonthlyBalances = pathname === "/monthly-balances";
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -108,6 +109,17 @@ export default function AppNavbar({
                       >
                         <i className="bi bi-grid" aria-hidden />
                         Portfolio
+                      </Link>
+                    </li>
+                  )}
+                  {!isMonthlyBalances && (
+                    <li>
+                      <Link
+                        href="/monthly-balances"
+                        className="dropdown-item d-flex align-items-center gap-2 py-2"
+                      >
+                        <i className="bi bi-table" aria-hidden />
+                        Monthly balances
                       </Link>
                     </li>
                   )}
