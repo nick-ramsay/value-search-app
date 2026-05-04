@@ -1,5 +1,4 @@
 import AppNavbar from "../components/AppNavbar";
-import MonthlyBalancesHeader from "./MonthlyBalancesHeader";
 import MonthlyBalancesClient from "./MonthlyBalancesClient";
 
 export default function MonthlyBalancesPage() {
@@ -9,7 +8,6 @@ export default function MonthlyBalancesPage() {
       <main className="container pt-5 mt-4">
         <div className="row justify-content-center">
           <div className="col-12 col-xl-11">
-            <MonthlyBalancesHeader />
             <MonthlyBalancesClient />
           </div>
         </div>

@@ -4,14 +4,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
 import {
-  defaultMonthRows,
   isValidAccountTypeForKind,
   monthKeyCompareDesc,
+  monthKeysInclusiveRange,
   parseMonthKey,
   formatMonthKey,
   type BalanceAccountKind,
 } from "@/lib/monthly-balances";
 import { isValidCurrencyCode } from "@/lib/iso4217-currencies";
+import {
+  ensureAustralianDollarSeed,
+  ensureCurrenciesTracked,
+  refreshStaleExchangeRates,
+  getUsdPerUnitRatesForCurrencies,
+} from "@/lib/usd-exchange-rates";
 import UserMonthlyBalanceSheet, {
   type IBalanceAccount,
   type IMonthBalanceRow,
@@ -28,15 +34,41 @@ function isMonthNotAfterToday(monthKey: string): boolean {
   return d.getTime() <= cur.getTime();
 }
 
+function isAccountArchived(a: IBalanceAccount): boolean {
+  return Boolean(a.archived);
+}
+
+function activeAccounts(accounts: IBalanceAccount[]): IBalanceAccount[] {
+  return accounts.filter((a) => !isAccountArchived(a));
+}
+
+function activeAccountIds(accounts: IBalanceAccount[]): Set<string> {
+  return new Set(activeAccounts(accounts).map((a) => a.id));
+}
+
+/** When there is at least one active account but no month rows, add the current month. Returns true if mutated. */
+function ensureMonthRowWhenHasAccounts(doc: {
+  accounts: IBalanceAccount[];
+  monthRows?: IMonthBalanceRow[] | null;
+}): boolean {
+  if (!doc.monthRows) doc.monthRows = [];
+  if (activeAccounts(doc.accounts).length === 0 || doc.monthRows.length > 0) return false;
+  doc.monthRows = [{ monthKey: currentMonthKey(), balances: {} }];
+  return true;
+}
+
 function serializeSheet(doc: {
   accounts: IBalanceAccount[];
-  monthRows: IMonthBalanceRow[];
+  monthRows?: IMonthBalanceRow[] | null;
 }) {
-  const monthRows = [...doc.monthRows].sort((a: IMonthBalanceRow, b: IMonthBalanceRow) =>
+  const rawRows = doc.monthRows ?? [];
+  const monthRows = [...rawRows].sort((a: IMonthBalanceRow, b: IMonthBalanceRow) =>
     monthKeyCompareDesc(a.monthKey, b.monthKey),
   );
+  const visible = activeAccounts(doc.accounts);
+  const visibleIds = activeAccountIds(doc.accounts);
   return {
-    accounts: doc.accounts.map((a) => ({
+    accounts: visible.map((a) => ({
       id: a.id,
       name: a.name,
       kind: a.kind,
@@ -46,11 +78,38 @@ function serializeSheet(doc: {
           ? a.currency.trim().toUpperCase()
           : "USD",
     })),
-    monthRows: monthRows.map((row) => ({
-      monthKey: row.monthKey,
-      balances: { ...(row.balances ?? {}) },
-    })),
+    monthRows: monthRows.map((row) => {
+      const b = (row.balances ?? {}) as Record<string, unknown>;
+      const balances = Object.fromEntries(
+        Object.entries(b).filter(
+          ([id, v]) =>
+            visibleIds.has(id) && typeof v === "number" && Number.isFinite(v),
+        ),
+      ) as Record<string, number>;
+      return {
+        monthKey: row.monthKey,
+        balances,
+      };
+    }),
   };
+}
+
+type MonthlyBalancesDoc = {
+  accounts: IBalanceAccount[];
+  monthRows?: IMonthBalanceRow[] | null;
+};
+
+/** Serialized sheet plus `rates` (USD per 1 unit of each currency used by active accounts). */
+async function monthlyBalancesPayload(doc: MonthlyBalancesDoc | null) {
+  await ensureAustralianDollarSeed();
+  const base = doc ? serializeSheet(doc) : { accounts: [], monthRows: [] };
+  const currencies = base.accounts.map((a) => a.currency.toUpperCase());
+  await ensureCurrenciesTracked(currencies);
+  await refreshStaleExchangeRates(currencies);
+  const rates = await getUsdPerUnitRatesForCurrencies(
+    currencies.length > 0 ? currencies : ["USD"],
+  );
+  return { ...base, rates };
 }
 
 async function getOrCreateSheet(userId: string) {
@@ -59,10 +118,12 @@ async function getOrCreateSheet(userId: string) {
     doc = await UserMonthlyBalanceSheet.create({
       userId,
       accounts: [],
-      monthRows: defaultMonthRows(12),
+      monthRows: [],
     });
-  } else if (!doc.monthRows || doc.monthRows.length === 0) {
-    doc.monthRows = defaultMonthRows(12);
+    return doc;
+  }
+  if (ensureMonthRowWhenHasAccounts(doc)) {
+    doc.markModified("monthRows");
     await doc.save();
   }
   return doc;
@@ -76,16 +137,13 @@ export async function GET() {
   await connectDB();
   const doc = await UserMonthlyBalanceSheet.findOne({ userId: session.user.id });
   if (!doc) {
-    return NextResponse.json({
-      accounts: [],
-      monthRows: defaultMonthRows(12),
-    });
+    return NextResponse.json(await monthlyBalancesPayload(null));
   }
-  if (!doc.monthRows || doc.monthRows.length === 0) {
-    doc.monthRows = defaultMonthRows(12);
+  if (ensureMonthRowWhenHasAccounts(doc)) {
+    doc.markModified("monthRows");
     await doc.save();
   }
-  return NextResponse.json(serializeSheet(doc));
+  return NextResponse.json(await monthlyBalancesPayload(doc));
 }
 
 type PatchBody =
@@ -97,6 +155,15 @@ type PatchBody =
       currency: string;
     }
   | { op: "removeAccount"; accountId: string }
+  | { op: "restoreAccount"; accountId: string }
+  | {
+      op: "updateAccount";
+      accountId: string;
+      name: string;
+      kind: BalanceAccountKind;
+      accountType: string;
+      currency: string;
+    }
   | {
       op: "setCell";
       monthKey: string;
@@ -104,7 +171,8 @@ type PatchBody =
       /** Positive magnitude; server applies sign from account kind. Null clears. */
       amount: number | null;
     }
-  | { op: "addMonth"; monthKey: string };
+  | { op: "addMonth"; monthKey: string }
+  | { op: "addMonthRange"; fromMonthKey: string; throughMonthKey: string };
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
@@ -144,17 +212,45 @@ export async function PATCH(request: Request) {
     if (!currencyRaw || !isValidCurrencyCode(currencyRaw)) {
       return NextResponse.json({ message: "Invalid currency" }, { status: 400 });
     }
+    await ensureCurrenciesTracked([currencyRaw]);
     const doc = await getOrCreateSheet(userId);
+    if (
+      doc.accounts.some(
+        (a: IBalanceAccount) => !isAccountArchived(a) && a.name === name,
+      )
+    ) {
+      return NextResponse.json(
+        { message: "An account with this name already exists." },
+        { status: 409 },
+      );
+    }
+    const archivedSameName = doc.accounts.find(
+      (a: IBalanceAccount) => isAccountArchived(a) && a.name === name,
+    );
+    if (archivedSameName) {
+      return NextResponse.json(
+        {
+          code: "ARCHIVED_ACCOUNT_EXISTS",
+          message: `An archived account named "${name}" already exists. Restore it instead of creating a new one.`,
+          archivedAccountId: archivedSameName.id,
+        },
+        { status: 409 },
+      );
+    }
     const account: IBalanceAccount = {
       id: randomUUID(),
       name,
       kind: body.kind,
       accountType,
       currency: currencyRaw,
+      archived: false,
     };
     doc.accounts = [...doc.accounts, account];
+    if (ensureMonthRowWhenHasAccounts(doc)) {
+      doc.markModified("monthRows");
+    }
     await doc.save();
-    return NextResponse.json(serializeSheet(doc));
+    return NextResponse.json(await monthlyBalancesPayload(doc));
   }
 
   if (body.op === "removeAccount") {
@@ -165,17 +261,136 @@ export async function PATCH(request: Request) {
     }
     const doc = await UserMonthlyBalanceSheet.findOne({ userId });
     if (!doc) {
-      return NextResponse.json({ accounts: [], monthRows: defaultMonthRows(12) });
+      return NextResponse.json(await monthlyBalancesPayload(null));
     }
-    doc.accounts = doc.accounts.filter((a: IBalanceAccount) => a.id !== accountId);
-    for (const row of doc.monthRows) {
-      const b = row.balances as Record<string, number>;
-      if (b && accountId in b) {
-        delete b[accountId];
-      }
+    const acc = doc.accounts.find((a: IBalanceAccount) => a.id === accountId);
+    if (!acc) {
+      return NextResponse.json({ message: "Unknown account" }, { status: 404 });
+    }
+    if (isAccountArchived(acc)) {
+      return NextResponse.json(await monthlyBalancesPayload(doc));
+    }
+    acc.archived = true;
+    doc.markModified("accounts");
+    await doc.save();
+    return NextResponse.json(await monthlyBalancesPayload(doc));
+  }
+
+  if (body.op === "restoreAccount") {
+    const accountId =
+      typeof body.accountId === "string" ? body.accountId.trim() : "";
+    if (!accountId) {
+      return NextResponse.json({ message: "accountId required" }, { status: 400 });
+    }
+    const doc = await getOrCreateSheet(userId);
+    const acc = doc.accounts.find((a: IBalanceAccount) => a.id === accountId);
+    if (!acc) {
+      return NextResponse.json({ message: "Unknown account" }, { status: 404 });
+    }
+    if (!isAccountArchived(acc)) {
+      return NextResponse.json({ message: "Account is not archived" }, { status: 400 });
+    }
+    if (
+      doc.accounts.some(
+        (a: IBalanceAccount) =>
+          !isAccountArchived(a) && a.id !== accountId && a.name === acc.name,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "An active account already uses this name. Rename or archive it before restoring.",
+        },
+        { status: 409 },
+      );
+    }
+    acc.archived = false;
+    doc.markModified("accounts");
+    if (ensureMonthRowWhenHasAccounts(doc)) {
+      doc.markModified("monthRows");
     }
     await doc.save();
-    return NextResponse.json(serializeSheet(doc));
+    return NextResponse.json(await monthlyBalancesPayload(doc));
+  }
+
+  if (body.op === "updateAccount") {
+    const accountId =
+      typeof body.accountId === "string" ? body.accountId.trim() : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    if (!accountId || !name || name.length > 120) {
+      return NextResponse.json({ message: "Invalid account" }, { status: 400 });
+    }
+    if (body.kind !== "Asset" && body.kind !== "Debt") {
+      return NextResponse.json({ message: "Invalid kind" }, { status: 400 });
+    }
+    const accountType =
+      typeof body.accountType === "string" ? body.accountType.trim() : "";
+    if (!isValidAccountTypeForKind(body.kind, accountType)) {
+      return NextResponse.json({ message: "Invalid account type" }, { status: 400 });
+    }
+    const currencyRaw =
+      typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "";
+    if (!currencyRaw || !isValidCurrencyCode(currencyRaw)) {
+      return NextResponse.json({ message: "Invalid currency" }, { status: 400 });
+    }
+
+    const doc = await UserMonthlyBalanceSheet.findOne({ userId });
+    if (!doc) {
+      return NextResponse.json({ message: "No sheet" }, { status: 404 });
+    }
+    const acc = doc.accounts.find((a: IBalanceAccount) => a.id === accountId);
+    if (!acc || isAccountArchived(acc)) {
+      return NextResponse.json({ message: "Unknown account" }, { status: 404 });
+    }
+
+    if (
+      doc.accounts.some(
+        (a: IBalanceAccount) =>
+          !isAccountArchived(a) && a.id !== accountId && a.name === name,
+      )
+    ) {
+      return NextResponse.json(
+        { message: "An account with this name already exists." },
+        { status: 409 },
+      );
+    }
+    const archivedSameName = doc.accounts.find(
+      (a: IBalanceAccount) =>
+        isAccountArchived(a) && a.name === name && a.id !== accountId,
+    );
+    if (archivedSameName) {
+      return NextResponse.json(
+        {
+          code: "ARCHIVED_ACCOUNT_EXISTS",
+          message: `An archived account named "${name}" already exists. Restore it instead of renaming to this name.`,
+          archivedAccountId: archivedSameName.id,
+        },
+        { status: 409 },
+      );
+    }
+
+    const oldKind = acc.kind;
+    const newKind = body.kind;
+    if (oldKind !== newKind) {
+      for (const row of doc.monthRows ?? []) {
+        const balances = (row.balances ?? {}) as Record<string, number>;
+        if (!(accountId in balances)) continue;
+        const v = balances[accountId];
+        if (typeof v !== "number" || !Number.isFinite(v)) continue;
+        const mag = Math.abs(v);
+        balances[accountId] = newKind === "Debt" ? -mag : mag;
+        row.balances = { ...balances };
+      }
+      doc.markModified("monthRows");
+    }
+
+    acc.name = name;
+    acc.kind = newKind;
+    acc.accountType = accountType;
+    acc.currency = currencyRaw;
+    doc.markModified("accounts");
+    await doc.save();
+    return NextResponse.json(await monthlyBalancesPayload(doc));
   }
 
   if (body.op === "addMonth") {
@@ -191,15 +406,69 @@ export async function PATCH(request: Request) {
       );
     }
     const doc = await getOrCreateSheet(userId);
-    if (doc.monthRows.some((r: IMonthBalanceRow) => r.monthKey === monthKey)) {
+    const existingMonths = doc.monthRows ?? [];
+    if (existingMonths.some((r: IMonthBalanceRow) => r.monthKey === monthKey)) {
       return NextResponse.json({ message: "Month already exists" }, { status: 409 });
     }
-    doc.monthRows = [...doc.monthRows, { monthKey, balances: {} }].sort(
+    doc.monthRows = [...existingMonths, { monthKey, balances: {} }].sort(
       (a: IMonthBalanceRow, b: IMonthBalanceRow) =>
         monthKeyCompareDesc(a.monthKey, b.monthKey),
     );
+    doc.markModified("monthRows");
     await doc.save();
-    return NextResponse.json(serializeSheet(doc));
+    return NextResponse.json(await monthlyBalancesPayload(doc));
+  }
+
+  if (body.op === "addMonthRange") {
+    const fromRaw =
+      typeof body.fromMonthKey === "string" ? body.fromMonthKey.trim() : "";
+    const throughRaw =
+      typeof body.throughMonthKey === "string" ? body.throughMonthKey.trim() : "";
+    const fromD = parseMonthKey(fromRaw);
+    const throughD = parseMonthKey(throughRaw);
+    if (!fromD || !throughD) {
+      return NextResponse.json({ message: "Invalid month" }, { status: 400 });
+    }
+    if (fromD.getTime() > throughD.getTime()) {
+      return NextResponse.json(
+        {
+          message: "From month must be the same as or earlier than Through month.",
+        },
+        { status: 400 },
+      );
+    }
+    const keys = monthKeysInclusiveRange(fromRaw, throughRaw);
+    for (const k of keys) {
+      if (!isMonthNotAfterToday(k)) {
+        return NextResponse.json(
+          { message: "Month cannot be in the future" },
+          { status: 400 },
+        );
+      }
+    }
+    const doc = await getOrCreateSheet(userId);
+    const existingMonths = doc.monthRows ?? [];
+    const existingSet = new Set(
+      existingMonths.map((r: IMonthBalanceRow) => r.monthKey),
+    );
+    const toAdd = keys.filter((k) => !existingSet.has(k));
+    if (toAdd.length === 0) {
+      return NextResponse.json(
+        { message: "All months in that range are already in the table." },
+        { status: 400 },
+      );
+    }
+    const newRows: IMonthBalanceRow[] = toAdd.map((monthKey) => ({
+      monthKey,
+      balances: {},
+    }));
+    doc.monthRows = [...existingMonths, ...newRows].sort(
+      (a: IMonthBalanceRow, b: IMonthBalanceRow) =>
+        monthKeyCompareDesc(a.monthKey, b.monthKey),
+    );
+    doc.markModified("monthRows");
+    await doc.save();
+    return NextResponse.json(await monthlyBalancesPayload(doc));
   }
 
   if (body.op === "setCell") {
@@ -217,10 +486,13 @@ export async function PATCH(request: Request) {
       );
     }
     const doc = await getOrCreateSheet(userId);
-    const account = doc.accounts.find((a: IBalanceAccount) => a.id === accountId);
+    const account = doc.accounts.find(
+      (a: IBalanceAccount) => a.id === accountId && !isAccountArchived(a),
+    );
     if (!account) {
       return NextResponse.json({ message: "Unknown account" }, { status: 400 });
     }
+    if (!doc.monthRows) doc.monthRows = [];
     let row = doc.monthRows.find((r: IMonthBalanceRow) => r.monthKey === monthKey);
     if (!row) {
       row = { monthKey, balances: {} };
@@ -241,9 +513,10 @@ export async function PATCH(request: Request) {
       balances[accountId] =
         account.kind === "Debt" ? -magnitude : magnitude;
     }
-    row.balances = balances;
+    row.balances = { ...balances };
+    doc.markModified("monthRows");
     await doc.save();
-    return NextResponse.json(serializeSheet(doc));
+    return NextResponse.json(await monthlyBalancesPayload(doc));
   }
 
   return NextResponse.json({ message: "Unknown op" }, { status: 400 });

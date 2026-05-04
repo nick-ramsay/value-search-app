@@ -61,6 +61,20 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  events: {
+    async signIn({ user }) {
+      const id = user?.id;
+      if (!id || typeof id !== "string") return;
+      try {
+        const { refreshExchangeRatesForUserOnLogin } = await import(
+          "@/lib/usd-exchange-rates"
+        );
+        await refreshExchangeRatesForUserOnLogin(id);
+      } catch (e) {
+        console.error("[auth] exchange rate refresh on sign-in", e);
+      }
+    },
+  },
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   secret:
     process.env.NEXTAUTH_SECRET ||

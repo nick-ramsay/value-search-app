@@ -65,12 +65,14 @@ export default function AppNavbar({
             className="ms-auto d-flex align-items-center gap-2"
             style={{ minWidth: 0 }}
           >
-            <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
-              <SearchBar
-                initialQuery={searchSelected ? "" : searchInitialQuery}
-                formAction={formAction}
-              />
-            </div>
+            {!isMonthlyBalances ? (
+              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
+                <SearchBar
+                  initialQuery={searchSelected ? "" : searchInitialQuery}
+                  formAction={formAction}
+                />
+              </div>
+            ) : null}
 
             {status === "authenticated" ? (
               <div className="dropdown">

@@ -7,6 +7,8 @@ export interface IBalanceAccount {
   accountType: string;
   /** ISO 4217 code, e.g. USD */
   currency: string;
+  /** When true, account is hidden from the UI but kept for restore and history. */
+  archived?: boolean;
 }
 
 export interface IMonthBalanceRow {
@@ -27,6 +29,7 @@ const BalanceAccountSchema = new mongoose.Schema<IBalanceAccount>(
     kind: { type: String, enum: ["Asset", "Debt"], required: true },
     accountType: { type: String, required: true },
     currency: { type: String, required: true, default: "USD", trim: true, uppercase: true },
+    archived: { type: Boolean, default: false },
   },
   { _id: false },
 );

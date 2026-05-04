@@ -62,3 +62,25 @@ export function isValidAccountTypeForKind(
 export function monthKeyCompareDesc(a: string, b: string): number {
   return a < b ? 1 : a > b ? -1 : 0;
 }
+
+/**
+ * Inclusive calendar months from `fromMonthKey` through `throughMonthKey`, ascending.
+ * Returns [] if either key is invalid or if From is chronologically after Through.
+ */
+export function monthKeysInclusiveRange(
+  fromMonthKey: string,
+  throughMonthKey: string,
+): string[] {
+  const from = parseMonthKey(fromMonthKey.trim());
+  const through = parseMonthKey(throughMonthKey.trim());
+  if (!from || !through) return [];
+  if (from.getTime() > through.getTime()) return [];
+  const keys: string[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(through.getFullYear(), through.getMonth(), 1);
+  while (cur.getTime() <= end.getTime()) {
+    keys.push(formatMonthKey(cur));
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return keys;
+}
