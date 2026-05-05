@@ -23,6 +23,8 @@ export default function AppNavbar({
 
   const isPortfolio = pathname === "/portfolio";
   const isMonthlyBalances = pathname === "/monthly-balances";
+  /** Main table + CSV upload and other sub-routes: no stock search in the bar */
+  const hideNavbarSearch = pathname?.startsWith("/monthly-balances") ?? false;
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -65,7 +67,7 @@ export default function AppNavbar({
             className="ms-auto d-flex align-items-center gap-2"
             style={{ minWidth: 0 }}
           >
-            {!isMonthlyBalances ? (
+            {!hideNavbarSearch ? (
               <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
                 <SearchBar
                   initialQuery={searchSelected ? "" : searchInitialQuery}

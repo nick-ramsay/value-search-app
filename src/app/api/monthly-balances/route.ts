@@ -11,6 +11,7 @@ import {
   formatMonthKey,
   type BalanceAccountKind,
 } from "@/lib/monthly-balances";
+import { roundMoney2 } from "@/lib/csv-monthly-balance-import";
 import { isValidCurrencyCode } from "@/lib/iso4217-currencies";
 import {
   ensureAustralianDollarSeed,
@@ -172,7 +173,23 @@ type PatchBody =
       amount: number | null;
     }
   | { op: "addMonth"; monthKey: string }
-  | { op: "addMonthRange"; fromMonthKey: string; throughMonthKey: string };
+  | { op: "addMonthRange"; fromMonthKey: string; throughMonthKey: string }
+  | {
+      op: "wizardImport";
+      /** merge = append accounts & balances (default); replace = purge sheet then import only */
+      sheetMode?: "merge" | "replace";
+      accounts: Array<{
+        name: string;
+        kind: BalanceAccountKind;
+        accountType: string;
+        currency: string;
+      }>;
+      monthRows: Array<{
+        monthKey: string;
+        /** Positive magnitude per account index; null skips the cell */
+        amounts: Array<number | null>;
+      }>;
+    };
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
@@ -466,6 +483,188 @@ export async function PATCH(request: Request) {
       (a: IMonthBalanceRow, b: IMonthBalanceRow) =>
         monthKeyCompareDesc(a.monthKey, b.monthKey),
     );
+    doc.markModified("monthRows");
+    await doc.save();
+    return NextResponse.json(await monthlyBalancesPayload(doc));
+  }
+
+  if (body.op === "wizardImport") {
+    if (!Array.isArray(body.accounts) || !Array.isArray(body.monthRows)) {
+      return NextResponse.json({ message: "Invalid wizard import" }, { status: 400 });
+    }
+    if (body.accounts.length === 0) {
+      return NextResponse.json(
+        { message: "At least one account is required." },
+        { status: 400 },
+      );
+    }
+    for (const a of body.accounts) {
+      const name = typeof a.name === "string" ? a.name.trim() : "";
+      if (!name || name.length > 120) {
+        return NextResponse.json({ message: "Invalid account name" }, { status: 400 });
+      }
+      if (a.kind !== "Asset" && a.kind !== "Debt") {
+        return NextResponse.json({ message: "Invalid kind" }, { status: 400 });
+      }
+      const accountType =
+        typeof a.accountType === "string" ? a.accountType.trim() : "";
+      if (!isValidAccountTypeForKind(a.kind, accountType)) {
+        return NextResponse.json({ message: "Invalid account type" }, { status: 400 });
+      }
+      const currencyRaw =
+        typeof a.currency === "string" ? a.currency.trim().toUpperCase() : "";
+      if (!currencyRaw || !isValidCurrencyCode(currencyRaw)) {
+        return NextResponse.json({ message: "Invalid currency" }, { status: 400 });
+      }
+    }
+    const namesInPayload = new Set<string>();
+    for (const a of body.accounts) {
+      const name = (a.name as string).trim();
+      if (namesInPayload.has(name)) {
+        return NextResponse.json(
+          { message: `Duplicate account name in import: "${name}".` },
+          { status: 400 },
+        );
+      }
+      namesInPayload.add(name);
+    }
+
+    const sheetMode =
+      body.sheetMode === "replace" ? "replace" : "merge";
+
+    const doc = await getOrCreateSheet(userId);
+
+    if (sheetMode === "merge") {
+      for (const a of body.accounts) {
+        const name = (a.name as string).trim();
+        if (
+          doc.accounts.some(
+            (x: IBalanceAccount) => !isAccountArchived(x) && x.name === name,
+          )
+        ) {
+          return NextResponse.json(
+            {
+              message: `An account named "${name}" already exists. Rename it in your sheet or archive the existing account first.`,
+            },
+            { status: 409 },
+          );
+        }
+        const archivedSameName = doc.accounts.find(
+          (x: IBalanceAccount) => isAccountArchived(x) && x.name === name,
+        );
+        if (archivedSameName) {
+          return NextResponse.json(
+            {
+              code: "ARCHIVED_ACCOUNT_EXISTS",
+              message: `An archived account named "${name}" already exists. Restore or remove it before importing.`,
+              archivedAccountId: archivedSameName.id,
+            },
+            { status: 409 },
+          );
+        }
+      }
+    }
+
+    const n = body.accounts.length;
+    const newAccounts: IBalanceAccount[] = body.accounts.map((a) => {
+      const name = (a.name as string).trim();
+      const accountType = (a.accountType as string).trim();
+      const currencyRaw = (a.currency as string).trim().toUpperCase();
+      return {
+        id: randomUUID(),
+        name,
+        kind: a.kind,
+        accountType,
+        currency: currencyRaw,
+        archived: false,
+      };
+    });
+
+    for (const cur of new Set(
+      newAccounts.map((a) => a.currency.toUpperCase()),
+    )) {
+      await ensureCurrenciesTracked([cur]);
+    }
+
+    for (const row of body.monthRows) {
+      const monthKey = typeof row.monthKey === "string" ? row.monthKey.trim() : "";
+      if (!parseMonthKey(monthKey)) {
+        return NextResponse.json({ message: "Invalid month in import" }, { status: 400 });
+      }
+      if (!isMonthNotAfterToday(monthKey)) {
+        return NextResponse.json(
+          { message: "Month cannot be in the future" },
+          { status: 400 },
+        );
+      }
+      if (!Array.isArray(row.amounts) || row.amounts.length !== n) {
+        return NextResponse.json(
+          { message: "Each row must include one amount per account." },
+          { status: 400 },
+        );
+      }
+      for (const amt of row.amounts) {
+        if (amt === null || amt === undefined) continue;
+        const raw = Number(amt);
+        if (!Number.isFinite(raw) || raw < 0) {
+          return NextResponse.json(
+            { message: "Amounts must be non-negative magnitudes." },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
+    if (sheetMode === "replace") {
+      doc.accounts = newAccounts;
+      const builtRows: IMonthBalanceRow[] = [];
+      for (const row of body.monthRows) {
+        const monthKey = row.monthKey.trim();
+        const balances = {} as Record<string, number>;
+        for (let i = 0; i < n; i += 1) {
+          const amt = row.amounts[i];
+          if (amt === null || amt === undefined) continue;
+          const magnitude = roundMoney2(Math.abs(Number(amt)));
+          const acc = newAccounts[i];
+          balances[acc.id] = acc.kind === "Debt" ? -magnitude : magnitude;
+        }
+        builtRows.push({ monthKey, balances });
+      }
+      builtRows.sort((a: IMonthBalanceRow, b: IMonthBalanceRow) =>
+        monthKeyCompareDesc(a.monthKey, b.monthKey),
+      );
+      doc.monthRows = builtRows;
+      doc.markModified("accounts");
+      doc.markModified("monthRows");
+      await doc.save();
+      return NextResponse.json(await monthlyBalancesPayload(doc));
+    }
+
+    doc.accounts = [...doc.accounts, ...newAccounts];
+    if (!doc.monthRows) doc.monthRows = [];
+
+    for (const row of body.monthRows) {
+      const monthKey = row.monthKey.trim();
+      let target = doc.monthRows.find((r: IMonthBalanceRow) => r.monthKey === monthKey);
+      if (!target) {
+        target = { monthKey, balances: {} };
+        doc.monthRows.push(target);
+        doc.monthRows.sort((a: IMonthBalanceRow, b: IMonthBalanceRow) =>
+          monthKeyCompareDesc(a.monthKey, b.monthKey),
+        );
+      }
+      const balances = { ...(target.balances ?? {}) } as Record<string, number>;
+      for (let i = 0; i < n; i += 1) {
+        const amt = row.amounts[i];
+        if (amt === null || amt === undefined) continue;
+        const magnitude = roundMoney2(Math.abs(Number(amt)));
+        const acc = newAccounts[i];
+        balances[acc.id] = acc.kind === "Debt" ? -magnitude : magnitude;
+      }
+      target.balances = balances;
+    }
+
+    doc.markModified("accounts");
     doc.markModified("monthRows");
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));

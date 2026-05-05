@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -183,6 +184,19 @@ function normalizeMonthRows(rows: unknown): MonthRow[] {
   }
   parsed.sort((a, b) => monthKeyCompareDesc(a.monthKey, b.monthKey));
   return parsed;
+}
+
+/** Bootstrap `md` — table vs stacked cards; only one layout mounts (avoids duplicate balance input ids). */
+function useMediaMinMd(): boolean {
+  const [matches, setMatches] = useState(false);
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setMatches(mq.matches);
+    const handler = () => setMatches(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return matches;
 }
 
 export default function MonthlyBalancesClient() {
@@ -844,6 +858,86 @@ export default function MonthlyBalancesClient() {
     return typeof v === "number" && Number.isFinite(v) ? v : undefined;
   };
 
+  const isDesktopTable = useMediaMinMd();
+
+  const renderAccountBalanceEditor = (monthKey: string, a: Account) => {
+    const signed = getSigned(monthKey, a.id);
+    const key = makeCellBufferKey(monthKey, a.id);
+    const buffer = buffers[key];
+    const display =
+      buffer !== undefined ? buffer : signedToDisplayMagnitude(a, signed);
+    const trendClassEditing = cellTrendToneClass(
+      monthRows,
+      monthKey,
+      a,
+      buffer,
+      signed,
+      getSigned,
+    );
+    const trendClassDisplay = cellTrendToneClass(
+      monthRows,
+      monthKey,
+      a,
+      undefined,
+      signed,
+      getSigned,
+    );
+    const trendClass =
+      editingCellKey === key ? trendClassEditing : trendClassDisplay;
+    const inputId = `cell-${monthKey}-${a.id}`;
+    const displayText = display.trim() === "" ? "—" : display;
+    if (editingCellKey === key) {
+      return (
+        <>
+          <label className="visually-hidden" htmlFor={inputId}>
+            {a.name} balance for {formatMonthLabel(monthKey)}
+          </label>
+          <input
+            id={inputId}
+            className={`form-control form-control-sm monthly-balances-cell-input text-end${trendClass ? ` ${trendClass}` : ""}`}
+            inputMode="decimal"
+            placeholder="—"
+            value={display}
+            onChange={(e) => {
+              const v = e.target.value;
+              setBuffers((prev) => ({ ...prev, [key]: v }));
+              const mag = parseInputToMagnitude(v);
+              scheduleCellSave(monthKey, a.id, mag);
+            }}
+            onBlur={() => {
+              const mag = parseInputToMagnitude(
+                buffers[key] ?? signedToDisplayMagnitude(a, signed),
+              );
+              setBuffers((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+              });
+              void flushSave(monthKey, a.id, mag).catch((err) => {
+                setError(err instanceof Error ? err.message : "Save failed");
+              });
+              const tkey = makeCellBufferKey(monthKey, a.id);
+              const prevT = debouncers.current.get(tkey);
+              if (prevT) window.clearTimeout(prevT);
+              debouncers.current.delete(tkey);
+              setEditingCellKey(null);
+            }}
+          />
+        </>
+      );
+    }
+    return (
+      <button
+        type="button"
+        className={`monthly-balances-cell-display${trendClass ? ` ${trendClass}` : ""}`}
+        aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${display === "" || display.trim() === "" ? "empty" : display}. Click to edit.`}
+        onClick={() => setEditingCellKey(key)}
+      >
+        {displayText}
+      </button>
+    );
+  };
+
   if (status === "loading") {
     return (
       <div className="d-flex align-items-center justify-content-center py-5 gap-2 text-secondary">
@@ -874,6 +968,13 @@ export default function MonthlyBalancesClient() {
         <div className="card-body monthly-balances-card-body">
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <h2 className="h5 mb-0">Monthly Balances</h2>
+            <Link
+              href="/monthly-balances/upload"
+              className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
+            >
+              <i className="bi bi-file-earmark-arrow-up me-1" aria-hidden />
+              Upload from CSV
+            </Link>
           </div>
 
           <div className="mb-3">
@@ -1217,7 +1318,9 @@ export default function MonthlyBalancesClient() {
               ) : null}
 
               {accounts.length === 0 && monthRows.length === 0 ? null : (
-                <div className="monthly-balances-table-wrap">
+                <>
+                  {isDesktopTable ? (
+                    <div className="monthly-balances-table-wrap">
                   <table className="table monthly-balances-table mb-0">
                 <thead>
                   <tr>
@@ -1286,92 +1389,14 @@ export default function MonthlyBalancesClient() {
                         >
                           {formatMonthLabel(row.monthKey)}
                         </th>
-                        {accounts.map((a) => {
-                          const signed = getSigned(row.monthKey, a.id);
-                          const key = makeCellBufferKey(row.monthKey, a.id);
-                          const buffer = buffers[key];
-                          const display =
-                            buffer !== undefined
-                              ? buffer
-                              : signedToDisplayMagnitude(a, signed);
-                          const trendClassEditing = cellTrendToneClass(
-                            monthRows,
-                            row.monthKey,
-                            a,
-                            buffer,
-                            signed,
-                            getSigned,
-                          );
-                          const trendClassDisplay = cellTrendToneClass(
-                            monthRows,
-                            row.monthKey,
-                            a,
-                            undefined,
-                            signed,
-                            getSigned,
-                          );
-                          const trendClass =
-                            editingCellKey === key ? trendClassEditing : trendClassDisplay;
-                          const inputId = `cell-${row.monthKey}-${a.id}`;
-                          const displayText =
-                            display.trim() === "" ? "—" : display;
-                          return (
-                            <td
-                              key={a.id}
-                              className="align-middle text-center monthly-balances-account-col"
-                            >
-                              {editingCellKey === key ? (
-                                <>
-                                  <label className="visually-hidden" htmlFor={inputId}>
-                                    {a.name} balance for {formatMonthLabel(row.monthKey)}
-                                  </label>
-                                  <input
-                                    id={inputId}
-                                    className={`form-control form-control-sm monthly-balances-cell-input text-end${trendClass ? ` ${trendClass}` : ""}`}
-                                    inputMode="decimal"
-                                    placeholder="—"
-                                    value={display}
-                                    onChange={(e) => {
-                                      const v = e.target.value;
-                                      setBuffers((prev) => ({ ...prev, [key]: v }));
-                                      const mag = parseInputToMagnitude(v);
-                                      scheduleCellSave(row.monthKey, a.id, mag);
-                                    }}
-                                    onBlur={() => {
-                                      const mag = parseInputToMagnitude(
-                                        buffers[key] ?? signedToDisplayMagnitude(a, signed),
-                                      );
-                                      setBuffers((prev) => {
-                                        const next = { ...prev };
-                                        delete next[key];
-                                        return next;
-                                      });
-                                      void flushSave(row.monthKey, a.id, mag).catch((err) => {
-                                        setError(
-                                          err instanceof Error ? err.message : "Save failed",
-                                        );
-                                      });
-                                      const tkey = makeCellBufferKey(row.monthKey, a.id);
-                                      const prevT = debouncers.current.get(tkey);
-                                      if (prevT) window.clearTimeout(prevT);
-                                      debouncers.current.delete(tkey);
-                                      setEditingCellKey(null);
-                                    }}
-                                  />
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className={`monthly-balances-cell-display${trendClass ? ` ${trendClass}` : ""}`}
-                                  aria-label={`${a.name} for ${formatMonthLabel(row.monthKey)}: ${display === "" || display.trim() === "" ? "empty" : display}. Click to edit.`}
-                                  onClick={() => setEditingCellKey(key)}
-                                >
-                                  {displayText}
-                                </button>
-                              )}
-                            </td>
-                          );
-                        })}
+                        {accounts.map((a) => (
+                          <td
+                            key={a.id}
+                            className="align-middle text-center monthly-balances-account-col"
+                          >
+                            {renderAccountBalanceEditor(row.monthKey, a)}
+                          </td>
+                        ))}
                         {accounts.length > 0 ? (
                           <td
                             className={`text-end fw-semibold monthly-balances-net-col monthly-balances-net-cell ${netClass}`}
@@ -1392,6 +1417,104 @@ export default function MonthlyBalancesClient() {
                 </tbody>
                   </table>
                 </div>
+                  ) : (
+                    <div
+                      className="monthly-balances-mobile-stack"
+                      role="list"
+                      aria-label="Balances by month"
+                    >
+                      {monthRows.map((row) => {
+                        const summary = netSummaryForMonth(
+                          row.monthKey,
+                          accounts,
+                          getSigned,
+                          usdRates,
+                        );
+                        const netText =
+                          summary.kind === "ok"
+                            ? formatMoneyAmount(summary.net, summary.currency)
+                            : "—";
+                        const netClass =
+                          summary.kind === "empty"
+                            ? "text-secondary"
+                            : summary.kind === "mixed"
+                              ? "text-secondary"
+                              : summary.net >= 0
+                                ? "text-success"
+                                : "text-danger";
+                        return (
+                          <article
+                            key={row.monthKey}
+                            className="monthly-balances-month-card"
+                            role="listitem"
+                          >
+                            <div className="monthly-balances-month-card__header">
+                              <h3 className="monthly-balances-month-card__title">
+                                {formatMonthLabel(row.monthKey)}
+                              </h3>
+                              {accounts.length > 0 ? (
+                                <div
+                                  className={`monthly-balances-month-card__net ${netClass}`}
+                                  title={
+                                    summary.kind === "mixed"
+                                      ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
+                                      : summary.kind === "ok"
+                                        ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
+                                        : undefined
+                                  }
+                                >
+                                  <span className="monthly-balances-month-card__net-label">
+                                    Net (USD)
+                                  </span>
+                                  <span className="monthly-balances-month-card__net-value">
+                                    {netText}
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                            {accounts.length > 0 ? (
+                              <div className="monthly-balances-month-card__body">
+                                {accounts.map((a) => (
+                                  <div
+                                    key={a.id}
+                                    className="monthly-balances-mobile-account-row"
+                                  >
+                                    <div className="monthly-balances-mobile-account-row__info">
+                                      <div className="monthly-balances-mobile-account-row__name-line">
+                                        <span className="monthly-balances-mobile-account-name">
+                                          {a.name}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className="btn btn-link p-0 monthly-balances-account-info-btn"
+                                          onClick={() => openAccountInfoModal(a)}
+                                          aria-label={`Account details for ${a.name}`}
+                                          title="Account details"
+                                        >
+                                          <i className="bi bi-info-circle" aria-hidden />
+                                        </button>
+                                      </div>
+                                      <span className="monthly-balances-mobile-currency-pill">
+                                        {a.currency}
+                                      </span>
+                                    </div>
+                                    <div className="monthly-balances-mobile-account-row__value">
+                                      {renderAccountBalanceEditor(row.monthKey, a)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="small text-secondary mb-0 monthly-balances-month-card__empty">
+                                Add an account to enter balances for this month.
+                              </p>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
 
               {accounts.length === 0 && monthRows.length === 0 ? null : accounts.length > 0 ? (
