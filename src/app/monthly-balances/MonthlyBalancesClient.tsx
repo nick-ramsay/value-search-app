@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +27,8 @@ import CurrencySearchCombobox from "./CurrencySearchCombobox";
 const MONTHLY_BALANCES_LOGIN_CALLBACK = `/login?callbackUrl=${encodeURIComponent("/monthly-balances")}`;
 const MB_ARCHIVE_ACCOUNT_MODAL_ID = "mb-archive-account-modal";
 const MB_ACCOUNT_INFO_MODAL_ID = "mb-account-info-modal";
+/** Persisted preference: when true, balance cells are read-only. */
+const MB_CELLS_LOCKED_STORAGE_KEY = "value-search-mb-balance-cells-locked";
 /** Case-sensitive confirmation required to archive an account. */
 const ARCHIVE_CONFIRM_PHRASE = "Delete";
 
@@ -245,6 +254,8 @@ export default function MonthlyBalancesClient() {
   const [buffers, setBuffers] = useState<Record<string, string>>({});
   /** `monthKey::accountId` while that balance cell is in edit mode (input visible). */
   const [editingCellKey, setEditingCellKey] = useState<string | null>(null);
+  /** When true, balance amount cells cannot be edited (desktop table + mobile cards). Default: locked. */
+  const [balanceCellsLocked, setBalanceCellsLocked] = useState(true);
   const [accountDetailsTarget, setAccountDetailsTarget] = useState<Account | null>(null);
   const [accountDetailsForm, setAccountDetailsForm] =
     useState<AccountDetailsFormState | null>(null);
@@ -253,8 +264,19 @@ export default function MonthlyBalancesClient() {
     id: string;
     message: string;
   } | null>(null);
+  const [expandedMobileMonthKey, setExpandedMobileMonthKey] = useState<string | null>(null);
 
   const typeOptions = newKind === "Asset" ? ASSET_ACCOUNT_TYPES : DEBT_ACCOUNT_TYPES;
+
+  useLayoutEffect(() => {
+    try {
+      if (localStorage.getItem(MB_CELLS_LOCKED_STORAGE_KEY) === "0") {
+        setBalanceCellsLocked(false);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (newKind === "Asset") {
@@ -487,6 +509,51 @@ export default function MonthlyBalancesClient() {
     },
     [flushSave],
   );
+
+  const handleToggleBalanceCellsLocked = useCallback(() => {
+    setBalanceCellsLocked((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(MB_CELLS_LOCKED_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
+  /** Commit active cell edit when locking (same as input blur). */
+  useEffect(() => {
+    if (!balanceCellsLocked || !editingCellKey) return;
+    const sep = editingCellKey.indexOf("::");
+    if (sep <= 0) return;
+    const monthKey = editingCellKey.slice(0, sep);
+    const accountId = editingCellKey.slice(sep + 2);
+    const account = accounts.find((x) => x.id === accountId);
+    const row = monthRows.find((r) => r.monthKey === monthKey);
+    const signed =
+      typeof row?.balances?.[accountId] === "number" &&
+      Number.isFinite(row.balances[accountId])
+        ? row.balances[accountId]
+        : undefined;
+    const raw =
+      buffers[editingCellKey] ??
+      (account ? signedToDisplayMagnitude(account, signed) : "");
+    const mag = parseInputToMagnitude(raw);
+    const tkey = makeCellBufferKey(monthKey, accountId);
+    const prevT = debouncers.current.get(tkey);
+    if (prevT) window.clearTimeout(prevT);
+    debouncers.current.delete(tkey);
+    setBuffers((prev) => {
+      const next = { ...prev };
+      delete next[editingCellKey];
+      return next;
+    });
+    setEditingCellKey(null);
+    void flushSave(monthKey, accountId, mag).catch((err) => {
+      setError(err instanceof Error ? err.message : "Save failed");
+    });
+  }, [balanceCellsLocked, editingCellKey, buffers, accounts, monthRows, flushSave]);
 
   useEffect(() => {
     if (!editingCellKey) return;
@@ -886,6 +953,18 @@ export default function MonthlyBalancesClient() {
       editingCellKey === key ? trendClassEditing : trendClassDisplay;
     const inputId = `cell-${monthKey}-${a.id}`;
     const displayText = display.trim() === "" ? "—" : display;
+    if (balanceCellsLocked) {
+      return (
+        <span
+          className={`monthly-balances-cell-display monthly-balances-cell-display--locked${
+            trendClassDisplay ? ` ${trendClassDisplay}` : ""
+          }`}
+          aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${display === "" || display.trim() === "" ? "empty" : display}. Editing locked.`}
+        >
+          {displayText}
+        </span>
+      );
+    }
     if (editingCellKey === key) {
       return (
         <>
@@ -968,13 +1047,32 @@ export default function MonthlyBalancesClient() {
         <div className="card-body monthly-balances-card-body">
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <h2 className="h5 mb-0">Monthly Balances</h2>
-            <Link
-              href="/monthly-balances/upload"
-              className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
-            >
-              <i className="bi bi-file-earmark-arrow-up me-1" aria-hidden />
-              Upload from CSV
-            </Link>
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              <button
+                type="button"
+                className={`btn btn-sm ${balanceCellsLocked ? "btn-danger" : "btn-success"} monthly-balances-lock-btn`}
+                onClick={handleToggleBalanceCellsLocked}
+                aria-pressed={balanceCellsLocked}
+                title={
+                  balanceCellsLocked
+                    ? "Unlock balance cells for editing"
+                    : "Lock balance cells (read-only)"
+                }
+              >
+                <i
+                  className={`bi ${balanceCellsLocked ? "bi-lock-fill" : "bi-unlock"} me-1`}
+                  aria-hidden
+                />
+                {balanceCellsLocked ? "Locked" : "Edit"}
+              </button>
+              <Link
+                href="/monthly-balances/upload"
+                className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
+              >
+                <i className="bi bi-file-earmark-arrow-up me-1" aria-hidden />
+                Upload from CSV
+              </Link>
+            </div>
           </div>
 
           <div className="mb-3">
@@ -1294,7 +1392,7 @@ export default function MonthlyBalancesClient() {
 
           {loading ? (
             <div
-              className="monthly-balances-table-wrap d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary"
+              className="monthly-balances-sheet-loading d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary"
               role="status"
               aria-live="polite"
               aria-busy="true"
@@ -1316,113 +1414,67 @@ export default function MonthlyBalancesClient() {
                   and enter amounts.
                 </p>
               ) : null}
+            </>
+          )}
+        </div>
+      </section>
 
-              {accounts.length === 0 && monthRows.length === 0 ? null : (
-                <>
-                  {isDesktopTable ? (
-                    <div className="monthly-balances-table-wrap">
+      {!loading ? (
+        <>
+          {accounts.length === 0 && monthRows.length === 0 ? null : (
+            <>
+              {isDesktopTable ? (
+                <div
+                  className="monthly-balances-table-viewport mb-4"
+                  role="region"
+                  aria-label="Monthly balance sheet"
+                >
                   <table className="table monthly-balances-table mb-0">
-                <thead>
-                  <tr>
-                    <th
-                      scope="col"
-                      className="monthly-balances-sticky-col monthly-balances-corner-th"
-                    >
-                      Month
-                    </th>
-                    {accounts.map((a) => (
-                      <th
-                        key={a.id}
-                        scope="col"
-                        className="text-center monthly-balances-account-col"
-                      >
-                        <div className="monthly-balances-account-head">
-                          <span className="monthly-balances-account-name">{a.name}</span>
-                          <button
-                            type="button"
-                            className="btn btn-link p-0 monthly-balances-account-info-btn"
-                            onClick={() => openAccountInfoModal(a)}
-                            aria-label={`Account details for ${a.name}`}
-                            title="Account details"
-                          >
-                            <i className="bi bi-info-circle" aria-hidden />
-                          </button>
-                        </div>
-                      </th>
-                    ))}
-                    {accounts.length > 0 ? (
-                      <th
-                        scope="col"
-                        className="text-end monthly-balances-net-col monthly-balances-corner-th"
-                        title="Sum of entered amounts converted to US dollars using stored FX rates."
-                      >
-                        Net (USD)
-                      </th>
-                    ) : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthRows.map((row) => {
-                    const summary = netSummaryForMonth(
-                      row.monthKey,
-                      accounts,
-                      getSigned,
-                      usdRates,
-                    );
-                    const netText =
-                      summary.kind === "ok"
-                        ? formatMoneyAmount(summary.net, summary.currency)
-                        : "—";
-                    const netClass =
-                      summary.kind === "empty"
-                        ? "text-secondary"
-                        : summary.kind === "mixed"
-                          ? "text-secondary"
-                          : summary.net >= 0
-                            ? "text-success"
-                            : "text-danger";
-                    return (
-                      <tr key={row.monthKey}>
+                    <thead>
+                      <tr>
                         <th
-                          scope="row"
-                          className="monthly-balances-sticky-col monthly-balances-month-label"
+                          scope="col"
+                          className="monthly-balances-sticky-col monthly-balances-corner-th"
                         >
-                          {formatMonthLabel(row.monthKey)}
+                          Month
                         </th>
                         {accounts.map((a) => (
-                          <td
+                          <th
                             key={a.id}
-                            className="align-middle text-center monthly-balances-account-col"
+                            scope="col"
+                            className="text-center monthly-balances-account-col"
                           >
-                            {renderAccountBalanceEditor(row.monthKey, a)}
-                          </td>
+                            <div className="monthly-balances-account-head">
+                              <div className="monthly-balances-account-title-wrap">
+                                <span className="monthly-balances-account-name">{a.name}</span>
+                                <span className="monthly-balances-account-currency-pill">
+                                  {a.currency}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 monthly-balances-account-info-btn"
+                                onClick={() => openAccountInfoModal(a)}
+                                aria-label={`Account details for ${a.name}`}
+                                title="Account details"
+                              >
+                                <i className="bi bi-info-circle" aria-hidden />
+                              </button>
+                            </div>
+                          </th>
                         ))}
                         {accounts.length > 0 ? (
-                          <td
-                            className={`text-end fw-semibold monthly-balances-net-col monthly-balances-net-cell ${netClass}`}
-                            title={
-                              summary.kind === "mixed"
-                                ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
-                                : summary.kind === "ok"
-                                  ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
-                                  : undefined
-                            }
+                          <th
+                            scope="col"
+                            className="text-end monthly-balances-net-col monthly-balances-corner-th"
+                            title="Sum of entered amounts converted to US dollars using stored FX rates."
                           >
-                            {netText}
-                          </td>
+                            Net (USD)
+                          </th>
                         ) : null}
                       </tr>
-                    );
-                  })}
-                </tbody>
-                  </table>
-                </div>
-                  ) : (
-                    <div
-                      className="monthly-balances-mobile-stack"
-                      role="list"
-                      aria-label="Balances by month"
-                    >
+                    </thead>
+                    <tbody>
                       {monthRows.map((row) => {
                         const summary = netSummaryForMonth(
                           row.monthKey,
@@ -1443,42 +1495,115 @@ export default function MonthlyBalancesClient() {
                                 ? "text-success"
                                 : "text-danger";
                         return (
-                          <article
-                            key={row.monthKey}
-                            className="monthly-balances-month-card"
-                            role="listitem"
-                          >
-                            <div className="monthly-balances-month-card__header">
-                              <h3 className="monthly-balances-month-card__title">
-                                {formatMonthLabel(row.monthKey)}
-                              </h3>
-                              {accounts.length > 0 ? (
-                                <div
-                                  className={`monthly-balances-month-card__net ${netClass}`}
-                                  title={
-                                    summary.kind === "mixed"
-                                      ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
-                                      : summary.kind === "ok"
-                                        ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
-                                        : undefined
-                                  }
-                                >
-                                  <span className="monthly-balances-month-card__net-label">
-                                    Net (USD)
-                                  </span>
-                                  <span className="monthly-balances-month-card__net-value">
-                                    {netText}
-                                  </span>
-                                </div>
-                              ) : null}
-                            </div>
+                          <tr key={row.monthKey}>
+                            <th
+                              scope="row"
+                              className="monthly-balances-sticky-col monthly-balances-month-label"
+                            >
+                              {formatMonthLabel(row.monthKey)}
+                            </th>
+                            {accounts.map((a) => (
+                              <td
+                                key={a.id}
+                                className="align-middle text-center monthly-balances-account-col"
+                              >
+                                {renderAccountBalanceEditor(row.monthKey, a)}
+                              </td>
+                            ))}
                             {accounts.length > 0 ? (
-                              <div className="monthly-balances-month-card__body">
+                              <td
+                                className={`text-end fw-semibold monthly-balances-net-col monthly-balances-net-cell ${netClass}`}
+                                title={
+                                  summary.kind === "mixed"
+                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
+                                    : summary.kind === "ok"
+                                      ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
+                                      : undefined
+                                }
+                              >
+                                {netText}
+                              </td>
+                            ) : null}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <section className="mb-4" aria-label="Balances by month">
+                  <div className="monthly-balances-mobile-stack" role="list">
+                    {monthRows.map((row) => {
+                      const summary = netSummaryForMonth(
+                        row.monthKey,
+                        accounts,
+                        getSigned,
+                        usdRates,
+                      );
+                      const netText =
+                        summary.kind === "ok"
+                          ? formatMoneyAmount(summary.net, summary.currency)
+                          : "—";
+                      const netClass =
+                        summary.kind === "empty"
+                          ? "text-secondary"
+                          : summary.kind === "mixed"
+                            ? "text-secondary"
+                            : summary.net >= 0
+                              ? "text-success"
+                              : "text-danger";
+                      return (
+                        <article
+                          key={row.monthKey}
+                          className="monthly-balances-month-card"
+                          role="listitem"
+                        >
+                          <button
+                            type="button"
+                            className="monthly-balances-month-card__header monthly-balances-month-card__toggle"
+                            onClick={() =>
+                              setExpandedMobileMonthKey((prev) =>
+                                prev === row.monthKey ? null : row.monthKey,
+                              )
+                            }
+                            aria-expanded={expandedMobileMonthKey === row.monthKey}
+                            aria-controls={`mb-mobile-month-body-${row.monthKey}`}
+                          >
+                            <h3 className="monthly-balances-month-card__title">
+                              {formatMonthLabel(row.monthKey)}
+                            </h3>
+                            {accounts.length > 0 ? (
+                              <div
+                                className={`monthly-balances-month-card__net ${netClass}`}
+                                title={
+                                  summary.kind === "mixed"
+                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
+                                    : summary.kind === "ok"
+                                      ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
+                                      : undefined
+                                }
+                              >
+                                <span className="monthly-balances-month-card__net-label">
+                                  Net (USD)
+                                </span>
+                                <span className="monthly-balances-month-card__net-value">
+                                  {netText}
+                                </span>
+                              </div>
+                            ) : null}
+                            <i
+                              className={`bi ${expandedMobileMonthKey === row.monthKey ? "bi-chevron-up" : "bi-chevron-down"} monthly-balances-month-card__chevron`}
+                              aria-hidden
+                            />
+                          </button>
+                          {expandedMobileMonthKey === row.monthKey ? (
+                            accounts.length > 0 ? (
+                              <div
+                                id={`mb-mobile-month-body-${row.monthKey}`}
+                                className="monthly-balances-month-card__body"
+                              >
                                 {accounts.map((a) => (
-                                  <div
-                                    key={a.id}
-                                    className="monthly-balances-mobile-account-row"
-                                  >
+                                  <div key={a.id} className="monthly-balances-mobile-account-row">
                                     <div className="monthly-balances-mobile-account-row__info">
                                       <div className="monthly-balances-mobile-account-row__name-line">
                                         <span className="monthly-balances-mobile-account-name">
@@ -1505,37 +1630,40 @@ export default function MonthlyBalancesClient() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="small text-secondary mb-0 monthly-balances-month-card__empty">
+                              <p
+                                id={`mb-mobile-month-body-${row.monthKey}`}
+                                className="small text-secondary mb-0 monthly-balances-month-card__empty"
+                              >
                                 Add an account to enter balances for this month.
                               </p>
-                            )}
-                          </article>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {accounts.length === 0 && monthRows.length === 0 ? null : accounts.length > 0 ? (
-                <p className="small text-secondary monthly-balances-footnote mb-0">
-                  <i className="bi bi-info-circle me-1" aria-hidden />
-                  <strong>Net</strong> is in <strong>USD</strong>, converting each cell from its
-                  account currency using stored rates. Rates refresh when you sign in and when this
-                  sheet loads or updates if a currency’s rate is missing or older than 24 hours.
-                  Debts count as negative in the sum. If a rate is unavailable for a currency in a
-                  row, Net shows an em dash.
-                </p>
-              ) : (
-                <p className="small text-secondary monthly-balances-footnote mb-0">
-                  <i className="bi bi-info-circle me-1" aria-hidden />
-                  Net and balance cells appear after you add your first account.
-                </p>
+                            )
+                          ) : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
             </>
           )}
-        </div>
-      </section>
+
+          {accounts.length === 0 && monthRows.length === 0 ? null : accounts.length > 0 ? (
+            <p className="small text-secondary monthly-balances-footnote mb-0">
+              <i className="bi bi-info-circle me-1" aria-hidden />
+              <strong>Net</strong> is in <strong>USD</strong>, converting each cell from its
+              account currency using stored rates. Rates refresh when you sign in and when this
+              sheet loads or updates if a currency’s rate is missing or older than 24 hours.
+              Debts count as negative in the sum. If a rate is unavailable for a currency in a
+              row, Net shows an em dash.
+            </p>
+          ) : (
+            <p className="small text-secondary monthly-balances-footnote mb-0">
+              <i className="bi bi-info-circle me-1" aria-hidden />
+              Net and balance cells appear after you add your first account.
+            </p>
+          )}
+        </>
+      ) : null}
 
       {mounted && typeof document !== "undefined"
         ? createPortal(
