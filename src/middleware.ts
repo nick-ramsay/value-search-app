@@ -5,5 +5,5 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ["/portfolio", "/monthly-balances"],
+  matcher: ["/portfolio", "/monthly-balances", "/monthly-balances/upload"],
 };
