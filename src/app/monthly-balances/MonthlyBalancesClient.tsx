@@ -15,7 +15,10 @@ import { useSession } from "next-auth/react";
 import {
   ASSET_ACCOUNT_TYPES,
   DEBT_ACCOUNT_TYPES,
+  defaultUnvestedRsuVestingDateIso,
   formatMonthKey,
+  isRealEstateAsset,
+  isUnvestedRsuAsset,
   monthKeyCompareDesc,
   monthKeysInclusiveRange,
   parseMonthKey,
@@ -29,6 +32,8 @@ const MB_ARCHIVE_ACCOUNT_MODAL_ID = "mb-archive-account-modal";
 const MB_ACCOUNT_INFO_MODAL_ID = "mb-account-info-modal";
 /** Persisted preference: when true, balance cells are read-only. */
 const MB_CELLS_LOCKED_STORAGE_KEY = "value-search-mb-balance-cells-locked";
+const MB_COLUMN_VISIBILITY_MODAL_ID = "mb-column-visibility-modal";
+const MB_DELETE_MONTH_MODAL_ID = "mb-delete-month-modal";
 /** Case-sensitive confirmation required to archive an account. */
 const ARCHIVE_CONFIRM_PHRASE = "Delete";
 
@@ -38,6 +43,12 @@ type Account = {
   kind: BalanceAccountKind;
   accountType: string;
   currency: string;
+  /** ISO `YYYY-MM-DD` when account type is Unvested RSU. */
+  vestingDate?: string;
+  /** Annual growth percentage for Real Estate (e.g. 4 = 4%). */
+  annualGrowthPercent?: number;
+  /** When true, balances are excluded from the monthly Net (USD) total. */
+  exemptFromNetWorth?: boolean;
 };
 
 type MonthRow = { monthKey: string; balances: Record<string, number> };
@@ -47,6 +58,9 @@ type AccountDetailsFormState = {
   kind: BalanceAccountKind;
   accountType: string;
   currency: string;
+  vestingDate?: string;
+  annualGrowthPercent?: string;
+  exemptFromNetWorth: boolean;
 };
 
 function formatMonthLabel(monthKey: string): string {
@@ -62,11 +76,36 @@ function signedToDisplayMagnitude(account: Account, signed: number | undefined):
 }
 
 function parseInputToMagnitude(raw: string): number | null {
-  const t = raw.trim().replace(/,/g, "");
+  const t = raw.trim().replace(/[$,\s]/g, "");
   if (t === "") return null;
   const n = Number.parseFloat(t);
   if (!Number.isFinite(n)) return null;
   return Math.abs(n);
+}
+
+function signedToGroupedAmountDisplay(account: Account, signed: number | undefined): string {
+  if (signed === undefined || signed === null || Number.isNaN(signed)) return "";
+  const v = account.kind === "Debt" ? Math.abs(signed) : signed;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(v);
+  } catch {
+    return v.toFixed(2);
+  }
+}
+
+function magnitudeToGroupedAmountDisplay(magnitude: number | null): string {
+  if (magnitude === null || !Number.isFinite(magnitude)) return "";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(magnitude));
+  } catch {
+    return Math.abs(magnitude).toFixed(2);
+  }
 }
 
 type NetSummary =
@@ -87,7 +126,7 @@ function normalizeUsdRates(raw: unknown): Record<string, number> {
   return out;
 }
 
-/** Net is the sum of cell values converted to USD using `usdRates`. */
+/** Net is the sum of visible account cell values converted to USD using `usdRates` (excludes exempt accounts). */
 function netSummaryForMonth(
   monthKey: string,
   accounts: Account[],
@@ -98,6 +137,7 @@ function netSummaryForMonth(
   let had = false;
   let missingRate = false;
   for (const a of accounts) {
+    if (a.exemptFromNetWorth) continue;
     const v = getSigned(monthKey, a.id);
     if (typeof v !== "number" || !Number.isFinite(v)) continue;
     had = true;
@@ -219,6 +259,10 @@ export default function MonthlyBalancesClient() {
   const [newName, setNewName] = useState("");
   const [newKind, setNewKind] = useState<BalanceAccountKind>("Asset");
   const [newAccountType, setNewAccountType] = useState<string>(ASSET_ACCOUNT_TYPES[0]);
+  const [newVestingDate, setNewVestingDate] = useState(() =>
+    defaultUnvestedRsuVestingDateIso(),
+  );
+  const [newAnnualGrowthPercent, setNewAnnualGrowthPercent] = useState("4");
   const [newCurrency, setNewCurrency] = useState("USD");
   const [adding, setAdding] = useState(false);
   const [addMonthKey, setAddMonthKey] = useState("");
@@ -249,9 +293,26 @@ export default function MonthlyBalancesClient() {
     hide: () => void;
     dispose: () => void;
   } | null>(null);
+  const columnVisibilityModalElRef = useRef<HTMLDivElement>(null);
+  const columnVisibilityBsModalRef = useRef<{
+    show: () => void;
+    hide: () => void;
+    dispose: () => void;
+  } | null>(null);
+  const deleteMonthModalElRef = useRef<HTMLDivElement>(null);
+  const deleteMonthBsModalRef = useRef<{
+    show: () => void;
+    hide: () => void;
+    dispose: () => void;
+  } | null>(null);
 
   const debouncers = useRef<Map<string, number>>(new Map());
+  const saveSeqRef = useRef<Map<string, number>>(new Map());
   const [buffers, setBuffers] = useState<Record<string, string>>({});
+  const [savingCellKeys, setSavingCellKeys] = useState<Record<string, number>>({});
+  const [pendingSaveMagnitudes, setPendingSaveMagnitudes] = useState<
+    Record<string, { seq: number; magnitude: number | null }>
+  >({});
   /** `monthKey::accountId` while that balance cell is in edit mode (input visible). */
   const [editingCellKey, setEditingCellKey] = useState<string | null>(null);
   /** When true, balance amount cells cannot be edited (desktop table + mobile cards). Default: locked. */
@@ -265,8 +326,46 @@ export default function MonthlyBalancesClient() {
     message: string;
   } | null>(null);
   const [expandedMobileMonthKey, setExpandedMobileMonthKey] = useState<string | null>(null);
+  const [hiddenColumnIds, setHiddenColumnIds] = useState<string[]>([]);
+  const [deleteMonthTargetKey, setDeleteMonthTargetKey] = useState<string | null>(null);
+  const [deleteMonthConfirmInput, setDeleteMonthConfirmInput] = useState("");
+  const [deletingMonth, setDeletingMonth] = useState(false);
+  const [hiddenColumnsLoadedFromServer, setHiddenColumnsLoadedFromServer] = useState(false);
 
   const typeOptions = newKind === "Asset" ? ASSET_ACCOUNT_TYPES : DEBT_ACCOUNT_TYPES;
+
+  const hiddenColumnIdSet = useMemo(
+    () => new Set(hiddenColumnIds),
+    [hiddenColumnIds],
+  );
+
+  const visibleAccounts = useMemo(
+    () => accounts.filter((a) => !hiddenColumnIdSet.has(a.id)),
+    [accounts, hiddenColumnIdSet],
+  );
+
+  const hiddenAccountColumnCount = accounts.length - visibleAccounts.length;
+
+  const applySheetPayload = useCallback(
+    (data: {
+      accounts?: Account[];
+      monthRows?: unknown;
+      rates?: unknown;
+      hiddenColumnIds?: unknown;
+    }) => {
+      setAccounts(data.accounts ?? []);
+      setMonthRows(normalizeMonthRows(data.monthRows));
+      setUsdRates(normalizeUsdRates(data.rates));
+      if (
+        Array.isArray(data.hiddenColumnIds) &&
+        data.hiddenColumnIds.every((x) => typeof x === "string")
+      ) {
+        setHiddenColumnIds(data.hiddenColumnIds);
+        setHiddenColumnsLoadedFromServer(true);
+      }
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     try {
@@ -277,6 +376,106 @@ export default function MonthlyBalancesClient() {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    const ids = new Set(accounts.map((a) => a.id));
+    setHiddenColumnIds((prev) => {
+      const next = prev.filter((id) => ids.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [accounts]);
+
+  useEffect(() => {
+    if (!hiddenColumnsLoadedFromServer) return;
+    const save = async () => {
+      try {
+        const res = await fetch("/api/monthly-balances", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ op: "setHiddenColumns", accountIds: hiddenColumnIds }),
+        });
+        if (res.status === 401) {
+          router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
+          return;
+        }
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { message?: string };
+          throw new Error(j.message ?? "Could not save hidden columns");
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Could not save hidden columns",
+        );
+      }
+    };
+    void save();
+  }, [hiddenColumnIds, hiddenColumnsLoadedFromServer, router]);
+
+  const hideAccountColumn = useCallback((accountId: string) => {
+    setHiddenColumnIds((prev) => (prev.includes(accountId) ? prev : [...prev, accountId]));
+  }, []);
+
+  const showAccountColumn = useCallback((accountId: string) => {
+    setHiddenColumnIds((prev) => prev.filter((id) => id !== accountId));
+  }, []);
+
+  const showAllAccountColumns = useCallback(() => {
+    setHiddenColumnIds([]);
+  }, []);
+
+  const setAccountColumnVisible = useCallback(
+    (accountId: string, visible: boolean) => {
+      if (visible) showAccountColumn(accountId);
+      else hideAccountColumn(accountId);
+    },
+    [hideAccountColumn, showAccountColumn],
+  );
+
+  const openColumnsModal = useCallback(() => {
+    window.setTimeout(() => {
+      void import("bootstrap/js/dist/modal").then((mod) => {
+        const Modal = mod.default;
+        const el = columnVisibilityModalElRef.current;
+        if (!el) return;
+        columnVisibilityBsModalRef.current = Modal.getOrCreateInstance(el, {
+          backdrop: true,
+          keyboard: true,
+        });
+        columnVisibilityBsModalRef.current.show();
+      });
+    }, 0);
+  }, []);
+
+  const openDeleteMonthModal = useCallback(
+    (monthKey: string) => {
+      if (balanceCellsLocked) return;
+      setDeleteMonthTargetKey(monthKey);
+      setDeleteMonthConfirmInput("");
+      window.setTimeout(() => {
+        void import("bootstrap/js/dist/modal").then((mod) => {
+          const Modal = mod.default;
+          const el = deleteMonthModalElRef.current;
+          if (!el) return;
+          deleteMonthBsModalRef.current = Modal.getOrCreateInstance(el, {
+            backdrop: "static",
+            keyboard: false,
+          });
+          deleteMonthBsModalRef.current.show();
+        });
+      }, 0);
+    },
+    [balanceCellsLocked],
+  );
+
+  const deleteMonthConfirmPhrase = useMemo(
+    () => (deleteMonthTargetKey ? formatMonthLabel(deleteMonthTargetKey) : ""),
+    [deleteMonthTargetKey],
+  );
+
+  const deleteMonthConfirmValid =
+    deleteMonthConfirmPhrase !== "" &&
+    deleteMonthConfirmInput.trim() === deleteMonthConfirmPhrase;
 
   useEffect(() => {
     if (newKind === "Asset") {
@@ -305,6 +504,13 @@ export default function MonthlyBalancesClient() {
       kind: accountDetailsTarget.kind,
       accountType: accountDetailsTarget.accountType,
       currency: (accountDetailsTarget.currency ?? "USD").toUpperCase(),
+      vestingDate: accountDetailsTarget.vestingDate?.trim(),
+      annualGrowthPercent:
+        typeof accountDetailsTarget.annualGrowthPercent === "number" &&
+        Number.isFinite(accountDetailsTarget.annualGrowthPercent)
+          ? String(accountDetailsTarget.annualGrowthPercent)
+          : "",
+      exemptFromNetWorth: Boolean(accountDetailsTarget.exemptFromNetWorth),
     });
     setAccountDetailsArchivedConflict(null);
   }, [accountDetailsTarget]);
@@ -318,11 +524,22 @@ export default function MonthlyBalancesClient() {
     const orig = accountDetailsTarget;
     const curCur = (cur.currency ?? "").trim().toUpperCase();
     const origCur = (orig.currency ?? "USD").toUpperCase();
+    const curVest = (cur.vestingDate ?? "").trim();
+    const origVest = (orig.vestingDate ?? "").trim();
+    const curGrowth = (cur.annualGrowthPercent ?? "").trim();
+    const origGrowth =
+      typeof orig.annualGrowthPercent === "number" &&
+      Number.isFinite(orig.annualGrowthPercent)
+        ? String(orig.annualGrowthPercent)
+        : "";
     return (
       cur.name.trim() !== orig.name ||
       cur.kind !== orig.kind ||
       cur.accountType !== orig.accountType ||
-      curCur !== origCur
+      curCur !== origCur ||
+      curVest !== origVest ||
+      curGrowth !== origGrowth ||
+      cur.exemptFromNetWorth !== Boolean(orig.exemptFromNetWorth)
     );
   }, [accountDetailsTarget, accountDetailsForm]);
 
@@ -343,10 +560,9 @@ export default function MonthlyBalancesClient() {
         accounts: Account[];
         monthRows: unknown;
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
-      setAccounts(data.accounts ?? []);
-      setMonthRows(normalizeMonthRows(data.monthRows));
-      setUsdRates(normalizeUsdRates(data.rates));
+      applySheetPayload(data);
       setEditingCellKey(null);
       setAccountDetailsTarget(null);
     } catch (e) {
@@ -354,7 +570,7 @@ export default function MonthlyBalancesClient() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [applySheetPayload, router]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -398,12 +614,31 @@ export default function MonthlyBalancesClient() {
     };
   }, [mounted]);
 
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    const el = deleteMonthModalElRef.current;
+    if (!el) return;
+    const onHidden = () => {
+      setDeleteMonthTargetKey(null);
+      setDeleteMonthConfirmInput("");
+      setDeletingMonth(false);
+    };
+    el.addEventListener("hidden.bs.modal", onHidden);
+    return () => {
+      el.removeEventListener("hidden.bs.modal", onHidden);
+    };
+  }, [mounted]);
+
   useEffect(() => {
     return () => {
       archiveBsModalRef.current?.dispose();
       archiveBsModalRef.current = null;
       accountInfoBsModalRef.current?.dispose();
       accountInfoBsModalRef.current = null;
+      columnVisibilityBsModalRef.current?.dispose();
+      columnVisibilityBsModalRef.current = null;
+      deleteMonthBsModalRef.current?.dispose();
+      deleteMonthBsModalRef.current = null;
     };
   }, []);
 
@@ -462,7 +697,13 @@ export default function MonthlyBalancesClient() {
   }, [rangeFromKey, monthThroughOptions]);
 
   const flushSave = useCallback(
-    async (monthKey: string, accountId: string, magnitude: number | null) => {
+    async (
+      monthKey: string,
+      accountId: string,
+      magnitude: number | null,
+      saveSeq: number,
+    ) => {
+      const saveKey = makeCellBufferKey(monthKey, accountId);
       const res = await fetch("/api/monthly-balances", {
         method: "PATCH",
         credentials: "include",
@@ -486,23 +727,53 @@ export default function MonthlyBalancesClient() {
         accounts: Account[];
         monthRows: MonthRow[];
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
-      setAccounts(data.accounts);
-      setMonthRows(normalizeMonthRows(data.monthRows));
-      setUsdRates(normalizeUsdRates(data.rates));
+      applySheetPayload(data);
+      setSavingCellKeys((prev) => {
+        if (prev[saveKey] !== saveSeq) return prev;
+        const next = { ...prev };
+        delete next[saveKey];
+        return next;
+      });
+      setPendingSaveMagnitudes((prev) => {
+        if (prev[saveKey]?.seq !== saveSeq) return prev;
+        const next = { ...prev };
+        delete next[saveKey];
+        return next;
+      });
     },
-    [router],
+    [applySheetPayload, router],
   );
 
   const scheduleCellSave = useCallback(
     (monthKey: string, accountId: string, magnitude: number | null) => {
       const key = makeCellBufferKey(monthKey, accountId);
+      const nextSeq = (saveSeqRef.current.get(key) ?? 0) + 1;
+      saveSeqRef.current.set(key, nextSeq);
+      setSavingCellKeys((prev) => ({ ...prev, [key]: nextSeq }));
+      setPendingSaveMagnitudes((prev) => ({
+        ...prev,
+        [key]: { seq: nextSeq, magnitude },
+      }));
       const prev = debouncers.current.get(key);
       if (prev) window.clearTimeout(prev);
       const t = window.setTimeout(() => {
         debouncers.current.delete(key);
-        void flushSave(monthKey, accountId, magnitude).catch((e) => {
+        void flushSave(monthKey, accountId, magnitude, nextSeq).catch((e) => {
           setError(e instanceof Error ? e.message : "Save failed");
+          setSavingCellKeys((prev) => {
+            if (prev[key] !== nextSeq) return prev;
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          });
+          setPendingSaveMagnitudes((prev) => {
+            if (prev[key]?.seq !== nextSeq) return prev;
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          });
         });
       }, 450);
       debouncers.current.set(key, t);
@@ -550,8 +821,27 @@ export default function MonthlyBalancesClient() {
       return next;
     });
     setEditingCellKey(null);
-    void flushSave(monthKey, accountId, mag).catch((err) => {
+    const nextSeq = (saveSeqRef.current.get(tkey) ?? 0) + 1;
+    saveSeqRef.current.set(tkey, nextSeq);
+    setSavingCellKeys((prev) => ({ ...prev, [tkey]: nextSeq }));
+    setPendingSaveMagnitudes((prev) => ({
+      ...prev,
+      [tkey]: { seq: nextSeq, magnitude: mag },
+    }));
+    void flushSave(monthKey, accountId, mag, nextSeq).catch((err) => {
       setError(err instanceof Error ? err.message : "Save failed");
+      setSavingCellKeys((prev) => {
+        if (prev[tkey] !== nextSeq) return prev;
+        const next = { ...prev };
+        delete next[tkey];
+        return next;
+      });
+      setPendingSaveMagnitudes((prev) => {
+        if (prev[tkey]?.seq !== nextSeq) return prev;
+        const next = { ...prev };
+        delete next[tkey];
+        return next;
+      });
     });
   }, [balanceCellsLocked, editingCellKey, buffers, accounts, monthRows, flushSave]);
 
@@ -587,6 +877,12 @@ export default function MonthlyBalancesClient() {
           kind: newKind,
           accountType: newAccountType,
           currency: newCurrency,
+          ...(isUnvestedRsuAsset(newKind, newAccountType)
+            ? { vestingDate: newVestingDate }
+            : {}),
+          ...(isRealEstateAsset(newKind, newAccountType)
+            ? { annualGrowthPercent: Number(newAnnualGrowthPercent) }
+            : {}),
         }),
       });
       const j = (await res.json().catch(() => ({}))) as {
@@ -596,6 +892,7 @@ export default function MonthlyBalancesClient() {
         accounts?: Account[];
         monthRows?: unknown;
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
       if (res.status === 401) {
         router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
@@ -620,12 +917,12 @@ export default function MonthlyBalancesClient() {
       if (!Array.isArray(j.accounts) || !Array.isArray(j.monthRows)) {
         throw new Error("Could not add account");
       }
-      setAccounts(j.accounts);
-      setMonthRows(normalizeMonthRows(j.monthRows));
-      setUsdRates(normalizeUsdRates(j.rates));
+      applySheetPayload(j);
       setNewName("");
       setNewKind("Asset");
       setNewAccountType(ASSET_ACCOUNT_TYPES[0]);
+      setNewVestingDate(defaultUnvestedRsuVestingDateIso());
+      setNewAnnualGrowthPercent("4");
       setNewCurrency("USD");
       setActionsPanel(null);
     } catch (err) {
@@ -706,6 +1003,23 @@ export default function MonthlyBalancesClient() {
           kind: accountDetailsForm.kind,
           accountType: accountDetailsForm.accountType,
           currency: accountDetailsForm.currency,
+          ...(isUnvestedRsuAsset(
+            accountDetailsForm.kind,
+            accountDetailsForm.accountType,
+          )
+            ? { vestingDate: accountDetailsForm.vestingDate ?? "" }
+            : {}),
+          ...(isRealEstateAsset(
+            accountDetailsForm.kind,
+            accountDetailsForm.accountType,
+          )
+            ? {
+                annualGrowthPercent: Number(
+                  accountDetailsForm.annualGrowthPercent ?? "",
+                ),
+              }
+            : {}),
+          exemptFromNetWorth: accountDetailsForm.exemptFromNetWorth,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as {
@@ -715,6 +1029,7 @@ export default function MonthlyBalancesClient() {
         accounts?: Account[];
         monthRows?: unknown;
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
       if (res.status === 401) {
         router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
@@ -739,9 +1054,7 @@ export default function MonthlyBalancesClient() {
       if (!Array.isArray(j.accounts) || !Array.isArray(j.monthRows)) {
         throw new Error("Could not save account");
       }
-      setAccounts(j.accounts);
-      setMonthRows(normalizeMonthRows(j.monthRows));
-      setUsdRates(normalizeUsdRates(j.rates));
+      applySheetPayload(j);
       const id = accountDetailsTarget.id;
       const updated = j.accounts.find((a) => a.id === id);
       if (updated) setAccountDetailsTarget(updated);
@@ -768,6 +1081,7 @@ export default function MonthlyBalancesClient() {
         accounts?: Account[];
         monthRows?: unknown;
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
       if (res.status === 401) {
         router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
@@ -780,9 +1094,7 @@ export default function MonthlyBalancesClient() {
         throw new Error("Could not archive account");
       }
       const id = archiveTarget.id;
-      setAccounts(j.accounts);
-      setMonthRows(normalizeMonthRows(j.monthRows));
-      setUsdRates(normalizeUsdRates(j.rates));
+      applySheetPayload(j);
       setBuffers((prev) => {
         const next = { ...prev };
         for (const k of Object.keys(next)) {
@@ -814,6 +1126,7 @@ export default function MonthlyBalancesClient() {
         accounts?: Account[];
         monthRows?: unknown;
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
       if (res.status === 401) {
         router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
@@ -825,9 +1138,7 @@ export default function MonthlyBalancesClient() {
       if (!Array.isArray(j.accounts) || !Array.isArray(j.monthRows)) {
         throw new Error("Could not restore account");
       }
-      setAccounts(j.accounts);
-      setMonthRows(normalizeMonthRows(j.monthRows));
-      setUsdRates(normalizeUsdRates(j.rates));
+      applySheetPayload(j);
       setArchivedConflict(null);
       setAccountDetailsArchivedConflict(null);
       setActionsPanel(null);
@@ -836,6 +1147,54 @@ export default function MonthlyBalancesClient() {
       setError(err instanceof Error ? err.message : "Could not restore account");
     } finally {
       setRestoringArchived(false);
+    }
+  };
+
+  const handleConfirmDeleteMonth = async () => {
+    if (!deleteMonthTargetKey || deletingMonth || !deleteMonthConfirmValid) return;
+    const targetKey = deleteMonthTargetKey;
+    setDeletingMonth(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/monthly-balances", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ op: "removeMonth", monthKey: targetKey }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        accounts?: Account[];
+        monthRows?: unknown;
+        rates?: unknown;
+        hiddenColumnIds?: unknown;
+      };
+      if (res.status === 401) {
+        router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(j.message ?? "Could not delete month");
+      }
+      if (!Array.isArray(j.accounts) || !Array.isArray(j.monthRows)) {
+        throw new Error("Could not delete month");
+      }
+      applySheetPayload(j);
+      setBuffers((prev) => {
+        const next = { ...prev };
+        const prefix = `${targetKey}::`;
+        for (const k of Object.keys(next)) {
+          if (k.startsWith(prefix)) delete next[k];
+        }
+        return next;
+      });
+      setExpandedMobileMonthKey((prev) => (prev === targetKey ? null : prev));
+      setEditingCellKey(null);
+      deleteMonthBsModalRef.current?.hide();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete month");
+    } finally {
+      setDeletingMonth(false);
     }
   };
 
@@ -867,10 +1226,9 @@ export default function MonthlyBalancesClient() {
         accounts: Account[];
         monthRows: MonthRow[];
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
-      setAccounts(data.accounts);
-      setMonthRows(normalizeMonthRows(data.monthRows));
-      setUsdRates(normalizeUsdRates(data.rates));
+      applySheetPayload(data);
       setActionsPanel(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add month");
@@ -907,10 +1265,9 @@ export default function MonthlyBalancesClient() {
         accounts: Account[];
         monthRows: MonthRow[];
         rates?: unknown;
+        hiddenColumnIds?: unknown;
       };
-      setAccounts(data.accounts);
-      setMonthRows(normalizeMonthRows(data.monthRows));
-      setUsdRates(normalizeUsdRates(data.rates));
+      applySheetPayload(data);
       setActionsPanel(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add months");
@@ -931,8 +1288,16 @@ export default function MonthlyBalancesClient() {
     const signed = getSigned(monthKey, a.id);
     const key = makeCellBufferKey(monthKey, a.id);
     const buffer = buffers[key];
-    const display =
-      buffer !== undefined ? buffer : signedToDisplayMagnitude(a, signed);
+    const display = buffer !== undefined ? buffer : signedToDisplayMagnitude(a, signed);
+    const isSavingCell = savingCellKeys[key] !== undefined;
+    const pendingForCell = pendingSaveMagnitudes[key];
+    const usePendingDisplay =
+      isSavingCell &&
+      pendingForCell !== undefined &&
+      pendingForCell.seq === savingCellKeys[key];
+    const displayAmount = usePendingDisplay
+      ? magnitudeToGroupedAmountDisplay(pendingForCell.magnitude)
+      : signedToGroupedAmountDisplay(a, signed);
     const trendClassEditing = cellTrendToneClass(
       monthRows,
       monthKey,
@@ -952,14 +1317,14 @@ export default function MonthlyBalancesClient() {
     const trendClass =
       editingCellKey === key ? trendClassEditing : trendClassDisplay;
     const inputId = `cell-${monthKey}-${a.id}`;
-    const displayText = display.trim() === "" ? "—" : display;
+    const displayText = displayAmount.trim() === "" ? "—" : displayAmount;
     if (balanceCellsLocked) {
       return (
         <span
           className={`monthly-balances-cell-display monthly-balances-cell-display--locked${
             trendClassDisplay ? ` ${trendClassDisplay}` : ""
           }`}
-          aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${display === "" || display.trim() === "" ? "empty" : display}. Editing locked.`}
+          aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${displayAmount === "" || displayAmount.trim() === "" ? "empty" : displayAmount}. Editing locked.`}
         >
           {displayText}
         </span>
@@ -992,10 +1357,29 @@ export default function MonthlyBalancesClient() {
                 delete next[key];
                 return next;
               });
-              void flushSave(monthKey, a.id, mag).catch((err) => {
-                setError(err instanceof Error ? err.message : "Save failed");
-              });
               const tkey = makeCellBufferKey(monthKey, a.id);
+              const nextSeq = (saveSeqRef.current.get(tkey) ?? 0) + 1;
+              saveSeqRef.current.set(tkey, nextSeq);
+              setSavingCellKeys((prev) => ({ ...prev, [tkey]: nextSeq }));
+              setPendingSaveMagnitudes((prev) => ({
+                ...prev,
+                [tkey]: { seq: nextSeq, magnitude: mag },
+              }));
+              void flushSave(monthKey, a.id, mag, nextSeq).catch((err) => {
+                setError(err instanceof Error ? err.message : "Save failed");
+                setSavingCellKeys((prev) => {
+                  if (prev[tkey] !== nextSeq) return prev;
+                  const next = { ...prev };
+                  delete next[tkey];
+                  return next;
+                });
+                setPendingSaveMagnitudes((prev) => {
+                  if (prev[tkey]?.seq !== nextSeq) return prev;
+                  const next = { ...prev };
+                  delete next[tkey];
+                  return next;
+                });
+              });
               const prevT = debouncers.current.get(tkey);
               if (prevT) window.clearTimeout(prevT);
               debouncers.current.delete(tkey);
@@ -1009,7 +1393,7 @@ export default function MonthlyBalancesClient() {
       <button
         type="button"
         className={`monthly-balances-cell-display${trendClass ? ` ${trendClass}` : ""}`}
-        aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${display === "" || display.trim() === "" ? "empty" : display}. Click to edit.`}
+        aria-label={`${a.name} for ${formatMonthLabel(monthKey)}: ${displayAmount === "" || displayAmount.trim() === "" ? "empty" : displayAmount}. Click to edit.`}
         onClick={() => setEditingCellKey(key)}
       >
         {displayText}
@@ -1072,6 +1456,22 @@ export default function MonthlyBalancesClient() {
                 <i className="bi bi-file-earmark-arrow-up me-1" aria-hidden />
                 Upload from CSV
               </Link>
+              {accounts.length > 0 ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => openColumnsModal()}
+                  title="Show or hide account columns in the sheet"
+                >
+                  <i className="bi bi-layout-three-columns me-1" aria-hidden />
+                  Columns
+                  {hiddenAccountColumnCount > 0 ? (
+                    <span className="badge text-bg-secondary ms-1">
+                      {hiddenAccountColumnCount}
+                    </span>
+                  ) : null}
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -1184,7 +1584,18 @@ export default function MonthlyBalancesClient() {
                       id="mb-account-type"
                       className="form-select glass-select"
                       value={newAccountType}
-                      onChange={(e) => setNewAccountType(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setNewAccountType(v);
+                        if (newKind === "Asset" && v === "Unvested RSU") {
+                          setNewVestingDate(defaultUnvestedRsuVestingDateIso());
+                        }
+                        if (newKind === "Asset" && v === "Real Estate") {
+                          setNewAnnualGrowthPercent((prev) =>
+                            prev.trim() !== "" ? prev : "4",
+                          );
+                        }
+                      }}
                     >
                       {typeOptions.map((t) => (
                         <option key={t} value={t}>
@@ -1193,6 +1604,40 @@ export default function MonthlyBalancesClient() {
                       ))}
                     </select>
                   </div>
+                  {newKind === "Asset" && newAccountType === "Unvested RSU" ? (
+                    <div className="col-md-4">
+                      <label htmlFor="mb-rsu-vesting" className="form-label fw-semibold">
+                        Vesting date
+                      </label>
+                      <input
+                        id="mb-rsu-vesting"
+                        type="date"
+                        className="form-control search-input-glass"
+                        value={newVestingDate}
+                        onChange={(e) => setNewVestingDate(e.target.value)}
+                        disabled={adding}
+                      />
+                    </div>
+                  ) : null}
+                  {newKind === "Asset" && newAccountType === "Real Estate" ? (
+                    <div className="col-md-4">
+                      <label htmlFor="mb-real-estate-growth" className="form-label fw-semibold">
+                        Annual Growth (%)
+                      </label>
+                      <input
+                        id="mb-real-estate-growth"
+                        type="number"
+                        inputMode="decimal"
+                        min={-99}
+                        max={100}
+                        step="0.01"
+                        className="form-control search-input-glass"
+                        value={newAnnualGrowthPercent}
+                        onChange={(e) => setNewAnnualGrowthPercent(e.target.value)}
+                        disabled={adding}
+                      />
+                    </div>
+                  ) : null}
                   <div className="col-12 col-lg-8">
                     <CurrencySearchCombobox
                       id="mb-currency-combobox"
@@ -1205,7 +1650,14 @@ export default function MonthlyBalancesClient() {
                     <button
                       type="submit"
                       className="btn filter-apply-button"
-                      disabled={adding || !newName.trim()}
+                      disabled={
+                        adding ||
+                        !newName.trim() ||
+                        (isUnvestedRsuAsset(newKind, newAccountType) &&
+                          !newVestingDate.trim()) ||
+                        (isRealEstateAsset(newKind, newAccountType) &&
+                          newAnnualGrowthPercent.trim() === "")
+                      }
                     >
                       {adding ? (
                         <>
@@ -1423,6 +1875,24 @@ export default function MonthlyBalancesClient() {
         <>
           {accounts.length === 0 && monthRows.length === 0 ? null : (
             <>
+              {accounts.length > 0 && visibleAccounts.length === 0 ? (
+                <div
+                  className="alert alert-secondary glass-alert mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
+                  role="status"
+                >
+                  <span className="small mb-0">
+                    All account columns are hidden. Use <strong>Columns</strong> to show accounts
+                    again.
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm filter-apply-button text-nowrap"
+                    onClick={() => openColumnsModal()}
+                  >
+                    Open Columns
+                  </button>
+                </div>
+              ) : null}
               {isDesktopTable ? (
                 <div
                   className="monthly-balances-table-viewport mb-4"
@@ -1438,7 +1908,7 @@ export default function MonthlyBalancesClient() {
                         >
                           Month
                         </th>
-                        {accounts.map((a) => (
+                        {visibleAccounts.map((a) => (
                           <th
                             key={a.id}
                             scope="col"
@@ -1467,7 +1937,7 @@ export default function MonthlyBalancesClient() {
                           <th
                             scope="col"
                             className="text-end monthly-balances-net-col monthly-balances-corner-th"
-                            title="Sum of entered amounts converted to US dollars using stored FX rates."
+                            title="Sum of visible account amounts converted to US dollars using stored FX rates. Hidden columns, and accounts marked exempt from net worth, are excluded."
                           >
                             Net (USD)
                           </th>
@@ -1478,7 +1948,7 @@ export default function MonthlyBalancesClient() {
                       {monthRows.map((row) => {
                         const summary = netSummaryForMonth(
                           row.monthKey,
-                          accounts,
+                          visibleAccounts,
                           getSigned,
                           usdRates,
                         );
@@ -1500,9 +1970,24 @@ export default function MonthlyBalancesClient() {
                               scope="row"
                               className="monthly-balances-sticky-col monthly-balances-month-label"
                             >
-                              {formatMonthLabel(row.monthKey)}
+                              <div className="d-flex align-items-center justify-content-between gap-2">
+                                <span className="flex-grow-1">
+                                  {formatMonthLabel(row.monthKey)}
+                                </span>
+                                {!balanceCellsLocked ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                                    onClick={() => openDeleteMonthModal(row.monthKey)}
+                                    aria-label={`Delete month row ${formatMonthLabel(row.monthKey)}`}
+                                    title="Delete month row"
+                                  >
+                                    <i className="bi bi-trash" aria-hidden />
+                                  </button>
+                                ) : null}
+                              </div>
                             </th>
-                            {accounts.map((a) => (
+                            {visibleAccounts.map((a) => (
                               <td
                                 key={a.id}
                                 className="align-middle text-center monthly-balances-account-col"
@@ -1515,9 +2000,9 @@ export default function MonthlyBalancesClient() {
                                 className={`text-end fw-semibold monthly-balances-net-col monthly-balances-net-cell ${netClass}`}
                                 title={
                                   summary.kind === "mixed"
-                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
+                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one visible account currency in this row."
                                     : summary.kind === "ok"
-                                      ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
+                                      ? "Net is the sum of entered amounts for visible columns converted to USD. Hidden columns and accounts exempt from net worth are excluded."
                                       : undefined
                                 }
                               >
@@ -1536,7 +2021,7 @@ export default function MonthlyBalancesClient() {
                     {monthRows.map((row) => {
                       const summary = netSummaryForMonth(
                         row.monthKey,
-                        accounts,
+                        visibleAccounts,
                         getSigned,
                         usdRates,
                       );
@@ -1558,51 +2043,64 @@ export default function MonthlyBalancesClient() {
                           className="monthly-balances-month-card"
                           role="listitem"
                         >
-                          <button
-                            type="button"
-                            className="monthly-balances-month-card__header monthly-balances-month-card__toggle"
-                            onClick={() =>
-                              setExpandedMobileMonthKey((prev) =>
-                                prev === row.monthKey ? null : row.monthKey,
-                              )
-                            }
-                            aria-expanded={expandedMobileMonthKey === row.monthKey}
-                            aria-controls={`mb-mobile-month-body-${row.monthKey}`}
-                          >
-                            <h3 className="monthly-balances-month-card__title">
-                              {formatMonthLabel(row.monthKey)}
-                            </h3>
-                            {accounts.length > 0 ? (
-                              <div
-                                className={`monthly-balances-month-card__net ${netClass}`}
-                                title={
-                                  summary.kind === "mixed"
-                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
-                                    : summary.kind === "ok"
-                                      ? "Net is the sum of entered amounts converted to USD using stored exchange rates."
-                                      : undefined
-                                }
+                          <div className="d-flex align-items-stretch gap-1 monthly-balances-month-card__header-row">
+                            <button
+                              type="button"
+                              className="monthly-balances-month-card__header monthly-balances-month-card__toggle flex-grow-1 min-w-0"
+                              onClick={() =>
+                                setExpandedMobileMonthKey((prev) =>
+                                  prev === row.monthKey ? null : row.monthKey,
+                                )
+                              }
+                              aria-expanded={expandedMobileMonthKey === row.monthKey}
+                              aria-controls={`mb-mobile-month-body-${row.monthKey}`}
+                            >
+                              <h3 className="monthly-balances-month-card__title">
+                                {formatMonthLabel(row.monthKey)}
+                              </h3>
+                              {accounts.length > 0 ? (
+                                <div
+                                  className={`monthly-balances-month-card__net ${netClass}`}
+                                  title={
+                                    summary.kind === "mixed"
+                                      ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one visible account currency in this row."
+                                      : summary.kind === "ok"
+                                        ? "Net is the sum of entered amounts for visible columns converted to USD. Hidden columns and accounts exempt from net worth are excluded."
+                                        : undefined
+                                  }
+                                >
+                                  <span className="monthly-balances-month-card__net-label">
+                                    Net (USD)
+                                  </span>
+                                  <span className="monthly-balances-month-card__net-value">
+                                    {netText}
+                                  </span>
+                                </div>
+                              ) : null}
+                              <i
+                                className={`bi ${expandedMobileMonthKey === row.monthKey ? "bi-chevron-up" : "bi-chevron-down"} monthly-balances-month-card__chevron`}
+                                aria-hidden
+                              />
+                            </button>
+                            {!balanceCellsLocked ? (
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger btn-sm align-self-stretch monthly-balances-month-delete-btn flex-shrink-0 px-2"
+                                onClick={() => openDeleteMonthModal(row.monthKey)}
+                                aria-label={`Delete month ${formatMonthLabel(row.monthKey)}`}
+                                title="Delete month row"
                               >
-                                <span className="monthly-balances-month-card__net-label">
-                                  Net (USD)
-                                </span>
-                                <span className="monthly-balances-month-card__net-value">
-                                  {netText}
-                                </span>
-                              </div>
+                                <i className="bi bi-trash" aria-hidden />
+                              </button>
                             ) : null}
-                            <i
-                              className={`bi ${expandedMobileMonthKey === row.monthKey ? "bi-chevron-up" : "bi-chevron-down"} monthly-balances-month-card__chevron`}
-                              aria-hidden
-                            />
-                          </button>
+                          </div>
                           {expandedMobileMonthKey === row.monthKey ? (
                             accounts.length > 0 ? (
                               <div
                                 id={`mb-mobile-month-body-${row.monthKey}`}
                                 className="monthly-balances-month-card__body"
                               >
-                                {accounts.map((a) => (
+                                {visibleAccounts.map((a) => (
                                   <div key={a.id} className="monthly-balances-mobile-account-row">
                                     <div className="monthly-balances-mobile-account-row__info">
                                       <div className="monthly-balances-mobile-account-row__name-line">
@@ -1647,20 +2145,34 @@ export default function MonthlyBalancesClient() {
             </>
           )}
 
-          {accounts.length === 0 && monthRows.length === 0 ? null : accounts.length > 0 ? (
-            <p className="small text-secondary monthly-balances-footnote mb-0">
-              <i className="bi bi-info-circle me-1" aria-hidden />
-              <strong>Net</strong> is in <strong>USD</strong>, converting each cell from its
-              account currency using stored rates. Rates refresh when you sign in and when this
-              sheet loads or updates if a currency’s rate is missing or older than 24 hours.
-              Debts count as negative in the sum. If a rate is unavailable for a currency in a
-              row, Net shows an em dash.
-            </p>
-          ) : (
-            <p className="small text-secondary monthly-balances-footnote mb-0">
-              <i className="bi bi-info-circle me-1" aria-hidden />
-              Net and balance cells appear after you add your first account.
-            </p>
+          {accounts.length === 0 && monthRows.length === 0 ? null : (
+            <>
+              {accounts.length > 0 ? (
+                <p className="small text-secondary monthly-balances-footnote mb-0">
+                  <i className="bi bi-info-circle me-1" aria-hidden />
+                  <strong>Net</strong> is in <strong>USD</strong>, converting each cell from its
+                  account currency using stored rates. Rates refresh when you sign in and when this
+                  sheet loads or updates if a currency’s rate is missing or older than 24 hours.
+                  Debts count as negative in the sum. Accounts marked exempt from net worth in
+                  Account details are omitted from Net, as are balances in columns you hide via{' '}
+                  <strong>Columns</strong>. If a rate is unavailable for a currency in a row, Net
+                  shows an em dash.
+                </p>
+              ) : (
+                <p className="small text-secondary monthly-balances-footnote mb-0">
+                  <i className="bi bi-info-circle me-1" aria-hidden />
+                  Net and balance cells appear after you add your first account.
+                </p>
+              )}
+              {monthRows.length > 0 ? (
+                <p className="small text-secondary monthly-balances-footnote mb-0 mt-2">
+                  <i className="bi bi-info-circle me-1" aria-hidden />
+                  To <strong>delete a month row</strong>, choose <strong>Edit</strong> (not{' '}
+                  <strong>Locked</strong>), then use the trash icon on that row. You must confirm by
+                  typing the month label exactly as shown (for example “May 2026”).
+                </p>
+              ) : null}
+            </>
           )}
         </>
       ) : null}
@@ -1856,7 +2368,23 @@ export default function MonthlyBalancesClient() {
                                           )
                                         ? prev.accountType
                                         : DEBT_ACCOUNT_TYPES[0];
-                                  return { ...prev, kind, accountType };
+                                  const vestingDate = isUnvestedRsuAsset(kind, accountType)
+                                    ? prev.vestingDate?.trim() ||
+                                      defaultUnvestedRsuVestingDateIso()
+                                    : undefined;
+                                  const annualGrowthPercent = isRealEstateAsset(
+                                    kind,
+                                    accountType,
+                                  )
+                                    ? prev.annualGrowthPercent?.trim() || "4"
+                                    : undefined;
+                                  return {
+                                    ...prev,
+                                    kind,
+                                    accountType,
+                                    vestingDate,
+                                    annualGrowthPercent,
+                                  };
                                 });
                               }}
                               disabled={savingAccountDetails}
@@ -1877,10 +2405,30 @@ export default function MonthlyBalancesClient() {
                               className="form-select glass-select form-select-sm"
                               value={accountDetailsForm.accountType}
                               onChange={(e) => {
+                                const accountType = e.target.value;
                                 setAccountDetailsArchivedConflict(null);
-                                setAccountDetailsForm((prev) =>
-                                  prev ? { ...prev, accountType: e.target.value } : prev,
-                                );
+                                setAccountDetailsForm((prev) => {
+                                  if (!prev) return prev;
+                                  const vestingDate = isUnvestedRsuAsset(
+                                    prev.kind,
+                                    accountType,
+                                  )
+                                    ? prev.vestingDate?.trim() ||
+                                      defaultUnvestedRsuVestingDateIso()
+                                    : undefined;
+                                  const annualGrowthPercent = isRealEstateAsset(
+                                    prev.kind,
+                                    accountType,
+                                  )
+                                    ? prev.annualGrowthPercent?.trim() || "4"
+                                    : undefined;
+                                  return {
+                                    ...prev,
+                                    accountType,
+                                    vestingDate,
+                                    annualGrowthPercent,
+                                  };
+                                });
                               }}
                               disabled={savingAccountDetails}
                             >
@@ -1891,6 +2439,62 @@ export default function MonthlyBalancesClient() {
                               ))}
                             </select>
                           </div>
+                          {accountDetailsForm.kind === "Asset" &&
+                          accountDetailsForm.accountType === "Unvested RSU" ? (
+                            <div className="col-12">
+                              <label
+                                htmlFor="mb-info-rsu-vesting"
+                                className="form-label fw-semibold small mb-1"
+                              >
+                                Vesting date
+                              </label>
+                              <input
+                                id="mb-info-rsu-vesting"
+                                type="date"
+                                className="form-control search-input-glass form-control-sm"
+                                value={accountDetailsForm.vestingDate ?? ""}
+                                onChange={(e) => {
+                                  setAccountDetailsArchivedConflict(null);
+                                  setAccountDetailsForm((prev) =>
+                                    prev
+                                      ? { ...prev, vestingDate: e.target.value }
+                                      : prev,
+                                  );
+                                }}
+                                disabled={savingAccountDetails}
+                              />
+                            </div>
+                          ) : null}
+                          {accountDetailsForm.kind === "Asset" &&
+                          accountDetailsForm.accountType === "Real Estate" ? (
+                            <div className="col-12">
+                              <label
+                                htmlFor="mb-info-real-estate-growth"
+                                className="form-label fw-semibold small mb-1"
+                              >
+                                Annual Growth (%)
+                              </label>
+                              <input
+                                id="mb-info-real-estate-growth"
+                                type="number"
+                                inputMode="decimal"
+                                min={-99}
+                                max={100}
+                                step="0.01"
+                                className="form-control search-input-glass form-control-sm"
+                                value={accountDetailsForm.annualGrowthPercent ?? ""}
+                                onChange={(e) => {
+                                  setAccountDetailsArchivedConflict(null);
+                                  setAccountDetailsForm((prev) =>
+                                    prev
+                                      ? { ...prev, annualGrowthPercent: e.target.value }
+                                      : prev,
+                                  );
+                                }}
+                                disabled={savingAccountDetails}
+                              />
+                            </div>
+                          ) : null}
                           <div className="col-12">
                             <CurrencySearchCombobox
                               id="mb-info-currency-combobox"
@@ -1903,6 +2507,64 @@ export default function MonthlyBalancesClient() {
                               }}
                               disabled={savingAccountDetails}
                             />
+                          </div>
+                        </div>
+                        <div className="row g-2 mt-2">
+                          <div className="col-12">
+                            <div className="form-check d-flex align-items-start gap-2 mb-0">
+                              <input
+                                className="form-check-input mt-1"
+                                type="checkbox"
+                                id="mb-info-exempt-net-worth"
+                                checked={accountDetailsForm.exemptFromNetWorth}
+                                onChange={(e) => {
+                                  setAccountDetailsArchivedConflict(null);
+                                  setAccountDetailsForm((prev) =>
+                                    prev
+                                      ? { ...prev, exemptFromNetWorth: e.target.checked }
+                                      : prev,
+                                  );
+                                }}
+                                disabled={savingAccountDetails}
+                              />
+                              <label
+                                className="form-check-label small fw-semibold mb-0"
+                                htmlFor="mb-info-exempt-net-worth"
+                              >
+                                Exempt from Net Worth
+                              </label>
+                            </div>
+                            <p className="small text-secondary mb-0 mt-1 ms-4">
+                              When checked, this account’s balances are omitted from each month’s{' '}
+                              <strong>Net (USD)</strong> total (balances still appear in the grid).
+                            </p>
+                          </div>
+                          <div className="col-12">
+                            <div className="form-check d-flex align-items-start gap-2 mb-0">
+                              <input
+                                className="form-check-input mt-1"
+                                type="checkbox"
+                                id="mb-info-hide-column"
+                                checked={hiddenColumnIdSet.has(accountDetailsTarget.id)}
+                                onChange={(e) =>
+                                  setAccountColumnVisible(
+                                    accountDetailsTarget.id,
+                                    !e.target.checked,
+                                  )
+                                }
+                                disabled={savingAccountDetails}
+                              />
+                              <label
+                                className="form-check-label small fw-semibold mb-0"
+                                htmlFor="mb-info-hide-column"
+                              >
+                                Hide this account column
+                              </label>
+                            </div>
+                            <p className="small text-secondary mb-0 mt-1 ms-4">
+                              Hides this account from the desktop and mobile table until you show it
+                              again in <strong>Columns</strong>.
+                            </p>
                           </div>
                         </div>
                         {accountDetailsForm.kind === "Debt" ? (
@@ -1940,7 +2602,20 @@ export default function MonthlyBalancesClient() {
                         type="button"
                         className="btn glass-btn glass-btn-primary"
                         disabled={
-                          savingAccountDetails || !accountDetailsForm?.name.trim()
+                          savingAccountDetails ||
+                          !accountDetailsForm?.name.trim() ||
+                          (accountDetailsForm != null &&
+                            isUnvestedRsuAsset(
+                              accountDetailsForm.kind,
+                              accountDetailsForm.accountType,
+                            ) &&
+                            !(accountDetailsForm.vestingDate ?? "").trim()) ||
+                          (accountDetailsForm != null &&
+                            isRealEstateAsset(
+                              accountDetailsForm.kind,
+                              accountDetailsForm.accountType,
+                            ) &&
+                            !(accountDetailsForm.annualGrowthPercent ?? "").trim())
                         }
                         onClick={() => void handleSaveAccountDetails()}
                       >
@@ -1957,6 +2632,166 @@ export default function MonthlyBalancesClient() {
                         )}
                       </button>
                     ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={deleteMonthModalElRef}
+              className="modal fade"
+              id={MB_DELETE_MONTH_MODAL_ID}
+              tabIndex={-1}
+              aria-labelledby={`${MB_DELETE_MONTH_MODAL_ID}-label`}
+              aria-hidden="true"
+            >
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content score-breakdown-modal">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id={`${MB_DELETE_MONTH_MODAL_ID}-label`}>
+                      Delete month row?
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                      disabled={deletingMonth}
+                    />
+                  </div>
+                  <div className="modal-body">
+                    {deleteMonthTargetKey ? (
+                      <>
+                        <p className="mb-3">
+                          This removes the <strong>{formatMonthLabel(deleteMonthTargetKey)}</strong>{" "}
+                          row and all balance values stored for that month. This cannot be undone.
+                        </p>
+                        <p className="small text-secondary mb-2">
+                          To confirm, type the month label exactly as shown in the table (e.g.{" "}
+                          <strong>{deleteMonthConfirmPhrase}</strong>).
+                        </p>
+                        <label
+                          htmlFor="mb-delete-month-confirm-input"
+                          className="form-label fw-semibold"
+                        >
+                          Month year
+                        </label>
+                        <input
+                          id="mb-delete-month-confirm-input"
+                          className="form-control search-input-glass"
+                          autoComplete="off"
+                          value={deleteMonthConfirmInput}
+                          onChange={(e) => setDeleteMonthConfirmInput(e.target.value)}
+                          placeholder={deleteMonthConfirmPhrase}
+                          disabled={deletingMonth}
+                        />
+                      </>
+                    ) : null}
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn glass-btn glass-btn-secondary"
+                      data-bs-dismiss="modal"
+                      disabled={deletingMonth}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      disabled={!deleteMonthConfirmValid || deletingMonth || !deleteMonthTargetKey}
+                      onClick={() => void handleConfirmDeleteMonth()}
+                    >
+                      {deletingMonth ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            aria-hidden
+                          />
+                          Deleting…
+                        </>
+                      ) : (
+                        "Delete month"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={columnVisibilityModalElRef}
+              className="modal fade"
+              id={MB_COLUMN_VISIBILITY_MODAL_ID}
+              tabIndex={-1}
+              aria-labelledby={`${MB_COLUMN_VISIBILITY_MODAL_ID}-label`}
+              aria-hidden="true"
+            >
+              <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div className="modal-content score-breakdown-modal">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id={`${MB_COLUMN_VISIBILITY_MODAL_ID}-label`}>
+                      Column visibility
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    />
+                  </div>
+                  <div className="modal-body">
+                    <p className="small text-secondary mb-3">
+                      Choose which accounts appear as columns in the sheet. This preference is
+                      saved to your account.
+                    </p>
+                    <ul className="list-group list-group-flush">
+                      {accounts.map((a) => (
+                        <li
+                          key={a.id}
+                          className="list-group-item d-flex align-items-center justify-content-between gap-2 border-secondary border-opacity-25 bg-transparent px-0"
+                        >
+                          <span className="small text-break pe-2">
+                            {a.name}{" "}
+                            <span className="text-secondary">({a.currency})</span>
+                          </span>
+                          <div className="form-check form-switch flex-shrink-0 mb-0">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id={`mb-col-vis-${a.id}`}
+                              checked={!hiddenColumnIdSet.has(a.id)}
+                              onChange={(e) => setAccountColumnVisible(a.id, e.target.checked)}
+                            />
+                            <label
+                              className="visually-hidden"
+                              htmlFor={`mb-col-vis-${a.id}`}
+                            >
+                              Show column for {a.name}
+                            </label>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-sm glass-btn glass-btn-secondary"
+                      onClick={showAllAccountColumns}
+                      disabled={hiddenColumnIds.length === 0}
+                    >
+                      Show all columns
+                    </button>
+                    <button
+                      type="button"
+                      className="btn glass-btn glass-btn-primary"
+                      data-bs-dismiss="modal"
+                    >
+                      Done
+                    </button>
                   </div>
                 </div>
               </div>

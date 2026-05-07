@@ -5,8 +5,35 @@ export const ASSET_ACCOUNT_TYPES = [
   "Retirement",
   "Mortgage Offset",
   "Brokerage",
+  "Real Estate",
+  "Unvested RSU",
   "Other",
 ] as const;
+
+/** ISO calendar date `YYYY-MM-DD`, four years from today (local). */
+export function defaultUnvestedRsuVestingDateIso(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 4);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}-${m.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+}
+
+/** Valid Gregorian `YYYY-MM-DD` string. */
+export function parseIsoDateOnly(s: string): string | null {
+  const t = s.trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const da = Number(m[3]);
+  const d = new Date(y, mo - 1, da);
+  if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== da) {
+    return null;
+  }
+  return t;
+}
 
 export const DEBT_ACCOUNT_TYPES = [
   "Mortgage",
@@ -20,6 +47,20 @@ export type AssetAccountType = (typeof ASSET_ACCOUNT_TYPES)[number];
 export type DebtAccountType = (typeof DEBT_ACCOUNT_TYPES)[number];
 
 export type BalanceAccountKind = "Asset" | "Debt";
+
+export function isUnvestedRsuAsset(
+  kind: BalanceAccountKind,
+  accountType: string,
+): boolean {
+  return kind === "Asset" && accountType === "Unvested RSU";
+}
+
+export function isRealEstateAsset(
+  kind: BalanceAccountKind,
+  accountType: string,
+): boolean {
+  return kind === "Asset" && accountType === "Real Estate";
+}
 
 export function formatMonthKey(date: Date): string {
   const y = date.getFullYear();

@@ -7,6 +7,12 @@ export interface IBalanceAccount {
   accountType: string;
   /** ISO 4217 code, e.g. USD */
   currency: string;
+  /** ISO calendar date `YYYY-MM-DD` when account type is Unvested RSU. */
+  vestingDate?: string;
+  /** Annual percentage growth used for Real Estate auto-growth (e.g. 4 = 4%). */
+  annualGrowthPercent?: number;
+  /** When true, balances are omitted from the monthly Net (USD) total. */
+  exemptFromNetWorth?: boolean;
   /** When true, account is hidden from the UI but kept for restore and history. */
   archived?: boolean;
 }
@@ -20,6 +26,7 @@ export interface IUserMonthlyBalanceSheet extends mongoose.Document {
   userId: string;
   accounts: IBalanceAccount[];
   monthRows: IMonthBalanceRow[];
+  hiddenColumnIds?: string[];
 }
 
 const BalanceAccountSchema = new mongoose.Schema<IBalanceAccount>(
@@ -28,6 +35,9 @@ const BalanceAccountSchema = new mongoose.Schema<IBalanceAccount>(
     name: { type: String, required: true, trim: true },
     kind: { type: String, enum: ["Asset", "Debt"], required: true },
     accountType: { type: String, required: true },
+    vestingDate: { type: String, trim: true },
+    annualGrowthPercent: { type: Number },
+    exemptFromNetWorth: { type: Boolean, default: false },
     currency: { type: String, required: true, default: "USD", trim: true, uppercase: true },
     archived: { type: Boolean, default: false },
   },
@@ -47,6 +57,7 @@ const UserMonthlyBalanceSheetSchema = new mongoose.Schema<IUserMonthlyBalanceShe
     userId: { type: String, required: true, unique: true, index: true },
     accounts: { type: [BalanceAccountSchema], default: [] },
     monthRows: { type: [MonthBalanceRowSchema], default: [] },
+    hiddenColumnIds: { type: [String], default: [] },
   },
   { timestamps: true },
 );

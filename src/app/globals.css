@@ -3388,6 +3388,26 @@ a:hover {
   background: var(--glass-bg);
 }
 
+.monthly-balances-month-card__header-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg);
+}
+
+.monthly-balances-month-card__header-row .monthly-balances-month-card__header.monthly-balances-month-card__toggle {
+  border-bottom: none;
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+}
+
+.monthly-balances-month-delete-btn {
+  align-self: stretch;
+}
+
 .monthly-balances-month-card__toggle {
   width: 100%;
   border: 0;
