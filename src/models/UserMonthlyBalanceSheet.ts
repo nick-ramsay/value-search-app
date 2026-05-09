@@ -27,6 +27,11 @@ export interface IUserMonthlyBalanceSheet extends mongoose.Document {
   accounts: IBalanceAccount[];
   monthRows: IMonthBalanceRow[];
   hiddenColumnIds?: string[];
+  /**
+   * When true, `UserNetWorthYearlyAverage` rows match this sheet’s balances/columns.
+   * Set false on any sheet mutation that can change yearly Net; GET runs sync only while false.
+   */
+  yearlyNetWorthAveragesMatchSheet?: boolean;
 }
 
 const BalanceAccountSchema = new mongoose.Schema<IBalanceAccount>(
@@ -58,6 +63,7 @@ const UserMonthlyBalanceSheetSchema = new mongoose.Schema<IUserMonthlyBalanceShe
     accounts: { type: [BalanceAccountSchema], default: [] },
     monthRows: { type: [MonthBalanceRowSchema], default: [] },
     hiddenColumnIds: { type: [String], default: [] },
+    yearlyNetWorthAveragesMatchSheet: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

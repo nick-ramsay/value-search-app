@@ -3219,6 +3219,97 @@ a:hover {
   padding: 1.5rem 1.6rem 1.65rem;
 }
 
+/* Page title strip */
+.monthly-balances-page-heading .monthly-balances-page-heading-body {
+  padding: 1rem 1.25rem 1.05rem;
+}
+
+[data-theme="light"] .monthly-balances-page-heading {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+/* Toolbar above chart/table — glass rail, grouped controls */
+.monthly-balances-toolbar {
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+}
+
+.monthly-balances-toolbar-inner {
+  padding: 1rem 1.15rem 1.2rem;
+}
+
+@media (min-width: 768px) {
+  .monthly-balances-toolbar-inner {
+    padding: 1.15rem 1.35rem 1.35rem;
+  }
+}
+
+.monthly-balances-toolbar-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 100%;
+}
+
+.monthly-balances-toolbar-cluster--end {
+  align-items: stretch;
+}
+
+@media (min-width: 992px) {
+  .monthly-balances-toolbar-cluster--end {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .monthly-balances-toolbar-cluster--end .monthly-balances-toolbar-data-btns {
+    justify-content: flex-end;
+  }
+}
+
+.monthly-balances-toolbar-cluster-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  line-height: 1.2;
+}
+
+.monthly-balances-toolbar-expand {
+  margin-top: 0.85rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-border-subtle);
+}
+
+.monthly-balances-toolbar-btn-wide {
+  align-self: flex-start;
+  min-width: min(100%, 9.75rem);
+}
+
+@media (min-width: 992px) {
+  .monthly-balances-toolbar-cluster:not(.monthly-balances-toolbar-cluster--end)
+    .monthly-balances-toolbar-btn-wide {
+    align-self: stretch;
+  }
+}
+
+[data-theme="light"] .monthly-balances-toolbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.08),
+    var(--glass-shadow);
+}
+
+.monthly-balances-sheet-loading.card.liquid-glass-card {
+  border-radius: 16px;
+}
+
 /* Monthly balances – large action toggles (add account / add month) */
 .monthly-balances-actions-bar {
   display: flex;
@@ -3932,6 +4023,106 @@ a:hover {
 [data-theme="light"] .monthly-balances-cell-display--locked:hover {
   background: #ffffff;
   border-color: transparent;
+}
+
+/* Net chart — same glass language as .card.liquid-glass-card / stock-card */
+.monthly-balances-net-chart-section {
+  padding: 1.2rem 1.35rem 1.35rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+}
+
+.monthly-balances-net-chart-section__title {
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.monthly-balances-net-chart-section .small {
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.monthly-balances-net-chart-figure {
+  margin: 0;
+}
+
+.monthly-balances-net-chart-svg-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.monthly-balances-net-chart-svg {
+  display: block;
+  max-width: none;
+  font-family: var(--font-sans);
+}
+
+.monthly-balances-net-chart-x-month {
+  font-weight: 600;
+}
+
+.monthly-balances-net-chart-x-year {
+  font-weight: 500;
+  font-size: 10px;
+  fill: var(--text-tertiary);
+}
+
+.monthly-balances-net-chart-scroll-hint {
+  line-height: 1.45;
+  padding-left: 0.15rem;
+}
+
+.monthly-balances-net-chart-plot-bg {
+  fill: var(--glass-bg-subtle);
+  stroke: var(--glass-border-subtle);
+  stroke-width: 1;
+}
+
+.monthly-balances-net-chart-zero-line {
+  stroke: var(--glass-border);
+}
+
+.monthly-balances-net-chart-axis-label {
+  fill: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.monthly-balances-net-chart-x-label {
+  fill: var(--text-secondary);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.monthly-balances-net-chart-placeholder-bar {
+  fill: color-mix(in srgb, var(--text-tertiary) 48%, var(--glass-bg-subtle));
+}
+
+.monthly-balances-net-chart-bar {
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--text-primary) 12%, transparent));
+}
+
+[data-theme="light"] .monthly-balances-net-chart-section {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.1),
+    var(--glass-shadow);
+}
+
+[data-theme="light"] .monthly-balances-net-chart-placeholder-bar {
+  fill: color-mix(in srgb, var(--text-tertiary) 38%, rgba(255, 255, 255, 0.65));
+}
+
+[data-theme="light"] .monthly-balances-net-chart-bar {
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.14));
 }
 
 .monthly-balances-footnote {

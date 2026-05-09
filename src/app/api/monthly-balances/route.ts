@@ -23,6 +23,7 @@ import {
   refreshStaleExchangeRates,
   getUsdPerUnitRatesForCurrencies,
 } from "@/lib/usd-exchange-rates";
+import { syncYearlyNetWorthIfStaleFromSheetDoc } from "@/lib/net-worth-yearly-averages";
 import UserMonthlyBalanceSheet, {
   type IBalanceAccount,
   type IMonthBalanceRow,
@@ -190,11 +191,13 @@ async function getOrCreateSheet(userId: string) {
       accounts: [],
       monthRows: [],
       hiddenColumnIds: [],
+      yearlyNetWorthAveragesMatchSheet: false,
     });
     return doc;
   }
   if (ensureMonthRowWhenHasAccounts(doc)) {
     doc.markModified("monthRows");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
   }
   return doc;
@@ -212,8 +215,10 @@ export async function GET() {
   }
   if (ensureMonthRowWhenHasAccounts(doc)) {
     doc.markModified("monthRows");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
   }
+  await syncYearlyNetWorthIfStaleFromSheetDoc(session.user.id, doc);
   return NextResponse.json(await monthlyBalancesPayload(doc));
 }
 
@@ -376,6 +381,7 @@ export async function PATCH(request: Request) {
     if (ensureMonthRowWhenHasAccounts(doc)) {
       doc.markModified("monthRows");
     }
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -399,6 +405,7 @@ export async function PATCH(request: Request) {
     }
     acc.archived = true;
     doc.markModified("accounts");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -436,6 +443,7 @@ export async function PATCH(request: Request) {
     if (ensureMonthRowWhenHasAccounts(doc)) {
       doc.markModified("monthRows");
     }
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -558,6 +566,7 @@ export async function PATCH(request: Request) {
       acc.exemptFromNetWorth = body.exemptFromNetWorth;
     }
     doc.markModified("accounts");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -586,6 +595,7 @@ export async function PATCH(request: Request) {
     const grew = applyRealEstateAutoGrowthForNewMonths(doc, new Set([monthKey]));
     doc.markModified("monthRows");
     if (grew) doc.markModified("monthRows");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -640,6 +650,7 @@ export async function PATCH(request: Request) {
     const grew = applyRealEstateAutoGrowthForNewMonths(doc, new Set(toAdd));
     doc.markModified("monthRows");
     if (grew) doc.markModified("monthRows");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -664,6 +675,7 @@ export async function PATCH(request: Request) {
     if (ensureMonthRowWhenHasAccounts(doc)) {
       doc.markModified("monthRows");
     }
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -687,8 +699,15 @@ export async function PATCH(request: Request) {
     const doc = await UserMonthlyBalanceSheet.findOneAndUpdate(
       { userId },
       {
-        $set: { hiddenColumnIds },
-        $setOnInsert: { userId, accounts: [], monthRows: [] },
+        $set: {
+          hiddenColumnIds,
+          yearlyNetWorthAveragesMatchSheet: false,
+        },
+        $setOnInsert: {
+          userId,
+          accounts: [],
+          monthRows: [],
+        },
       },
       { upsert: true, new: true },
     );
@@ -873,6 +892,7 @@ export async function PATCH(request: Request) {
       doc.monthRows = builtRows;
       doc.markModified("accounts");
       doc.markModified("monthRows");
+      doc.yearlyNetWorthAveragesMatchSheet = false;
       await doc.save();
       return NextResponse.json(await monthlyBalancesPayload(doc));
     }
@@ -903,6 +923,7 @@ export async function PATCH(request: Request) {
 
     doc.markModified("accounts");
     doc.markModified("monthRows");
+    doc.yearlyNetWorthAveragesMatchSheet = false;
     await doc.save();
     return NextResponse.json(await monthlyBalancesPayload(doc));
   }
@@ -954,6 +975,7 @@ export async function PATCH(request: Request) {
       row.balances = { ...balances };
       doc.markModified("monthRows");
       try {
+        doc.yearlyNetWorthAveragesMatchSheet = false;
         await doc.save();
         return NextResponse.json(await monthlyBalancesPayload(doc));
       } catch (err) {

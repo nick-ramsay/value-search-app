@@ -61,7 +61,7 @@ export function formatMoneyAmount(
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: c,
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
