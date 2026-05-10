@@ -342,9 +342,6 @@ export default function MonthlyBalancesClient() {
     hide: () => void;
     dispose: () => void;
   } | null>(null);
-  /** Desktop sheet horizontal scrollport — default scroll shows the right side (Net / newest columns). */
-  const tableViewportRef = useRef<HTMLDivElement>(null);
-
   const debouncers = useRef<Map<string, number>>(new Map());
   const saveSeqRef = useRef<Map<string, number>>(new Map());
   const [buffers, setBuffers] = useState<Record<string, string>>({});
@@ -1478,30 +1475,6 @@ export default function MonthlyBalancesClient() {
 
   const isDesktopTable = useMediaMinMd();
 
-  const visibleAccountIdsKey = useMemo(
-    () => visibleAccounts.map((a) => a.id).join(","),
-    [visibleAccounts],
-  );
-
-  /** Wide sheets start scrolled to the right so Net (USD) and trailing accounts are in view first. */
-  useLayoutEffect(() => {
-    if (loading || !isDesktopTable) return;
-    if (accounts.length === 0 || monthRows.length === 0) return;
-    const el = tableViewportRef.current;
-    if (!el) return;
-    const snapRight = () => {
-      el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
-    };
-    snapRight();
-    requestAnimationFrame(snapRight);
-  }, [
-    loading,
-    isDesktopTable,
-    accounts.length,
-    monthRows.length,
-    visibleAccountIdsKey,
-  ]);
-
   const renderAccountBalanceEditor = (monthKey: string, a: Account) => {
     const signed = getSigned(monthKey, a.id);
     const key = makeCellBufferKey(monthKey, a.id);
@@ -1692,7 +1665,7 @@ export default function MonthlyBalancesClient() {
                 Charts
               </h3>
               <div
-                className="btn-group monthly-balances-view-toggle flex-wrap mb-0"
+                className="btn-group monthly-balances-view-toggle flex-wrap"
                 role="group"
                 aria-label="Monthly sheet, year averages, or projections"
               >
@@ -1827,12 +1800,6 @@ export default function MonthlyBalancesClient() {
               >
                 Net worth projections
               </h2>
-              <p className="small text-secondary mb-3 mb-lg-4">
-                Forward-looking charts from your historical yearly averages and
-                baseline month (stored when averages sync). Same data as{" "}
-                <strong>Year averages</strong>, shown as projected paths—not
-                financial advice.
-              </p>
               {yearlyLoading ? (
                 <div
                   className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
@@ -1859,7 +1826,56 @@ export default function MonthlyBalancesClient() {
             aria-label="Balance table tools"
           >
             <div className="monthly-balances-toolbar-inner">
-              <div className="monthly-balances-toolbar-quick row g-2 g-lg-3 align-items-lg-center mb-3">
+              <div className="mb-3">
+                <div
+                  className="monthly-balances-actions-bar"
+                  role="tablist"
+                  aria-label="Add account or month"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={actionsPanel === "account"}
+                    aria-controls="mb-panel-add-account"
+                    id="mb-tab-add-account"
+                    className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
+                    onClick={() =>
+                      setActionsPanel((p) =>
+                        p === "account" ? null : "account",
+                      )
+                    }
+                  >
+                    <i
+                      className="bi bi-wallet2 monthly-balances-action-btn__icon"
+                      aria-hidden
+                    />
+                    <span className="monthly-balances-action-btn__label">
+                      Add new account
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={actionsPanel === "month"}
+                    aria-controls="mb-panel-add-month"
+                    id="mb-tab-add-month"
+                    className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
+                    onClick={() =>
+                      setActionsPanel((p) => (p === "month" ? null : "month"))
+                    }
+                  >
+                    <i
+                      className="bi bi-calendar-plus monthly-balances-action-btn__icon"
+                      aria-hidden
+                    />
+                    <span className="monthly-balances-action-btn__label">
+                      Add new month
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="monthly-balances-toolbar-quick row g-2 g-lg-3 align-items-lg-center mb-0">
                 <div className="col-12 col-lg-5 col-xl-4">
                   <div className="monthly-balances-toolbar-cluster">
                     <span className="monthly-balances-toolbar-cluster-label">
@@ -1925,54 +1941,7 @@ export default function MonthlyBalancesClient() {
               </div>
 
               <div className="monthly-balances-toolbar-expand">
-                <div className="mb-3">
-                  <div
-                    className="monthly-balances-actions-bar"
-                    role="tablist"
-                    aria-label="Add account or month"
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={actionsPanel === "account"}
-                      aria-controls="mb-panel-add-account"
-                      id="mb-tab-add-account"
-                      className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
-                      onClick={() =>
-                        setActionsPanel((p) =>
-                          p === "account" ? null : "account",
-                        )
-                      }
-                    >
-                      <i
-                        className="bi bi-wallet2 monthly-balances-action-btn__icon"
-                        aria-hidden
-                      />
-                      <span className="monthly-balances-action-btn__label">
-                        Add new account
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={actionsPanel === "month"}
-                      aria-controls="mb-panel-add-month"
-                      id="mb-tab-add-month"
-                      className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
-                      onClick={() =>
-                        setActionsPanel((p) => (p === "month" ? null : "month"))
-                      }
-                    >
-                      <i
-                        className="bi bi-calendar-plus monthly-balances-action-btn__icon"
-                        aria-hidden
-                      />
-                      <span className="monthly-balances-action-btn__label">
-                        Add new month
-                      </span>
-                    </button>
-                  </div>
-
+                <div className="mb-0">
                   <div
                     id="mb-panel-add-account"
                     role="tabpanel"
@@ -2409,7 +2378,6 @@ export default function MonthlyBalancesClient() {
               ) : null}
               {isDesktopTable ? (
                 <div
-                  ref={tableViewportRef}
                   className="monthly-balances-table-viewport mb-4"
                   role="region"
                   aria-label="Monthly balance sheet"

@@ -72,31 +72,43 @@ export default function PortfolioCurrentSelection({
 
   return (
     <>
-      <div className="d-flex align-items-center justify-content-center gap-2 mb-3">
-        <h2 className="glass-heading fs-6 fw-semibold mb-0">
+      <div className="position-relative mb-3">
+        <h3 className="glass-heading fs-6 fw-semibold mb-0 text-center px-4">
           Current Selection
-        </h2>
-        {hasSymbol && (
+        </h3>
+        {hasSymbol ? (
           <button
             type="button"
-            className="btn theme-switcher-btn rounded-circle d-flex align-items-center justify-content-center p-0"
-            style={{ width: "1.5rem", height: "1.5rem", minWidth: "1.5rem" }}
+            className="btn theme-switcher-btn rounded-circle d-flex align-items-center justify-content-center p-0 position-absolute top-50 end-0 translate-middle-y"
+            style={{
+              width: "1.5rem",
+              height: "1.5rem",
+              minWidth: "1.5rem",
+            }}
             aria-label="Clear selection"
             title="Clear selection"
             onClick={handleClear}
           >
             <i className="bi bi-x" style={{ fontSize: "0.75rem" }} aria-hidden />
           </button>
-        )}
+        ) : null}
       </div>
       <div className="mb-4">
         {loading ? (
-          <article className="stock-card stock-card--compact">
-            <header className="stock-card__head d-flex align-items-center justify-content-center text-center">
-              <p className="text-muted mb-0 w-100 px-2" style={{ fontSize: "0.95rem" }}>
+          <article className="stock-card stock-card--compact position-relative">
+            <header className="stock-card__head">
+              <span style={{ fontSize: "0.95rem", visibility: "hidden" }} aria-hidden="true">
+                Placeholder
+              </span>
+            </header>
+            <div
+              className="position-absolute start-0 end-0 d-flex align-items-center justify-content-center px-3"
+              style={{ top: "50%", transform: "translateY(-50%)" }}
+            >
+              <p className="text-muted mb-0 text-center px-3" style={{ fontSize: "0.95rem" }}>
                 Loading selection…
               </p>
-            </header>
+            </div>
             <div className="stock-card__signals invisible" aria-hidden="true">
               <span className="stock-card__badge">AI: Neutral</span>
               <span className="stock-card__badge">0%</span>

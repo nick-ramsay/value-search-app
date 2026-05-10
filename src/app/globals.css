@@ -42,9 +42,9 @@
   --text-on-glass: rgba(0, 0, 0, 0.87);
 
   /* Background */
-  --bg-start: #f5f5f7;
-  --bg-mid: #fbfbfd;
-  --bg-end: #f5f5f7;
+  --bg-start: #eef0f5;
+  --bg-mid: #fafbff;
+  --bg-end: #f0eef6;
 
   /* Dropdown (light) */
   --dropdown-bg: rgba(255, 255, 255, 0.96);
@@ -88,9 +88,9 @@
     --text-tertiary: rgba(255, 255, 255, 0.48);
     --text-on-glass: rgba(255, 255, 255, 0.96);
 
-    --bg-start: #000000;
-    --bg-mid: #0d0d10;
-    --bg-end: #000000;
+    --bg-start: #0a0a12;
+    --bg-mid: #13101e;
+    --bg-end: #080c14;
 
     --dropdown-bg: rgba(28, 28, 30, 0.96);
     --dropdown-border: rgba(255, 255, 255, 0.1);
@@ -126,9 +126,9 @@
   --text-tertiary: rgba(255, 255, 255, 0.48);
   --text-on-glass: rgba(255, 255, 255, 0.96);
 
-  --bg-start: #000000;
-  --bg-mid: #0d0d10;
-  --bg-end: #000000;
+  --bg-start: #0a0a12;
+  --bg-mid: #13101e;
+  --bg-end: #080c14;
 
   --dropdown-bg: rgba(28, 28, 30, 0.96);
   --dropdown-border: rgba(255, 255, 255, 0.1);
@@ -168,25 +168,7 @@ body {
   background-attachment: fixed;
 }
 
-/* Light theme: flat background */
-html[data-theme=”light”] body {
-  background: var(--bg-start);
-  background-attachment: fixed;
-}
 
-/* System dark: also use flat background */
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme=”light”]) body {
-    background: var(--bg-start);
-    background-attachment: fixed;
-  }
-}
-
-/* Forced dark: flat background */
-html[data-theme=”dark”] body {
-  background: var(--bg-start);
-  background-attachment: fixed;
-}
 
 /* Glass utility – taskboard-style */
 .glass {
@@ -3234,13 +3216,25 @@ a:hover {
   padding: 1.5rem 1.6rem 1.65rem;
 }
 
-/* Page title strip */
-.monthly-balances-page-heading .monthly-balances-page-heading-body {
-  padding: 1rem 1.25rem 1.05rem;
+/* Page title: transparent row, just the heading text */
+.monthly-balances-page-heading.card.glass-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-[data-theme="light"] .monthly-balances-page-heading {
-  background: rgba(255, 255, 255, 0.94);
+.monthly-balances-page-heading .monthly-balances-page-heading-body {
+  padding: 0 0 0.85rem;
+  text-align: center;
+}
+
+.monthly-balances-page-heading .monthly-balances-page-heading-body h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
 }
 
 /* Toolbar above chart/table — glass rail, grouped controls */
@@ -3255,12 +3249,12 @@ a:hover {
 }
 
 .monthly-balances-toolbar-inner {
-  padding: 1rem 1.15rem 1.2rem;
+  padding: 0.85rem 1rem 0.55rem;
 }
 
 @media (min-width: 768px) {
   .monthly-balances-toolbar-inner {
-    padding: 1.15rem 1.35rem 1.35rem;
+    padding: 0.9rem 1.15rem 0.6rem;
   }
 }
 
@@ -3268,7 +3262,6 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  min-height: 100%;
 }
 
 .monthly-balances-toolbar-cluster--end {
@@ -3287,18 +3280,13 @@ a:hover {
 }
 
 .monthly-balances-toolbar-cluster-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  line-height: 1.2;
+  display: none;
 }
 
-.monthly-balances-toolbar-expand {
-  margin-top: 0.85rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--glass-border-subtle);
+/* Only when a panel is open — keeps Cells/Data tight to the card bottom when both are closed */
+.monthly-balances-toolbar-expand
+  .monthly-balances-action-panel.collapse.show {
+  margin-top: 0.5rem;
 }
 
 .monthly-balances-toolbar-btn-wide {
@@ -3319,33 +3307,87 @@ a:hover {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+/* Lock (red tint) / Edit (green tint) — theme-aware pills */
+.monthly-balances-lock-btn.btn-danger,
+.monthly-balances-lock-btn.btn-success {
+  border-radius: 999px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.3rem 0.85rem !important;
+  box-shadow: none !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast) !important;
+}
+
+.monthly-balances-lock-btn.btn-danger {
+  background: color-mix(in srgb, var(--danger-soft) 92%, var(--glass-bg-strong)) !important;
+  border-color: color-mix(in srgb, var(--danger-clear) 38%, transparent) !important;
+  color: var(--danger-clear) !important;
+}
+
+.monthly-balances-lock-btn.btn-danger:hover {
+  background: color-mix(in srgb, var(--danger-clear) 26%, transparent) !important;
+  border-color: color-mix(in srgb, var(--danger-clear) 48%, transparent) !important;
+  color: var(--danger-clear) !important;
+}
+
+.monthly-balances-lock-btn.btn-success {
+  background: color-mix(in srgb, var(--success-glass) 88%, var(--glass-bg-strong)) !important;
+  border-color: color-mix(in srgb, var(--success) 42%, transparent) !important;
+  color: var(--success) !important;
+}
+
+.monthly-balances-lock-btn.btn-success:hover {
+  background: color-mix(in srgb, var(--success) 38%, transparent) !important;
+  border-color: color-mix(in srgb, var(--success) 55%, transparent) !important;
+  color: #ffffff !important;
+}
+
+/* Upload / Columns secondary buttons — glass pill to match toolbar */
+.monthly-balances-toolbar .btn-outline-secondary {
+  border-radius: 999px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  background: rgba(118, 118, 128, 0.1) !important;
+  border-color: transparent !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+}
+
+.monthly-balances-toolbar .btn-outline-secondary:hover {
+  background: rgba(118, 118, 128, 0.18) !important;
+  border-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+
 .monthly-balances-sheet-loading.card.glass-card {
   border-radius: 16px;
 }
 
-/* Monthly balances – large action toggles (add account / add month) */
+/* Monthly balances – compact pill action toggles (add account / add month) */
 .monthly-balances-actions-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .monthly-balances-action-btn {
   font-family: inherit;
-  flex: 1 1 0;
-  min-width: min(100%, 14rem);
+  flex: 1 1 auto;
+  min-width: min(100%, 11rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  min-height: 3rem;
-  padding: 0.65rem 1.15rem;
-  border-radius: 14px;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
   border: 1px solid var(--glass-border-subtle);
   background: var(--glass-bg-subtle);
   color: var(--text-secondary);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
@@ -3353,9 +3395,7 @@ a:hover {
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    transform 0.15s ease;
+    color var(--transition-fast);
 }
 
 .monthly-balances-action-btn:hover {
@@ -3374,31 +3414,22 @@ a:hover {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
-    var(--glass-shadow);
 }
 
 .monthly-balances-action-btn--active:hover {
-  background: color-mix(in srgb, var(--accent-glass) 88%, var(--glass-bg-strong));
-  color: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
 }
 
 .monthly-balances-action-btn__icon {
-  font-size: 1.15rem;
+  font-size: 0.9rem;
   flex-shrink: 0;
   line-height: 1;
-  opacity: 0.95;
-}
-
-.monthly-balances-action-btn--active .monthly-balances-action-btn__icon {
-  opacity: 1;
 }
 
 .monthly-balances-action-btn__label {
-  text-wrap: balance;
-  max-width: 16rem;
+  white-space: nowrap;
 }
 
 .monthly-balances-action-panel {
@@ -3431,24 +3462,28 @@ a:hover {
 }
 
 [data-theme="light"] .monthly-balances-action-btn {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(60, 60, 67, 0.14);
-  color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(60, 60, 67, 0.06);
+  background: rgba(118, 118, 128, 0.1);
+  border-color: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
 }
 
 [data-theme="light"] .monthly-balances-action-btn:hover {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(60, 60, 67, 0.2);
+  background: rgba(118, 118, 128, 0.16);
+  border-color: transparent;
+  color: var(--text-primary);
 }
 
 [data-theme="light"] .monthly-balances-action-btn--active {
   background: var(--accent-glass);
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent-glass),
-    0 2px 8px rgba(60, 60, 67, 0.08);
+  box-shadow: none;
+}
+
+[data-theme="light"] .monthly-balances-action-btn--active:hover {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 @media (min-width: 768px) {
@@ -3558,9 +3593,10 @@ a:hover {
 
 .monthly-balances-month-card__net-value {
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 .monthly-balances-month-card__chevron {
@@ -3916,6 +3952,8 @@ a:hover {
   line-height: 1.25;
   word-break: break-word;
   hyphens: auto;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .monthly-balances-cell-input {
@@ -3932,6 +3970,7 @@ a:hover {
   border-radius: 8px !important;
   color: var(--text-primary) !important;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 .monthly-balances-cell-input:focus {
@@ -3949,13 +3988,13 @@ a:hover {
   font-size: 0.8125rem !important;
   line-height: 1.25 !important;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
   text-align: right;
   color: var(--text-primary);
   background: var(--glass-bg-strong);
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  font-family: inherit;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast);
@@ -4038,29 +4077,74 @@ a:hover {
   border-color: transparent;
 }
 
-/* Chart area — subsection title above sheet/yearly/projections toggles */
+/* Chart area — hide the "Charts" heading; the view toggle is self-explanatory */
 .monthly-balances-chart-view-section__subheading {
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--text-primary);
-  margin: 0 0 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--glass-border-subtle);
-  line-height: 1.35;
+  display: none;
 }
 
-@media (min-width: 768px) {
-  .monthly-balances-chart-view-section__subheading {
-    font-size: 1.0625rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.65rem;
-  }
+/* View toggle — segmented pill control */
+.monthly-balances-chart-view-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Net chart — same glass language as .card.glass-card / stock-card */
+.monthly-balances-chart-view-section > *:not(.monthly-balances-view-toggle) {
+  width: 100%;
+  align-self: stretch;
+}
+
+.monthly-balances-view-toggle.btn-group {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  gap: 0 !important;
+  background: rgba(118, 118, 128, 0.12);
+  border-radius: 999px;
+  padding: 3px;
+  margin-bottom: 0.5rem;
+  width: auto !important;
+  border: none;
+}
+
+.monthly-balances-view-toggle .btn {
+  flex: 0 0 auto;
+  border-radius: 999px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.32rem 0.9rem !important;
+  box-shadow: none !important;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.monthly-balances-view-toggle .btn:hover {
+  background: rgba(118, 118, 128, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+.monthly-balances-view-toggle .btn.active,
+.monthly-balances-view-toggle .btn[aria-pressed="true"] {
+  background: var(--glass-bg-strong) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14), 0 0.5px 1px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .monthly-balances-view-toggle.btn-group {
+  background: rgba(118, 118, 128, 0.1);
+}
+
+[data-theme="light"] .monthly-balances-view-toggle .btn.active {
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Net chart section */
 .monthly-balances-net-chart-section {
-  padding: 1.2rem 1.35rem 1.35rem;
+  padding: 0.85rem 1.15rem 1.15rem;
   border-radius: 16px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -4071,8 +4155,9 @@ a:hover {
 }
 
 .monthly-balances-net-chart-section__title {
-  font-size: 0.9375rem;
-  letter-spacing: 0.02em;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--text-primary);
 }
 
@@ -4096,6 +4181,7 @@ a:hover {
   display: block;
   max-width: none;
   font-family: var(--font-sans);
+  margin: 0 auto;
 }
 
 .monthly-balances-net-chart-x-month {
