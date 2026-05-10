@@ -4025,6 +4025,26 @@ a:hover {
   border-color: transparent;
 }
 
+/* Chart area — subsection title above sheet/yearly/projections toggles */
+.monthly-balances-chart-view-section__subheading {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-border-subtle);
+  line-height: 1.35;
+}
+
+@media (min-width: 768px) {
+  .monthly-balances-chart-view-section__subheading {
+    font-size: 1.0625rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+  }
+}
+
 /* Net chart — same glass language as .card.liquid-glass-card / stock-card */
 .monthly-balances-net-chart-section {
   padding: 1.2rem 1.35rem 1.35rem;

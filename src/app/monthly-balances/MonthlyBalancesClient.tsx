@@ -1668,56 +1668,197 @@ export default function MonthlyBalancesClient() {
         </div>
       ) : (
         <>
-          <section
-            className="monthly-balances-toolbar mb-3"
-            aria-label="Sheet tools"
-          >
-            <div className="monthly-balances-toolbar-inner">
-              <div className="monthly-balances-toolbar-view row g-2 mb-3">
-                <div className="col-12">
-                  <div className="monthly-balances-toolbar-cluster">
-                    <span className="monthly-balances-toolbar-cluster-label">
-                      View
-                    </span>
+            {accounts.length === 0 && monthRows.length === 0 ? (
+              <p className="text-secondary small mb-3">
+                The table is empty until you add a month and/or an account.
+                Use <strong>Add new month</strong> or{" "}
+                <strong>Add new account</strong> to begin.
+              </p>
+            ) : accounts.length === 0 && monthRows.length > 0 ? (
+              <p className="text-secondary small mb-3">
+                You have month rows. Use <strong>Add new account</strong> to add
+                balance columns and enter amounts.
+              </p>
+            ) : null}
+
+            <section
+              className="monthly-balances-chart-view-section mb-3"
+              aria-labelledby="mb-chart-view-heading"
+            >
+              <h3
+                id="mb-chart-view-heading"
+                className="monthly-balances-chart-view-section__subheading"
+              >
+                Charts
+              </h3>
+              <div
+                className="btn-group monthly-balances-view-toggle flex-wrap mb-0"
+                role="group"
+                aria-label="Monthly sheet, year averages, or projections"
+              >
+                <button
+                  type="button"
+                  className={`btn btn-sm btn-outline-secondary ${tableView === "sheet" ? "active" : ""}`}
+                  aria-pressed={tableView === "sheet"}
+                  onClick={() => setTableViewPersisted("sheet")}
+                >
+                  <i className="bi bi-table me-1" aria-hidden />
+                  Monthly sheet
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm btn-outline-secondary ${tableView === "yearly" ? "active" : ""}`}
+                  aria-pressed={tableView === "yearly"}
+                  onClick={() => setTableViewPersisted("yearly")}
+                >
+                  <i className="bi bi-calendar3 me-1" aria-hidden />
+                  Year averages
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm btn-outline-secondary ${tableView === "projections" ? "active" : ""}`}
+                  aria-pressed={tableView === "projections"}
+                  onClick={() => setTableViewPersisted("projections")}
+                >
+                  <i className="bi bi-graph-up-arrow me-1" aria-hidden />
+                  Projections
+                </button>
+              </div>
+
+            {tableView === "sheet" ? (
+              accounts.length === 0 && monthRows.length === 0 ? null : (
+                <>
+                  {accounts.length > 0 && visibleAccounts.length === 0 ? (
                     <div
-                      className="btn-group monthly-balances-view-toggle flex-wrap"
-                      role="group"
-                      aria-label="Monthly sheet, year averages, or projections"
+                      className="alert alert-secondary glass-alert mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
+                      role="status"
                     >
+                      <span className="small mb-0">
+                        All account columns are hidden. Use{" "}
+                        <strong>Columns</strong> to show accounts again.
+                      </span>
                       <button
                         type="button"
-                        className={`btn btn-sm btn-outline-secondary ${tableView === "sheet" ? "active" : ""}`}
-                        aria-pressed={tableView === "sheet"}
-                        onClick={() => setTableViewPersisted("sheet")}
+                        className="btn btn-sm filter-apply-button text-nowrap"
+                        onClick={() => openColumnsModal()}
                       >
-                        <i
-                          className="bi bi-table me-1"
-                          aria-hidden
-                        />
-                        Monthly sheet
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm btn-outline-secondary ${tableView === "yearly" ? "active" : ""}`}
-                        aria-pressed={tableView === "yearly"}
-                        onClick={() => setTableViewPersisted("yearly")}
-                      >
-                        <i className="bi bi-calendar3 me-1" aria-hidden />
-                        Year averages
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm btn-outline-secondary ${tableView === "projections" ? "active" : ""}`}
-                        aria-pressed={tableView === "projections"}
-                        onClick={() => setTableViewPersisted("projections")}
-                      >
-                        <i className="bi bi-graph-up-arrow me-1" aria-hidden />
-                        Projections
+                        Open Columns
                       </button>
                     </div>
-                  </div>
+                  ) : null}
+                  {accounts.length > 0 &&
+                  visibleAccounts.length > 0 &&
+                  monthRows.length > 0 ? (
+                    <section
+                      className="monthly-balances-net-chart-section mb-3"
+                      aria-labelledby="mb-net-usd-chart-heading"
+                    >
+                      <h2
+                        id="mb-net-usd-chart-heading"
+                        className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
+                      >
+                        Net (USD) by month
+                      </h2>
+                      <p className="small mb-2 mb-md-3">
+                        Progress of your monthly Net (USD) total (same
+                        calculation as the column below), with the earliest month
+                        on the left.
+                      </p>
+                      <MonthlyNetUsdBarChart points={netUsdBarChartPoints} />
+                    </section>
+                  ) : null}
+                </>
+              )
+            ) : tableView === "yearly" ? (
+            <section
+              className="monthly-balances-net-chart-section mb-4"
+              aria-labelledby="mb-yearly-averages-heading"
+            >
+              <h2
+                id="mb-yearly-averages-heading"
+                className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
+              >
+                Average monthly Net (USD) by year
+              </h2>
+              <p className="small text-secondary mb-3 mb-lg-4">
+                Mean of monthly Net (USD) for each calendar year. Uses the same
+                Net rules as the monthly sheet (visible columns, exemptions, FX).
+              </p>
+              {yearlyLoading ? (
+                <div
+                  className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <span className="spinner-border spinner-border-sm" aria-hidden />
+                  <span className="small">Loading yearly averages…</span>
                 </div>
-              </div>
+              ) : yearlyError ? (
+                <div className="alert alert-danger glass-alert mb-0" role="alert">
+                  {yearlyError}
+                </div>
+              ) : yearlyRows.length === 0 ? (
+                <p className="text-secondary small mb-0">
+                  No yearly averages yet. Add balances on the monthly sheet and
+                  save; averages sync when the sheet updates or when you open this
+                  page.
+                </p>
+              ) : (
+                <YearlyNetUsdBarChart rows={yearlyRows} />
+              )}
+              {yearlyRows.length > 0 && !yearlyLoading && !yearlyError ? (
+                <p className="small text-secondary monthly-balances-footnote mb-0 mt-3">
+                  <i className="bi bi-info-circle me-1" aria-hidden />
+                  Each bar is the arithmetic mean of monthly Net (USD) for that
+                  calendar year (only months with a valid Net are counted). The
+                  second line under each year is how many months were averaged.
+                </p>
+              ) : null}
+            </section>
+            ) : (
+            <section
+              className="monthly-balances-net-chart-section mb-4"
+              aria-labelledby="mb-projections-heading"
+            >
+              <h2
+                id="mb-projections-heading"
+                className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
+              >
+                Net worth projections
+              </h2>
+              <p className="small text-secondary mb-3 mb-lg-4">
+                Forward-looking charts from your historical yearly averages and
+                baseline month (stored when averages sync). Same data as{" "}
+                <strong>Year averages</strong>, shown as projected paths—not
+                financial advice.
+              </p>
+              {yearlyLoading ? (
+                <div
+                  className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <span className="spinner-border spinner-border-sm" aria-hidden />
+                  <span className="small">Loading projections…</span>
+                </div>
+              ) : yearlyError ? (
+                <div className="alert alert-danger glass-alert mb-0" role="alert">
+                  {yearlyError}
+                </div>
+              ) : (
+                <NetWorthProjectionCharts projection={projectionPayload} />
+              )}
+            </section>
+            )}
+            </section>
+
+            <section
+            className="monthly-balances-toolbar monthly-balances-table-toolbar mb-3"
+            aria-label="Balance table tools"
+          >
+            <div className="monthly-balances-toolbar-inner">
               <div className="monthly-balances-toolbar-quick row g-2 g-lg-3 align-items-lg-center mb-3">
                 <div className="col-12 col-lg-5 col-xl-4">
                   <div className="monthly-balances-toolbar-cluster">
@@ -2244,24 +2385,11 @@ export default function MonthlyBalancesClient() {
             </div>
           </section>
 
-          {tableView === "sheet" ? (
+            {accounts.length === 0 && monthRows.length === 0 ? null : (
             <>
-              {accounts.length === 0 && monthRows.length === 0 ? (
-                <p className="text-secondary small mb-3">
-                  The table is empty until you add a month and/or an account.
-                  Use <strong>Add new month</strong> or{" "}
-                  <strong>Add new account</strong> to begin.
-                </p>
-              ) : accounts.length === 0 && monthRows.length > 0 ? (
-                <p className="text-secondary small mb-3">
-                  You have month rows. Use <strong>Add new account</strong> to add
-                  balance columns and enter amounts.
-                </p>
-              ) : null}
-
-              {accounts.length === 0 && monthRows.length === 0 ? null : (
-            <>
-              {accounts.length > 0 && visibleAccounts.length === 0 ? (
+              {tableView !== "sheet" &&
+              accounts.length > 0 &&
+              visibleAccounts.length === 0 ? (
                 <div
                   className="alert alert-secondary glass-alert mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
                   role="status"
@@ -2278,26 +2406,6 @@ export default function MonthlyBalancesClient() {
                     Open Columns
                   </button>
                 </div>
-              ) : null}
-              {accounts.length > 0 &&
-              visibleAccounts.length > 0 &&
-              monthRows.length > 0 ? (
-                <section
-                  className="monthly-balances-net-chart-section mb-3"
-                  aria-labelledby="mb-net-usd-chart-heading"
-                >
-                  <h2
-                    id="mb-net-usd-chart-heading"
-                    className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-                  >
-                    Net (USD) by month
-                  </h2>
-                  <p className="small mb-2 mb-md-3">
-                    Progress of your monthly Net (USD) total (same calculation
-                    as the column below), with the earliest month on the left.
-                  </p>
-                  <MonthlyNetUsdBarChart points={netUsdBarChartPoints} />
-                </section>
               ) : null}
               {isDesktopTable ? (
                 <div
@@ -2596,91 +2704,7 @@ export default function MonthlyBalancesClient() {
                 </p>
               ) : null}
             </>
-              )}
-            </>
-          ) : tableView === "yearly" ? (
-            <section
-              className="monthly-balances-net-chart-section mb-4"
-              aria-labelledby="mb-yearly-averages-heading"
-            >
-              <h2
-                id="mb-yearly-averages-heading"
-                className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-              >
-                Average monthly Net (USD) by year
-              </h2>
-              <p className="small text-secondary mb-3 mb-lg-4">
-                Mean of monthly Net (USD) for each calendar year. Uses the same
-                Net rules as the monthly sheet (visible columns, exemptions, FX).
-              </p>
-              {yearlyLoading ? (
-                <div
-                  className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
-                  role="status"
-                  aria-live="polite"
-                  aria-busy="true"
-                >
-                  <span className="spinner-border spinner-border-sm" aria-hidden />
-                  <span className="small">Loading yearly averages…</span>
-                </div>
-              ) : yearlyError ? (
-                <div className="alert alert-danger glass-alert mb-0" role="alert">
-                  {yearlyError}
-                </div>
-              ) : yearlyRows.length === 0 ? (
-                <p className="text-secondary small mb-0">
-                  No yearly averages yet. Add balances on the monthly sheet and
-                  save; averages sync when the sheet updates or when you open this
-                  page.
-                </p>
-              ) : (
-                <YearlyNetUsdBarChart rows={yearlyRows} />
-              )}
-              {yearlyRows.length > 0 && !yearlyLoading && !yearlyError ? (
-                <p className="small text-secondary monthly-balances-footnote mb-0 mt-3">
-                  <i className="bi bi-info-circle me-1" aria-hidden />
-                  Each bar is the arithmetic mean of monthly Net (USD) for that
-                  calendar year (only months with a valid Net are counted). The
-                  second line under each year is how many months were averaged.
-                </p>
-              ) : null}
-            </section>
-          ) : (
-            <section
-              className="monthly-balances-net-chart-section mb-4"
-              aria-labelledby="mb-projections-heading"
-            >
-              <h2
-                id="mb-projections-heading"
-                className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-              >
-                Net worth projections
-              </h2>
-              <p className="small text-secondary mb-3 mb-lg-4">
-                Forward-looking charts from your historical yearly averages and
-                baseline month (stored when averages sync). Same data as{" "}
-                <strong>Year averages</strong>, shown as projected paths—not
-                financial advice.
-              </p>
-              {yearlyLoading ? (
-                <div
-                  className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
-                  role="status"
-                  aria-live="polite"
-                  aria-busy="true"
-                >
-                  <span className="spinner-border spinner-border-sm" aria-hidden />
-                  <span className="small">Loading projections…</span>
-                </div>
-              ) : yearlyError ? (
-                <div className="alert alert-danger glass-alert mb-0" role="alert">
-                  {yearlyError}
-                </div>
-              ) : (
-                <NetWorthProjectionCharts projection={projectionPayload} />
-              )}
-            </section>
-          )}
+            )}
         </>
       )}
 
