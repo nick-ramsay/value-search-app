@@ -9,7 +9,7 @@ export default function AboutPage() {
         <div className="row justify-content-center">
           <div className="col-lg-8">
             <AboutHeader />
-            <section className="card liquid-glass-card about-page-card mb-4 pt-3">
+            <section className="card glass-card about-page-card mb-4 pt-3">
               <div className="card-body about-page-card-body">
               <section className="about-page-section">
               <h2 className="about-page-section-title">What is valuesearch.app?</h2>

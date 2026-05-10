@@ -1647,7 +1647,7 @@ export default function MonthlyBalancesClient() {
       ) : null}
 
       <section
-        className="card liquid-glass-card mb-3 monthly-balances-page-heading"
+        className="card glass-card mb-3 monthly-balances-page-heading"
         aria-label="Monthly Balances"
       >
         <div className="card-body monthly-balances-page-heading-body py-3 px-3 px-sm-4">
@@ -1657,7 +1657,7 @@ export default function MonthlyBalancesClient() {
 
       {loading ? (
         <div
-          className="monthly-balances-sheet-loading card liquid-glass-card d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary mb-4"
+          className="monthly-balances-sheet-loading card glass-card d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary mb-4"
           role="status"
           aria-live="polite"
           aria-busy="true"

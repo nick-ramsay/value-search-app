@@ -575,7 +575,7 @@ async function ResultsCard({
           <DisclosureModal />
         </p>
       </section>
-      <section className="card liquid-glass-card mb-4 pt-3">
+      <section className="card glass-card mb-4 pt-3">
         <div className="card-body pt-0">
           <ScoreExplanationModal />
           <PaginationWithLoader
@@ -619,7 +619,7 @@ function ResultsLoadingFallback() {
           <DisclosureModal />
         </p>
       </section>
-      <section className="card liquid-glass-card mb-4 pt-3 page-loading-results-card flex-grow-1 d-flex flex-column">
+      <section className="card glass-card mb-4 pt-3 page-loading-results-card flex-grow-1 d-flex flex-column">
         <div className="card-body pt-0 page-loading-results-card-body d-flex flex-column">
           <nav
             aria-label="Results pages"
