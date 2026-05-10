@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
 import { parseMonthKey } from "@/lib/monthly-balances";
 
@@ -54,10 +54,61 @@ type MonthlyNetUsdBarChartProps = {
  */
 export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartProps) {
   const gradId = useId().replace(/:/g, "");
+  const chartScrollWrapRef = useRef<HTMLDivElement>(null);
 
-  const okVals = points
-    .filter((p): p is NetUsdBarPoint & { kind: "ok"; netUsd: number } => p.kind === "ok")
-    .map((p) => p.netUsd);
+  const okVals = useMemo(
+    () =>
+      points
+        .filter((p): p is NetUsdBarPoint & { kind: "ok"; netUsd: number } => p.kind === "ok")
+        .map((p) => p.netUsd),
+    [points],
+  );
+
+  /** Layout width (must match values below) for scroll sync when the figure is shown. */
+  const layoutW = useMemo(() => {
+    const MIN_SLOT_W = 56;
+    const BASE_CHART_W = 720;
+    const padL = 52;
+    const padR = 12;
+    const n = points.length;
+    const MIN_PLOT_W = BASE_CHART_W - padL - padR;
+    const plotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
+    return padL + plotW + padR;
+  }, [points]);
+
+  const chartScrollSyncKey = useMemo(
+    () =>
+      `${points.length}:${points.map((p) => p.monthKey).join(",")}:${layoutW}`,
+    [points, layoutW],
+  );
+
+  /** Latest months are on the right; scroll the wrap so they’re in view first (matches wide sheet table). */
+  useLayoutEffect(() => {
+    if (points.length === 0 || okVals.length === 0) return;
+    const wrap = chartScrollWrapRef.current;
+    if (!wrap) return;
+    const snapRight = () => {
+      wrap.scrollLeft = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+    };
+    snapRight();
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(snapRight);
+    });
+    const t0 = window.setTimeout(snapRight, 0);
+    const t1 = window.setTimeout(snapRight, 80);
+    const ro = new ResizeObserver(snapRight);
+    ro.observe(wrap);
+    const svg = wrap.firstElementChild;
+    if (svg) ro.observe(svg);
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+      ro.disconnect();
+    };
+  }, [chartScrollSyncKey, okVals.length, points.length]);
 
   if (points.length === 0) {
     return (
@@ -122,7 +173,10 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
 
   return (
     <figure className="monthly-balances-net-chart-figure mb-0">
-      <div className="monthly-balances-net-chart-svg-wrap">
+      <div
+        ref={chartScrollWrapRef}
+        className="monthly-balances-net-chart-svg-wrap"
+      >
         <svg
           className="monthly-balances-net-chart-svg"
           width={W}

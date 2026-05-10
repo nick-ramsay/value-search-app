@@ -54,7 +54,7 @@ export default function AppNavbar({
         <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
           <span
             className="navbar-brand mb-0 h1 text-truncate"
-            style={{ minWidth: 0, fontWeight: 600 }}
+            style={{ minWidth: 0 }}
           >
             <Link
               href={headerHref}
@@ -91,7 +91,7 @@ export default function AppNavbar({
                       width: 28,
                       height: 28,
                       background:
-                        "linear-gradient(135deg, var(--accent) 0%, #5856d6 100%)",
+                        "linear-gradient(135deg, var(--accent) 0%, #30B0C7 100%)",
                       fontSize: "0.8rem",
                     }}
                   >

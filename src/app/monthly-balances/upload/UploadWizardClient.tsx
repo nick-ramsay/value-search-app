@@ -291,7 +291,7 @@ export default function UploadWizardClient() {
         </Link>
       </div>
 
-      <section className="card liquid-glass-card mb-4">
+      <section className="card glass-card mb-4">
         <div className="card-body">
           <h2 className="h6 fw-semibold mb-3">1. Choose a CSV File</h2>
           <p className="small text-secondary mb-2">
@@ -349,7 +349,7 @@ export default function UploadWizardClient() {
       ) : null}
 
       {editableAccounts.length > 0 ? (
-        <section className="card liquid-glass-card mb-4">
+        <section className="card glass-card mb-4">
           <div className="card-body">
             <h2 className="h6 fw-semibold mb-2">2. Confirm Each Account</h2>
             <p className="small text-secondary mb-3">

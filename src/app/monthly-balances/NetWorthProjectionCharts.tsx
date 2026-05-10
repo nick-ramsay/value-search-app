@@ -219,30 +219,6 @@ export default function NetWorthProjectionCharts({
     }));
   }, [projection]);
 
-  const meta = useMemo(() => {
-    if (!projection) return null;
-    const computed = new Date(projection.computedAt);
-    const when = Number.isNaN(computed.getTime())
-      ? projection.computedAt
-      : computed.toLocaleString(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        });
-    const parts: string[] = [];
-    if (projection.baselineMonthKey) {
-      parts.push(
-        `Baseline month ${projection.baselineMonthKey}: ${formatMoneyAmount(projection.baselineNetWorthUsd, "USD")}`,
-      );
-    } else {
-      parts.push(
-        `Baseline net worth: ${formatMoneyAmount(projection.baselineNetWorthUsd, "USD")}`,
-      );
-    }
-    parts.push(`${projection.historicalPointsUsed} year(s) of yearly averages`);
-    parts.push(`Computed ${when}`);
-    return parts.join(" · ");
-  }, [projection]);
-
   if (!projection || projection.projectionYears.length === 0) {
     return (
       <p className="text-secondary small mb-0">
@@ -255,28 +231,6 @@ export default function NetWorthProjectionCharts({
 
   return (
     <div className="net-worth-projection-charts">
-      <p className="small text-secondary mb-3">{meta}</p>
-
-      <p className="small text-secondary mb-4">
-        {projection.simpleAnnualizedGrowthRate !== null ? (
-          <>
-            Projection compounds your baseline month at the historical{" "}
-            <strong>CAGR</strong> from first to last yearly average (mean monthly Net snapshot per
-            year):{" "}
-            <strong>
-              {(projection.simpleAnnualizedGrowthRate * 100).toFixed(2)}% per year
-            </strong>
-            .
-          </>
-        ) : (
-          <>
-            Historical CAGR was not computed (need at least two calendar years with positive first
-            and last averages). The chart holds baseline flat at{" "}
-            <strong>0% annual growth</strong>.
-          </>
-        )}
-      </p>
-
       <h3
         className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
         id="mb-projection-nw-heading"
