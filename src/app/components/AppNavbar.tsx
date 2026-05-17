@@ -23,6 +23,7 @@ export default function AppNavbar({
 
   const isPortfolio = pathname === "/portfolio";
   const isMonthlyBalances = pathname === "/monthly-balances";
+  const isSectorAssessments = pathname === "/sector-assessments";
   /** Main table + CSV upload and other sub-routes: no stock search in the bar */
   const hideNavbarSearch = pathname?.startsWith("/monthly-balances") ?? false;
   const headerHref = isPortfolio ? "/portfolio" : "/";
@@ -124,6 +125,17 @@ export default function AppNavbar({
                       >
                         <i className="bi bi-table" aria-hidden />
                         Monthly balances
+                      </Link>
+                    </li>
+                  )}
+                  {!isSectorAssessments && (
+                    <li>
+                      <Link
+                        href="/sector-assessments"
+                        className="dropdown-item d-flex align-items-center gap-2 py-2"
+                      >
+                        <i className="bi bi-bar-chart-steps" aria-hidden />
+                        Sector assessments
                       </Link>
                     </li>
                   )}
