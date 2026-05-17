@@ -207,6 +207,19 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
             className="monthly-balances-net-chart-plot-bg"
           />
 
+          <g aria-hidden="true">
+            {([0.25, 0.5, 0.75] as const).map((frac) => (
+              <line
+                key={frac}
+                x1={padL}
+                x2={padL + plotW}
+                y1={padT + frac * plotH}
+                y2={padT + frac * plotH}
+                className="monthly-balances-net-chart-grid-line"
+              />
+            ))}
+          </g>
+
           <g>
             <line
               x1={padL}
@@ -224,6 +237,15 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
               fontSize={10}
             >
               {formatAxisUsd(maxV)}
+            </text>
+            <text
+              x={padL - 8}
+              y={padT + plotH * 0.5 + 4}
+              textAnchor="end"
+              className="monthly-balances-net-chart-axis-label"
+              fontSize={10}
+            >
+              {formatAxisUsd((maxV + minV) / 2)}
             </text>
             <text
               x={padL - 8}

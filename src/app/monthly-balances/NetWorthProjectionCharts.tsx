@@ -2,6 +2,7 @@
 
 import { useId, useMemo } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
+import type { MonteCarloYearSummaryJson } from "@/lib/monte-carlo-simulation-types";
 import type { TrendAndProjectionPayload } from "@/lib/net-worth-projection";
 
 function formatAxisUsd(n: number): string {
@@ -113,6 +114,19 @@ function ScalarUsdBarChart({
             className="monthly-balances-net-chart-plot-bg"
           />
 
+          <g aria-hidden="true">
+            {([0.25, 0.5, 0.75] as const).map((frac) => (
+              <line
+                key={frac}
+                x1={padL}
+                x2={padL + plotW}
+                y1={padT + frac * plotH}
+                y2={padT + frac * plotH}
+                className="monthly-balances-net-chart-grid-line"
+              />
+            ))}
+          </g>
+
           <g>
             <line
               x1={padL}
@@ -130,6 +144,15 @@ function ScalarUsdBarChart({
               fontSize={10}
             >
               {formatAxisUsd(maxV)}
+            </text>
+            <text
+              x={padL - 8}
+              y={padT + plotH * 0.5 + 4}
+              textAnchor="end"
+              className="monthly-balances-net-chart-axis-label"
+              fontSize={10}
+            >
+              {formatAxisUsd((maxV + minV) / 2)}
             </text>
             <text
               x={padL - 8}
@@ -203,28 +226,110 @@ function ScalarUsdBarChart({
   );
 }
 
+function ProjectionValuesAccordion({
+  points,
+  valueMode,
+}: {
+  points: ScalarPoint[];
+  valueMode: "monte-carlo" | "cagr";
+}) {
+  const uid = useId().replace(/:/g, "");
+  const accordionId = `mb-proj-values-acc-${uid}`;
+  const collapseId = `mb-proj-values-collapse-${uid}`;
+  const valueHeading =
+    valueMode === "monte-carlo" ? "Median net (USD)" : "Projected net (USD)";
+
+  return (
+    <div
+      className="accordion mb-projection-values-accordion mt-3"
+      id={accordionId}
+    >
+      <div className="accordion-item mb-projection-values-accordion__item">
+        <h4 className="accordion-header mb-0">
+          <button
+            type="button"
+            className="accordion-button collapsed mb-projection-values-accordion__btn"
+            data-bs-toggle="collapse"
+            data-bs-target={`#${collapseId}`}
+            aria-expanded="false"
+            aria-controls={collapseId}
+          >
+            <span className="mb-projection-values-accordion__btn-inner">
+              <span className="mb-projection-values-accordion__label">
+                Year-by-year values
+              </span>
+              <span className="mb-projection-values-accordion__hint text-secondary">
+                Same figures as the chart
+              </span>
+            </span>
+          </button>
+        </h4>
+        <div
+          id={collapseId}
+          className="accordion-collapse collapse"
+          data-bs-parent={`#${accordionId}`}
+        >
+          <div className="accordion-body mb-projection-values-accordion__body">
+            <div className="mb-projection-values-table-wrap">
+              <table className="mb-projection-values-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Year</th>
+                    <th scope="col">{valueHeading}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map((p) => (
+                    <tr key={p.year}>
+                      <td>{p.year}</td>
+                      <td>{formatMoneyAmount(p.value, "USD")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type NetWorthProjectionChartsProps = {
   projection: TrendAndProjectionPayload | null;
+  /** When present (from Python worker), bars use median (p50) “most likely” net per year. */
+  monteCarloYearSummaries: MonteCarloYearSummaryJson[] | null;
 };
 
-/** Bar chart of projected Net (USD) by calendar year from stored CAGR compounding. */
+/** Bar chart: Monte Carlo median path when stored; otherwise CAGR-compounded projection. */
 export default function NetWorthProjectionCharts({
   projection,
+  monteCarloYearSummaries,
 }: NetWorthProjectionChartsProps) {
+  const useMonteCarlo =
+    Array.isArray(monteCarloYearSummaries) && monteCarloYearSummaries.length > 0;
+
   const nwPoints = useMemo<ScalarPoint[]>(() => {
+    if (useMonteCarlo) {
+      return [...monteCarloYearSummaries!]
+        .sort((a, b) => a.year - b.year)
+        .map((row) => ({ year: row.year, value: row.p50 }));
+    }
     if (!projection?.projectionYears?.length) return [];
     return projection.projectionYears.map((row) => ({
       year: row.year,
       value: row.projectedNetWorthUsd,
     }));
-  }, [projection]);
+  }, [useMonteCarlo, monteCarloYearSummaries, projection]);
 
-  if (!projection || projection.projectionYears.length === 0) {
+  if (nwPoints.length === 0) {
     return (
       <p className="text-secondary small mb-0">
-        No projections yet. Yearly averages must sync first—use{" "}
-        <strong>Monthly sheet</strong> or <strong>Year averages</strong>, then return
-        here after the sheet updates.
+        No projections to chart yet. For the <strong>CAGR</strong> view, yearly averages must
+        sync first—use <strong>Monthly sheet</strong> or <strong>Year averages</strong>. For the{" "}
+        <strong>Monte Carlo (most likely)</strong> view, run the pyworker projection script so{" "}
+        <code className="user-select-all">usernetworthmontecarlosimulations</code> has a document
+        for your account.
       </p>
     );
   }
@@ -235,23 +340,29 @@ export default function NetWorthProjectionCharts({
         className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
         id="mb-projection-nw-heading"
       >
-        Projected total Net (USD) by year
+        {useMonteCarlo
+          ? "Most likely total Net (USD) by year (Monte Carlo)"
+          : "Projected total Net (USD) by year"}
       </h3>
       <p className="small text-secondary mb-2">
-        Exponential projection from your latest-month baseline using that CAGR (each yearly average
-        is the mean of monthly <strong>balance-sheet Net</strong> snapshots—not income).
-        Illustrative only.
+        {useMonteCarlo
+          ? "Median (p50) across simulated paths. Illustrative only."
+          : "Compounded from your baseline using your historical CAGR. Illustrative only."}
       </p>
       <ScalarUsdBarChart
         points={nwPoints}
-        ariaSummaryPrefix="Projected total net worth in US dollars by calendar year"
+        ariaSummaryPrefix={
+          useMonteCarlo
+            ? "Most likely total net worth in US dollars by calendar year from Monte Carlo median"
+            : "Projected total net worth in US dollars by calendar year"
+        }
       />
 
-      <p className="small text-secondary monthly-balances-footnote mb-0 mt-3">
-        <i className="bi bi-info-circle me-1" aria-hidden />
-        Values are compounded <strong>wealth levels</strong> from baseline and historic average
-        growth—not forecasts of returns. Not financial advice.
-      </p>
+      <ProjectionValuesAccordion
+        points={nwPoints}
+        valueMode={useMonteCarlo ? "monte-carlo" : "cagr"}
+      />
+
     </div>
   );
 }

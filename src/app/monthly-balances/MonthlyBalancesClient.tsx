@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { buildMonthlyBalancesGroupedTotalsCsv } from "@/lib/monthly-balances-export-csv";
 import {
   ASSET_ACCOUNT_TYPES,
   DEBT_ACCOUNT_TYPES,
@@ -25,6 +26,7 @@ import {
   type BalanceAccountKind,
 } from "@/lib/monthly-balances";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
+import type { MonteCarloYearSummaryJson } from "@/lib/monte-carlo-simulation-types";
 import type { TrendAndProjectionPayload } from "@/lib/net-worth-projection";
 import CurrencySearchCombobox from "./CurrencySearchCombobox";
 import MonthlyNetUsdBarChart, {
@@ -150,7 +152,7 @@ function normalizeUsdRates(raw: unknown): Record<string, number> {
   return out;
 }
 
-/** Net is the sum of visible account cell values converted to USD using `usdRates` (excludes exempt accounts). */
+/** Net is the sum of all non-exempt account cell values converted to USD using `usdRates`. Column visibility does not affect Net. */
 function netSummaryForMonth(
   monthKey: string,
   accounts: Account[],
@@ -380,6 +382,9 @@ export default function MonthlyBalancesClient() {
   const [yearlyRows, setYearlyRows] = useState<YearlyAverageRow[]>([]);
   const [projectionPayload, setProjectionPayload] =
     useState<TrendAndProjectionPayload | null>(null);
+  const [monteCarloYearSummaries, setMonteCarloYearSummaries] = useState<
+    MonteCarloYearSummaryJson[] | null
+  >(null);
   const [yearlyLoading, setYearlyLoading] = useState(false);
   const [yearlyError, setYearlyError] = useState<string | null>(null);
 
@@ -458,6 +463,7 @@ export default function MonthlyBalancesClient() {
       });
       if (res.status === 401) {
         router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
+        setMonteCarloYearSummaries(null);
         return;
       }
       if (!res.ok) {
@@ -472,12 +478,32 @@ export default function MonthlyBalancesClient() {
       };
       setYearlyRows(Array.isArray(data.rows) ? data.rows : []);
       setProjectionPayload(data.trendAndProjection ?? null);
+
+      const mcRes = await fetch("/api/monthly-balances/monte-carlo-simulation", {
+        credentials: "include",
+      });
+      if (mcRes.status === 401) {
+        router.replace(MONTHLY_BALANCES_LOGIN_CALLBACK);
+        return;
+      }
+      if (mcRes.ok) {
+        const mcJson = (await mcRes.json().catch(() => ({}))) as {
+          simulation?: { monteCarloYearSummaries?: MonteCarloYearSummaryJson[] } | null;
+        };
+        const summaries = mcJson.simulation?.monteCarloYearSummaries;
+        setMonteCarloYearSummaries(
+          Array.isArray(summaries) && summaries.length > 0 ? summaries : null,
+        );
+      } else {
+        setMonteCarloYearSummaries(null);
+      }
     } catch (e) {
       setYearlyError(
         e instanceof Error ? e.message : "Could not load yearly averages",
       );
       setYearlyRows([]);
       setProjectionPayload(null);
+      setMonteCarloYearSummaries(null);
     } finally {
       setYearlyLoading(false);
     }
@@ -926,6 +952,22 @@ export default function MonthlyBalancesClient() {
       return next;
     });
   }, []);
+
+  const handleExportMonthlyBalancesCsv = useCallback(() => {
+    const csv = buildMonthlyBalancesGroupedTotalsCsv(accounts, monthRows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    a.href = url;
+    a.download = `monthly-balances-export-${iso}.csv`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [accounts, monthRows]);
 
   /** Commit active cell edit when locking (same as input blur). */
   useEffect(() => {
@@ -1450,7 +1492,7 @@ export default function MonthlyBalancesClient() {
     return chronological.map((row) => {
       const summary = netSummaryForMonth(
         row.monthKey,
-        visibleAccounts,
+        accounts,
         getSignedLocal,
         usdRates,
       );
@@ -1471,7 +1513,7 @@ export default function MonthlyBalancesClient() {
       }
       return { monthKey: row.monthKey, shortLabel, kind: "mixed" as const };
     });
-  }, [monthRows, visibleAccounts, usdRates]);
+  }, [monthRows, accounts, usdRates]);
 
   const isDesktopTable = useMediaMinMd();
 
@@ -1719,9 +1761,7 @@ export default function MonthlyBalancesClient() {
                       </button>
                     </div>
                   ) : null}
-                  {accounts.length > 0 &&
-                  visibleAccounts.length > 0 &&
-                  monthRows.length > 0 ? (
+                  {accounts.length > 0 && monthRows.length > 0 ? (
                     <section
                       className="monthly-balances-net-chart-section mb-3"
                       aria-labelledby="mb-net-usd-chart-heading"
@@ -1733,9 +1773,7 @@ export default function MonthlyBalancesClient() {
                         Net (USD) by month
                       </h2>
                       <p className="small mb-2 mb-md-3">
-                        Progress of your monthly Net (USD) total (same
-                        calculation as the column below), with the earliest month
-                        on the left.
+                        Monthly Net (USD) trend, earliest on the left.
                       </p>
                       <MonthlyNetUsdBarChart points={netUsdBarChartPoints} />
                     </section>
@@ -1783,9 +1821,7 @@ export default function MonthlyBalancesClient() {
               {yearlyRows.length > 0 && !yearlyLoading && !yearlyError ? (
                 <p className="small text-secondary monthly-balances-footnote mb-0 mt-3">
                   <i className="bi bi-info-circle me-1" aria-hidden />
-                  Each bar is the arithmetic mean of monthly Net (USD) for that
-                  calendar year (only months with a valid Net are counted). The
-                  second line under each year is how many months were averaged.
+                  Each bar is the mean monthly Net (USD) for that year; the sub-label shows how many months were included.
                 </p>
               ) : null}
             </section>
@@ -1815,10 +1851,14 @@ export default function MonthlyBalancesClient() {
                   {yearlyError}
                 </div>
               ) : (
-                <NetWorthProjectionCharts projection={projectionPayload} />
+                <NetWorthProjectionCharts
+                  projection={projectionPayload}
+                  monteCarloYearSummaries={monteCarloYearSummaries}
+                />
               )}
             </section>
             )}
+
             </section>
 
             <section
@@ -1906,6 +1946,19 @@ export default function MonthlyBalancesClient() {
                       Data
                     </span>
                     <div className="monthly-balances-toolbar-data-btns d-flex flex-wrap gap-2 align-items-center">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary btn-sm"
+                        disabled={loading || monthRows.length === 0}
+                        onClick={handleExportMonthlyBalancesCsv}
+                        title="Download totals by month and by account type and currency"
+                      >
+                        <i
+                          className="bi bi-file-earmark-arrow-down me-1"
+                          aria-hidden
+                        />
+                        Export CSV
+                      </button>
                       <Link
                         href="/monthly-balances/upload"
                         className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
@@ -2422,7 +2475,7 @@ export default function MonthlyBalancesClient() {
                           <th
                             scope="col"
                             className="text-end monthly-balances-net-col monthly-balances-corner-th"
-                            title="Sum of visible account amounts converted to US dollars using stored FX rates. Hidden columns, and accounts marked exempt from net worth, are excluded."
+                            title="Sum of all account amounts (including hidden columns) converted to US dollars using stored FX rates. Only accounts marked exempt from net worth are excluded."
                           >
                             Net (USD)
                           </th>
@@ -2433,7 +2486,7 @@ export default function MonthlyBalancesClient() {
                       {monthRows.map((row) => {
                         const summary = netSummaryForMonth(
                           row.monthKey,
-                          visibleAccounts,
+                          accounts,
                           getSigned,
                           usdRates,
                         );
@@ -2487,9 +2540,9 @@ export default function MonthlyBalancesClient() {
                                 className={`text-end fw-semibold monthly-balances-net-col monthly-balances-net-cell ${netClass}`}
                                 title={
                                   summary.kind === "mixed"
-                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one visible account currency in this row."
+                                    ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
                                     : summary.kind === "ok"
-                                      ? "Net is the sum of entered amounts for visible columns converted to USD. Hidden columns and accounts exempt from net worth are excluded."
+                                      ? "Net is the sum of entered amounts for all accounts (including hidden columns) converted to USD. Only accounts exempt from net worth are excluded."
                                       : undefined
                                 }
                               >
@@ -2508,7 +2561,7 @@ export default function MonthlyBalancesClient() {
                     {monthRows.map((row) => {
                       const summary = netSummaryForMonth(
                         row.monthKey,
-                        visibleAccounts,
+                        accounts,
                         getSigned,
                         usdRates,
                       );
@@ -2552,9 +2605,9 @@ export default function MonthlyBalancesClient() {
                                   className={`monthly-balances-month-card__net ${netClass}`}
                                   title={
                                     summary.kind === "mixed"
-                                      ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one visible account currency in this row."
+                                      ? "Net is in USD using stored FX rates. A rate is missing or invalid for at least one account currency in this row."
                                       : summary.kind === "ok"
-                                        ? "Net is the sum of entered amounts for visible columns converted to USD. Hidden columns and accounts exempt from net worth are excluded."
+                                        ? "Net is the sum of entered amounts for all accounts (including hidden columns) converted to USD. Only accounts exempt from net worth are excluded."
                                         : undefined
                                   }
                                 >
@@ -3115,15 +3168,7 @@ export default function MonthlyBalancesClient() {
                         </>
                       ) : null}
                     </div>
-                    <div className="modal-footer">
-                      <button
-                        type="button"
-                        className="btn glass-btn glass-btn-secondary"
-                        data-bs-dismiss="modal"
-                        disabled={savingAccountDetails}
-                      >
-                        Close
-                      </button>
+                    <div className="modal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
                       <button
                         type="button"
                         className="btn btn-sm filter-clear-button"
@@ -3136,43 +3181,53 @@ export default function MonthlyBalancesClient() {
                         <i className="bi bi-trash me-1" aria-hidden />
                         Archive
                       </button>
-                      {accountDetailsDirty ? (
+                      <div className="d-flex flex-wrap align-items-center gap-2">
+                        {accountDetailsDirty ? (
+                          <button
+                            type="button"
+                            className="btn glass-btn glass-btn-primary"
+                            disabled={
+                              savingAccountDetails ||
+                              !accountDetailsForm?.name.trim() ||
+                              (accountDetailsForm != null &&
+                                isUnvestedRsuAsset(
+                                  accountDetailsForm.kind,
+                                  accountDetailsForm.accountType,
+                                ) &&
+                                !(accountDetailsForm.vestingDate ?? "").trim()) ||
+                              (accountDetailsForm != null &&
+                                isRealEstateAsset(
+                                  accountDetailsForm.kind,
+                                  accountDetailsForm.accountType,
+                                ) &&
+                                !(
+                                  accountDetailsForm.annualGrowthPercent ?? ""
+                                ).trim())
+                            }
+                            onClick={() => void handleSaveAccountDetails()}
+                          >
+                            {savingAccountDetails ? (
+                              <>
+                                <span
+                                  className="spinner-border spinner-border-sm me-2"
+                                  aria-hidden
+                                />
+                                Saving…
+                              </>
+                            ) : (
+                              "Save"
+                            )}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
-                          className="btn glass-btn glass-btn-primary"
-                          disabled={
-                            savingAccountDetails ||
-                            !accountDetailsForm?.name.trim() ||
-                            (accountDetailsForm != null &&
-                              isUnvestedRsuAsset(
-                                accountDetailsForm.kind,
-                                accountDetailsForm.accountType,
-                              ) &&
-                              !(accountDetailsForm.vestingDate ?? "").trim()) ||
-                            (accountDetailsForm != null &&
-                              isRealEstateAsset(
-                                accountDetailsForm.kind,
-                                accountDetailsForm.accountType,
-                              ) &&
-                              !(
-                                accountDetailsForm.annualGrowthPercent ?? ""
-                              ).trim())
-                          }
-                          onClick={() => void handleSaveAccountDetails()}
+                          className="btn glass-btn glass-btn-secondary"
+                          data-bs-dismiss="modal"
+                          disabled={savingAccountDetails}
                         >
-                          {savingAccountDetails ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                aria-hidden
-                              />
-                              Saving…
-                            </>
-                          ) : (
-                            "Save"
-                          )}
+                          Close
                         </button>
-                      ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>

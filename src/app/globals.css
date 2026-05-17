@@ -4209,6 +4209,11 @@ a:hover {
   stroke: var(--glass-border);
 }
 
+.monthly-balances-net-chart-grid-line {
+  stroke: var(--glass-border-subtle);
+  stroke-dasharray: 3 5;
+}
+
 .monthly-balances-net-chart-axis-label {
   fill: var(--text-tertiary);
   font-weight: 500;
@@ -4240,6 +4245,120 @@ a:hover {
 
 [data-theme="light"] .monthly-balances-net-chart-bar {
   filter: drop-shadow(0 1px 2px rgba(60, 60, 67, 0.14));
+}
+
+/* Projections – year table (accordion under bar chart) */
+.mb-projection-values-accordion {
+  --mb-proj-acc-border: color-mix(in srgb, var(--bs-border-color) 55%, transparent);
+}
+
+.mb-projection-values-accordion__item {
+  background: color-mix(in srgb, var(--glass-bg) 88%, transparent);
+  border: 1px solid var(--mb-proj-acc-border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.mb-projection-values-accordion__btn.accordion-button {
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.9rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.mb-projection-values-accordion__btn.accordion-button:not(.collapsed) {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+
+.mb-projection-values-accordion__btn.accordion-button:focus {
+  box-shadow: 0 0 0 0.12rem color-mix(in srgb, var(--bs-primary) 22%, transparent);
+}
+
+.mb-projection-values-accordion__btn-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.mb-projection-values-accordion__label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.mb-projection-values-accordion__hint {
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.mb-projection-values-accordion__body {
+  padding-top: 0.35rem;
+  padding-bottom: 0.75rem;
+}
+
+.mb-projection-values-table-wrap {
+  max-height: min(42vh, 380px);
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--mb-proj-acc-border);
+  background: color-mix(in srgb, var(--bs-body-bg) 55%, transparent);
+}
+
+.mb-projection-values-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mb-projection-values-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bs-secondary);
+  background: color-mix(in srgb, var(--bs-body-bg) 88%, var(--glass-bg-subtle));
+  border-bottom: 1px solid var(--mb-proj-acc-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mb-projection-values-table thead th:last-child {
+  text-align: right;
+}
+
+.mb-projection-values-table tbody td {
+  padding: 0.45rem 0.85rem;
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.mb-projection-values-table tbody td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+.mb-projection-values-table tbody tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--mb-proj-acc-border) 75%, transparent);
+}
+
+[data-theme="light"] .mb-projection-values-table-wrap {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="light"] .mb-projection-values-table thead th {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .monthly-balances-footnote {

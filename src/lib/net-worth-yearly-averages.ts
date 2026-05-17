@@ -25,17 +25,9 @@ function isAccountArchived(a: IBalanceAccount): boolean {
   return Boolean(a.archived);
 }
 
-function activeAccounts(accounts: IBalanceAccount[]): IBalanceAccount[] {
+/** Active, non-archived accounts; column visibility does not affect Net (USD). */
+function accountsForNetUsd(accounts: IBalanceAccount[]): IBalanceAccount[] {
   return accounts.filter((a) => !isAccountArchived(a));
-}
-
-/** Same visibility as the sheet Net column: active, non-archived, not hidden via Columns. */
-function visibleAccountsForNetColumn(
-  accounts: IBalanceAccount[],
-  hiddenColumnIds: string[] | null | undefined,
-): IBalanceAccount[] {
-  const hidden = new Set(hiddenColumnIds ?? []);
-  return activeAccounts(accounts).filter((a) => !hidden.has(a.id));
 }
 
 /**
@@ -43,14 +35,14 @@ function visibleAccountsForNetColumn(
  */
 function netUsdForMonthRow(
   row: IMonthBalanceRow,
-  visibleAccounts: IBalanceAccount[],
+  netAccounts: IBalanceAccount[],
   usdRates: Record<string, number>,
 ): { kind: "ok"; netUsd: number } | { kind: "skip" } {
   const balances = (row.balances ?? {}) as Record<string, number>;
   let netUsd = 0;
   let had = false;
   let missingRate = false;
-  for (const a of visibleAccounts) {
+  for (const a of netAccounts) {
     if (a.exemptFromNetWorth) continue;
     const v = balances[a.id];
     if (typeof v !== "number" || !Number.isFinite(v)) continue;
@@ -74,10 +66,7 @@ export function latestMonthNetUsdFromSheet(
   usdRates: Record<string, number>,
 ): number | null {
   const rows = sheet.monthRows ?? [];
-  const visible = visibleAccountsForNetColumn(
-    sheet.accounts,
-    sheet.hiddenColumnIds,
-  );
+  const netAccounts = accountsForNetUsd(sheet.accounts);
   let bestKey: string | null = null;
   for (const row of rows) {
     const mk = typeof row.monthKey === "string" ? row.monthKey.trim() : "";
@@ -90,7 +79,7 @@ export function latestMonthNetUsdFromSheet(
     return mk === bestKey;
   });
   if (!row) return null;
-  const net = netUsdForMonthRow(row, visible, usdRates);
+  const net = netUsdForMonthRow(row, netAccounts, usdRates);
   return net.kind === "ok" ? net.netUsd : null;
 }
 
@@ -107,15 +96,14 @@ export async function syncUserYearlyNetWorthFromBalanceSheet(
   await ensureAustralianDollarSeed();
 
   const rows = sheet.monthRows ?? [];
-  const visible = visibleAccountsForNetColumn(
-    sheet.accounts,
-    sheet.hiddenColumnIds,
-  );
+  const netAccounts = accountsForNetUsd(sheet.accounts);
   const currencies = [
     ...new Set(
-      visible.map((a) => (typeof a.currency === "string" ? a.currency : "USD").toUpperCase()),
+      netAccounts.map((a) =>
+        typeof a.currency === "string" ? a.currency : "USD",
+      ),
     ),
-  ];
+  ].map((c) => c.toUpperCase());
   await ensureCurrenciesTracked(currencies);
   await refreshStaleExchangeRates(currencies.length > 0 ? currencies : ["USD"]);
   const usdRates = await getUsdPerUnitRatesForCurrencies(
@@ -130,7 +118,7 @@ export async function syncUserYearlyNetWorthFromBalanceSheet(
     const year = Number.parseInt(mk.slice(0, 4), 10);
     if (!Number.isFinite(year) || year < 1900 || year > 2100) continue;
 
-    const net = netUsdForMonthRow(row, visible, usdRates);
+    const net = netUsdForMonthRow(row, netAccounts, usdRates);
     if (net.kind !== "ok") continue;
 
     const agg = byYear.get(year) ?? { sum: 0, count: 0 };
