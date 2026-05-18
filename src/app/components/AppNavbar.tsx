@@ -24,8 +24,9 @@ export default function AppNavbar({
   const isPortfolio = pathname === "/portfolio";
   const isMonthlyBalances = pathname === "/monthly-balances";
   const isSectorAssessments = pathname === "/sector-assessments";
-  /** Main table + CSV upload and other sub-routes: no stock search in the bar */
-  const hideNavbarSearch = pathname?.startsWith("/monthly-balances") ?? false;
+  /** Monthly balances sub-routes and sector assessments: no stock search in the bar */
+  const hideNavbarSearch =
+    pathname?.startsWith("/monthly-balances") === true || isSectorAssessments;
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -185,14 +186,26 @@ export default function AppNavbar({
             ) : (
               <>
                 <ThemeSwitcher />
-                <Link
-                  href="/about"
-                  className="btn btn-sm theme-switcher-btn"
-                  aria-label="About valuesearch.app"
-                  title="About valuesearch.app"
-                >
-                  <i className="bi bi-info-circle" aria-hidden />
-                </Link>
+                {!isSectorAssessments && (
+                  <Link
+                    href="/sector-assessments"
+                    className="btn btn-sm theme-switcher-btn"
+                    aria-label="Sector assessments"
+                    title="Sector assessments"
+                  >
+                    <i className="bi bi-bar-chart-steps" aria-hidden />
+                  </Link>
+                )}
+                {pathname !== "/about" && (
+                  <Link
+                    href="/about"
+                    className="btn btn-sm theme-switcher-btn"
+                    aria-label="About valuesearch.app"
+                    title="About valuesearch.app"
+                  >
+                    <i className="bi bi-info-circle" aria-hidden />
+                  </Link>
+                )}
                 <button
                   type="button"
                   className="btn btn-sm theme-switcher-btn"

@@ -5,7 +5,7 @@ export default function AboutPage() {
   return (
     <div className="min-vh-100">
       <AppNavbar />
-      <main className="container pt-5 mt-4">
+      <main className="container pt-5 mt-4 about-page">
         <div className="row justify-content-center">
           <div className="col-lg-8">
             <AboutHeader />
@@ -24,7 +24,7 @@ export default function AboutPage() {
                   <h2 className="about-page-section-title">How it works</h2>
                   <p>
                     Data from a variety of sources is fed into the{" "}
-                    <code className="about-page-code">gpt-oss:20b</code> model, which
+                    <code className="about-page-code">Qwen3:30B</code> model, which
                     analyses the data and offers its opinion about the investment
                     opportunity.
                   </p>

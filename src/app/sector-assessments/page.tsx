@@ -100,25 +100,43 @@ export default async function SectorAssessmentsPage({
   const grouped = groupBySector(assessments);
   const sectorKeys = Array.from(grouped.keys()).sort();
 
+  const countLabel =
+    assessments.length === 1 ? "assessment" : "assessments";
+  const countSuffix = selectedSector ? ` in ${selectedSector}` : "";
+
   return (
-    <div className="min-vh-100">
+    <div
+      className="min-vh-100"
+    >
       <AppNavbar />
       <main className="container pt-5 mt-4">
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
+        <div
+          className="row justify-content-center"
+        >
+          <div className="col-lg-8 sector-assessments-page">
 
             <section
-              className="card glass-card mb-3 monthly-balances-page-heading"
+              className="card glass-card monthly-balances-page-heading sector-assessments-heading"
               aria-label="Sector assessments"
             >
-              <div className="card-body monthly-balances-page-heading-body py-3 px-3 px-sm-4">
+              <div
+                className="card-body monthly-balances-page-heading-body"
+              >
                 <h2 className="h5 mb-0">Sector &amp; Industry Assessments</h2>
+                <p className="sector-assessments-lead mb-0">
+                  AI-generated outlooks by sector and industry, refreshed on weekends.
+                </p>
               </div>
             </section>
 
-            <section className="mt-3">
-              <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
-                <div className="accordion-item">
+            <section className="sector-assessments-filters" aria-label="Filters">
+              <div
+                className="accordion filters-accordion-glass"
+                id="filtersAccordion"
+              >
+                <div
+                  className="accordion-item"
+                >
                   <h2 className="accordion-header" id="filtersHeading">
                     <button
                       className="accordion-button collapsed ai-accordion-button fw-bold"
@@ -139,7 +157,9 @@ export default async function SectorAssessmentsPage({
                   >
                     <div className="accordion-body">
                       <form method="get" action="/sector-assessments" className="row g-3">
-                        <div className="col-md-6">
+                        <div
+                          className="col-12"
+                        >
                           <label htmlFor="sector" className="form-label fw-semibold">
                             Sector
                           </label>
@@ -157,7 +177,9 @@ export default async function SectorAssessmentsPage({
                             ))}
                           </select>
                         </div>
-                        <div className="col-12 d-flex justify-content-end gap-2 mt-2">
+                        <div
+                          className="col-12 d-flex justify-content-end gap-2"
+                        >
                           {selectedSector && (
                             <a
                               href="/sector-assessments"
@@ -177,36 +199,42 @@ export default async function SectorAssessmentsPage({
               </div>
             </section>
 
-            <section className="card-body pb-2">
-              <p className="text-muted small mb-0 text-center">
-                {assessments.length}{" "}
-                {assessments.length === 1 ? "assessment" : "assessments"}
-                {selectedSector ? ` in ${selectedSector}` : ""}
+            <section
+              className="sector-assessments-meta"
+              aria-live="polite"
+            >
+              <p>
+                {assessments.length} {countLabel}
+                {countSuffix}
               </p>
             </section>
 
-            <section className="card glass-card mb-4 pt-3">
-              <div className="card-body pt-0">
+            <section
+              className="card glass-card sector-assessments-results mb-4"
+              aria-label="Assessment results"
+            >
+              <div
+                className="card-body sector-assessments-results-body"
+              >
                 {assessments.length === 0 ? (
-                  <p className="text-muted text-center mb-0">No assessments found</p>
+                  <p className="sector-assessments-empty text-muted text-center mb-0">
+                    No assessments found
+                  </p>
                 ) : (
-                  <div className="d-flex flex-column gap-3">
+                  <div
+                    className="sector-assessments-sector-list"
+                  >
                     {sectorKeys.map((sector) => {
                       const items = grouped.get(sector)!;
                       const sectorId = `sector-${sector.replace(/\W+/g, "-")}`;
                       return (
-                        <div key={sector}>
-                          <h3 className="h6 fw-semibold mb-2 ps-1" style={{ color: "var(--accent)" }}>
-                            {sector}
-                            <span
-                              className="ms-2 badge rounded-pill"
-                              style={{
-                                background: "var(--accent)",
-                                color: "#fff",
-                                fontSize: "0.7rem",
-                                fontWeight: 600,
-                              }}
-                            >
+                        <div
+                          key={sector}
+                          className="sector-assessments-sector-group"
+                        >
+                          <h3 className="sector-assessments-sector-title">
+                            <span>{sector}</span>
+                            <span className="sector-assessments-sector-count">
                               {items.length}
                             </span>
                           </h3>
@@ -219,10 +247,7 @@ export default async function SectorAssessmentsPage({
                               const headingId = `${collapseId}-heading`;
                               return (
                                 <div className="accordion-item" key={item._id}>
-                                  <h4
-                                    className="accordion-header"
-                                    id={headingId}
-                                  >
+                                  <h4 className="accordion-header" id={headingId}>
                                     <button
                                       className="accordion-button stock-card__inner-accordion-btn collapsed"
                                       type="button"
@@ -240,12 +265,14 @@ export default async function SectorAssessmentsPage({
                                     aria-labelledby={headingId}
                                     data-bs-parent={`#${sectorId}`}
                                   >
-                                    <div className="accordion-body stock-card__inner-accordion-body">
-                                      <p className="mb-2 small lh-base">
+                                    <div
+                                      className="accordion-body stock-card__inner-accordion-body"
+                                    >
+                                      <p className="sector-assessments-assessment-text stock-card__description-text mb-0">
                                         {item.assessment}
                                       </p>
-                                      <p className="mb-0 text-muted" style={{ fontSize: "0.72rem" }}>
-                                        Last updated: {formatDate(item.lastUpdated)}
+                                      <p className="sector-assessments-updated mb-0">
+                                        Last updated {formatDate(item.lastUpdated)}
                                       </p>
                                     </div>
                                   </div>

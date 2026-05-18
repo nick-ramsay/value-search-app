@@ -679,9 +679,17 @@ export default async function Home({
         searchInitialQuery={query}
         searchSelected={isSelected}
       />
-      <main className="container pt-5 mt-4">
+      <main className="container pt-5 mt-4 home-page">
         <div className="row justify-content-center">
           <div className="col-lg-8">
+            <section
+              className="card glass-card monthly-balances-page-heading home-page__assessments-title"
+              aria-label="Current Assessments"
+            >
+              <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
+                <h2 className="h5 mb-0">Current Assessments</h2>
+              </div>
+            </section>
             <Suspense fallback={<FiltersLoadingFallback />}>
               <FiltersAsyncWrapper searchParams={searchParams} />
             </Suspense>

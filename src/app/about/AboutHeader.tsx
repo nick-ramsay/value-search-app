@@ -14,27 +14,28 @@ export default function AboutHeader() {
   };
 
   return (
-    <div className="about-header-wrap w-100 mb-3 mt-2">
-      {/* Left column: back sits at inner edge, immediately left of centered pill */}
-      <div className="about-header-back-cell">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="btn btn-sm about-header-back d-inline-flex align-items-center justify-content-center"
-          aria-label="Go back"
+    <div className="about-page-header">
+      <div className="about-page-header__row">
+        <div className="about-page-header__back-cell">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="btn btn-sm about-page-header__back d-inline-flex align-items-center justify-content-center"
+            aria-label="Go back"
+          >
+            <i className="bi bi-chevron-left" aria-hidden />
+          </button>
+        </div>
+        <section
+          className="card glass-card monthly-balances-page-heading about-page__title about-page-header__title"
+          aria-label="About"
         >
-          <i className="bi bi-chevron-left" aria-hidden />
-        </button>
+          <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
+            <h2 className="h5 mb-0">About</h2>
+          </div>
+        </section>
+        <div className="about-page-header__spacer" aria-hidden="true" />
       </div>
-      {/* Middle column: pill only — 1fr | auto | 1fr keeps this column dead center */}
-      <div className="about-header-pill px-3 py-2">
-        <span className="small fw-semibold text-uppercase about-header-pill-text">
-          About valuesearch.app
-        </span>
-      </div>
-      {/* Right column: balances layout so middle column stays centered */}
-      <div className="about-header-spacer" aria-hidden="true" />
     </div>
   );
 }
-

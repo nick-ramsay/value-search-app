@@ -27,15 +27,15 @@ export default async function PortfolioPage({
         searchInitialQuery={query}
         searchSelected={isSelected}
       />
-      <main className="container pt-5 mt-4">
+      <main className="container pt-5 mt-4 portfolio-page">
         <ScoreExplanationModal />
         <div className="row justify-content-center">
           <div className="col-lg-8">
             <section
-              className="card glass-card mb-3 monthly-balances-page-heading"
+              className="card glass-card monthly-balances-page-heading portfolio-page__title"
               aria-label="Portfolio"
             >
-              <div className="card-body monthly-balances-page-heading-body py-3 px-3 px-sm-4">
+              <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
                 <h2 className="h5 mb-0">Portfolio</h2>
               </div>
             </section>

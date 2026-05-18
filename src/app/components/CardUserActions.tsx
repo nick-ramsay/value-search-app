@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
+import { buildTargetDistanceLine } from "@/lib/stock-card-display";
 import CardStatusSelect from "./CardStatusSelect";
 import CardComments from "./CardComments";
 
@@ -39,7 +40,9 @@ type CardUserActionsProps = {
   /** Stable identifier for the underlying stock record (e.g. database _id). */
   recordId?: string;
   compact?: boolean;
-  /** When set, status + edit button are portaled into this element so they sit in the action row. */
+  /** When set, buy/sell target distance line is portaled below the price. */
+  priceContextSlotId?: string;
+  /** When set, status + edit button are portaled into this element (action row). */
   actionBarSlotId?: string;
   /** When set, buy/sell target pill is portaled into this element (e.g. signals row). */
   targetPillSlotId?: string;
@@ -58,6 +61,7 @@ export default function CardUserActions({
   cardId,
   recordId,
   compact = false,
+  priceContextSlotId,
   actionBarSlotId,
   targetPillSlotId,
   labelsSlotId,
@@ -277,6 +281,27 @@ export default function CardUserActions({
       ? document.getElementById(labelsSlotId)
       : null;
 
+  const priceContextSlotEl =
+    mounted && priceContextSlotId && typeof document !== "undefined"
+      ? document.getElementById(priceContextSlotId)
+      : null;
+
+  const targetDistance = buildTargetDistanceLine(
+    currentPrice,
+    status,
+    buyTarget,
+    sellTarget,
+  );
+
+  const priceContextContent = targetDistance ? (
+    <p
+      className={`stock-card__price-context stock-card__price-context--${targetDistance.tone} mb-0`}
+      aria-label={targetDistance.ariaLabel}
+    >
+      {targetDistance.text}
+    </p>
+  ) : null;
+
   const actionBarContent = (
     <div className="stock-card__user-actions-row">
       {!targetPillSlotId && targetPillContent}
@@ -291,13 +316,19 @@ export default function CardUserActions({
         title="Edit status and comments"
         disabled={showStatusLoader}
       >
-        {showStatusLoader ? (
-          <span className="stock-card__status-loading" aria-hidden="true">
-            <span className="spinner-border spinner-border-sm" role="status" aria-label={statusUpdating ? "Saving status" : "Loading status"}>
-              <span className="visually-hidden">{statusUpdating ? "Saving status" : "Loading status"}</span>
+      {showStatusLoader ? (
+        <span className="stock-card__status-loading" aria-hidden="true">
+          <span
+            className="spinner-border spinner-border-sm"
+            role="status"
+            aria-label={statusUpdating ? "Saving status" : "Loading status"}
+          >
+            <span className="visually-hidden">
+              {statusUpdating ? "Saving status" : "Loading status"}
             </span>
           </span>
-        ) : (
+        </span>
+      ) : (
           <>
             {status ? (
               <span
@@ -322,12 +353,12 @@ export default function CardUserActions({
   const collapseContent = (
     <div
       id={userActionsCollapseId}
-      className="collapse stock-card__panel"
-      aria-label="Status and comments"
+      className="collapse stock-card__panel stock-card__panel--portfolio"
+      aria-label="Your position"
     >
       <div className="stock-card__panel-inner">
         <div className="stock-card__close-all-inline-wrap">
-          <span className="stock-card__panel-heading">Edit Portfolio Entry</span>
+          <span className="stock-card__panel-heading">Your position</span>
           {showInlineCloseAll && onCloseThisPanel ? (
             <button
               type="button"
@@ -571,6 +602,9 @@ export default function CardUserActions({
 
   return (
     <>
+      {priceContextSlotEl &&
+        priceContextContent &&
+        createPortal(priceContextContent, priceContextSlotEl)}
       {targetPillSlotEl &&
         targetPillContent &&
         createPortal(targetPillContent, targetPillSlotEl)}

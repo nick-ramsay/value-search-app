@@ -402,6 +402,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 .stock-card {
   --stock-card-row-gap: 0.5rem;
   --stock-card-side-padding: 1.1rem;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   /* Action row pills + in-panel Score/AI history switch (matched height) */
   --stock-card-action-pad-y: 0.3rem;
   --stock-card-action-pad-x: 0.55rem;
@@ -476,8 +479,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__head-row > .stock-card__title,
 .stock-card__head-row > .stock-card__title-text {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: calc(100% - 2.75rem);
 }
 
 .stock-card__meta-row {
@@ -502,11 +506,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
     align-items: flex-start;
   }
 
-  .stock-card__head-row .stock-card__title .stock-card__title-text {
-    flex: 1;
-    min-width: 0;
-  }
-
   .stock-card__head-row .stock-card__title-text {
     white-space: normal;
     overflow: visible;
@@ -522,6 +521,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__company-info-btn {
   flex-shrink: 0;
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -558,15 +558,17 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__title {
   display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  align-items: flex-start;
+  gap: 0.3rem;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   text-decoration: none;
   letter-spacing: 0.01em;
   min-width: 0;
-  flex: 1;
+  width: auto;
+  max-width: 100%;
+  flex: 0 1 auto;
   transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
 }
 
@@ -576,14 +578,21 @@ button.accordion-button.ai-accordion-button:focus-visible {
   text-underline-offset: 0.2em;
 }
 
+.stock-card__head-row .stock-card__title .stock-card__title-text {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
 .stock-card__title-icon {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  font-size: 0.85em;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  line-height: 1;
   opacity: 0.7;
 }
 
@@ -607,6 +616,34 @@ button.accordion-button.ai-accordion-button:focus-visible {
 .stock-card__price-row .stock-card__price-row-inner {
   gap: 0.1rem;
   align-items: center;
+}
+
+.stock-card__head-status-slot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.stock-card__head-status-slot:empty {
+  display: none;
+}
+
+.stock-card__head-status-btn.stock-card__user-pill {
+  padding: 0.2rem 0.45rem;
+  min-height: 0;
+  border-radius: 999px;
+}
+
+.stock-card__head-status-btn .stock-card__status-badge {
+  font-size: 0.625rem !important;
+  padding: 0.1rem 0.35rem !important;
+}
+
+.stock-card__head-status-placeholder {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .stock-card__time-btn {
@@ -801,62 +838,202 @@ button.accordion-button.ai-accordion-button:focus-visible {
   text-overflow: ellipsis;
 }
 
-/* Mobile: keep Trends, Assessment, Edit in one row; scale down responsively to fit */
+/* Responsive action labels: full on desktop, short on narrow viewports */
+.stock-card__action-label--short {
+  display: none;
+}
+
+/* Mobile: card layout tuned for phone viewports (≤576px) */
 @media (max-width: 576px) {
   .stock-card {
-    --stock-card-side-padding: 1rem;
+    --stock-card-side-padding: 0.85rem;
     --stock-card-row-gap: 0.5rem;
+    border-radius: 12px;
+  }
+
+  .stock-card--has-open {
+    padding-bottom: 3.25rem;
+  }
+
+  .stock-card__head {
+    padding-top: 0.65rem;
+  }
+
+  .stock-card__head-row > .stock-card__title,
+  .stock-card__head-row > .stock-card__title-text {
+    max-width: calc(100% - 2.5rem);
+  }
+
+  .stock-card__title-icon {
+    margin-top: 0.15rem;
+  }
+
+  .stock-card__meta-row {
+    font-size: 0.7rem;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  /* Signals & badges */
+  .stock-card__signals {
+    gap: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .stock-card__target-pill {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25 !important;
+  }
+
+  .stock-card--compact .stock-card__signals .stock-card__badge {
+    font-size: 0.625rem;
+    padding: 0.18rem 0.35rem !important;
+  }
+
+  .stock-card__labels-inline .stock-card__label-pill {
+    max-width: 100%;
+  }
+
+  .stock-card__label-pill-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 10rem;
+  }
+
+  /* Actions: equal-width pills, 44px min touch height, short labels */
+  .stock-card__action-label--full {
+    display: none;
+  }
+
+  .stock-card__action-label--short {
+    display: inline;
   }
 
   .stock-card__actions {
     flex-wrap: nowrap;
-    gap: clamp(0.2rem, 1.2vw, 0.4rem);
+    gap: 0.3rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.5rem;
   }
 
   .stock-card__actions .stock-card__action,
+  .stock-card__actions-slot > .stock-card__action,
   .stock-card__actions .stock-card__user-actions-row,
   .stock-card__actions .stock-card__user-pill {
+    flex: 1 1 0;
     flex-shrink: 1;
     min-width: 0;
+    justify-content: center;
+    min-height: 2.75rem;
   }
 
   .stock-card__actions .stock-card__action {
-    padding: clamp(0.26rem, 1.8vw, var(--stock-card-action-pad-y))
-      clamp(0.38rem, 2vw, var(--stock-card-action-pad-x));
-    font-size: clamp(0.6875rem, 2.2vw, var(--stock-card-action-font-size));
+    padding: 0.35rem 0.4rem;
+    font-size: 0.6875rem;
     line-height: var(--stock-card-action-line-height);
-    gap: clamp(0.15rem, 0.8vw, 0.3rem);
+    gap: 0.2rem;
   }
 
-  .stock-card__actions .stock-card__action--icon {
-    padding: clamp(0.28rem, 1.5vw, 0.4rem) clamp(0.35rem, 1.8vw, 0.55rem);
+  .stock-card__actions .stock-card__action--icon .bi,
+  .stock-card__actions .stock-card__action-icon {
+    font-size: 0.8rem;
   }
 
-  .stock-card__actions .stock-card__action--icon .bi {
-    font-size: clamp(0.75rem, 2vw, 0.9rem);
+  .stock-card__actions .stock-card__action-chevron {
+    font-size: 0.7rem;
+    flex-shrink: 0;
   }
 
-  /* Edit (user-pill): match View trends / AI Assessment size on mobile */
   .stock-card__actions .stock-card__user-pill {
-    padding: clamp(0.26rem, 1.8vw, var(--stock-card-action-pad-y))
-      clamp(0.38rem, 2vw, var(--stock-card-action-pad-x));
-    font-size: clamp(0.6875rem, 2.2vw, var(--stock-card-action-font-size));
+    padding: 0.35rem 0.4rem;
+    font-size: 0.6875rem;
     line-height: var(--stock-card-action-line-height);
-    gap: clamp(0.15rem, 0.8vw, 0.3rem);
+    gap: 0.15rem;
+    min-height: 2.75rem;
   }
 
   .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: clamp(0.55rem, 1.8vw, 0.65rem) !important;
-    padding: 0.08rem clamp(0.22rem, 1.1vw, 0.35rem) !important;
+    font-size: 0.6rem !important;
+    padding: 0.08rem 0.3rem !important;
   }
 
   .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
-    font-size: clamp(0.7rem, 1.9vw, 0.85rem);
+    font-size: 0.7rem;
   }
 
-  .stock-card__actions .stock-card__action-icon,
-  .stock-card__actions .stock-card__action-chevron {
-    font-size: clamp(0.7rem, 1.9vw, 0.85rem);
+  /* Panels & assessment detail */
+  .stock-card__panel-inner {
+    padding: 0.45rem var(--stock-card-side-padding) 0.55rem;
+  }
+
+  .stock-card__assessment-text {
+    font-size: 0.8125rem;
+  }
+
+  .stock-card__detail-dl-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
+
+  .stock-card__detail-dl-value {
+    text-align: left;
+    width: 100%;
+  }
+
+  .stock-card__assessment-data-trigger .stock-card__action-label {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  .stock-card__close-all-wrap {
+    padding-left: var(--stock-card-side-padding);
+    padding-right: var(--stock-card-side-padding);
+  }
+
+  .stock-card__close-all-wrap .stock-card__close-all {
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .stock-card__panel-close-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  /* Portfolio tab list spacing matches card density */
+  .portfolio-tabs-glass {
+    padding: 0.65rem 0.75rem 0.85rem;
+    border-radius: 14px;
+  }
+
+  .portfolio-tabs-glass .portfolio-tabs-nav {
+    gap: 0.25rem;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .portfolio-tabs-glass .portfolio-cards-list {
+    gap: 0.75rem;
+  }
+
+  .stock-card__target-input,
+  .stock-card__status-select {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+}
+
+/* Very narrow phones (≤380px) */
+@media (max-width: 380px) {
+  .stock-card {
+    --stock-card-side-padding: 0.75rem;
+  }
+
+  .stock-card__signals-slot {
+    flex-basis: 100%;
   }
 }
 
@@ -963,6 +1140,11 @@ button.accordion-button.ai-accordion-button:focus-visible {
   padding: 0.45rem 0.6rem;
   font-size: 0.7rem;
   grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+}
+
+.stock-card__target-pill--fulfilled {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent);
+  background: color-mix(in srgb, var(--success-glass) 80%, var(--glass-bg-subtle)) !important;
 }
 
 .stock-card__user-actions-row {
@@ -1253,6 +1435,23 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   padding: 0.5rem var(--stock-card-side-padding) 0.5rem;
   background: var(--glass-bg-subtle);
   min-width: 0;
+  border-left: 3px solid var(--glass-border);
+}
+
+.stock-card__panel--trends .stock-card__panel-inner {
+  border-left-color: color-mix(in srgb, var(--accent) 55%, var(--glass-border));
+}
+
+.stock-card__panel--assessment .stock-card__panel-inner {
+  border-left-color: color-mix(in srgb, #a78bfa 50%, var(--glass-border));
+}
+
+.stock-card__panel--portfolio .stock-card__panel-inner {
+  border-left-color: color-mix(in srgb, var(--success) 50%, var(--glass-border));
+}
+
+.stock-card__panel--company-desc .stock-card__panel-inner {
+  border-left: none;
 }
 
 /* Smoother accordion transitions (cards + other Bootstrap collapse elements) */
@@ -1424,6 +1623,60 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 
 .stock-card__detail-table tbody tr:last-child {
   border-bottom: none;
+}
+
+.stock-card__assessment-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stock-card__detail-group-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.stock-card__detail-dl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.stock-card__detail-dl-row:last-child {
+  border-bottom: none;
+}
+
+.stock-card__detail-dl-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.stock-card__detail-dl-value {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  text-align: right;
+  word-break: break-word;
+}
+
+.stock-card__detail-raw-toggle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-decoration: none;
+}
+
+.stock-card__detail-raw-toggle:hover {
+  color: var(--accent);
 }
 
 /* User row: status + edit */
@@ -2182,27 +2435,42 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   color: var(--text-primary) !important;
 }
 
-/* About page – pill absolutely centered on row; back sits just left of pill */
-.about-header-wrap {
+/* About page – back anchored left of centered page title */
+.about-page-header {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.65rem;
+}
+
+.about-page-header__row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  min-height: 40px;
 }
 
-.about-header-back-cell {
+.about-page-header__back-cell {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
-  padding-right: 0.5rem; /* gap between back and pill */
 }
 
-.about-header-spacer {
+.about-page-header__spacer {
   min-width: 0;
 }
 
-/* About page – centered back + title pill; theme-aware glass */
-.about-header-back {
+.about-page-header__title {
+  width: auto;
+}
+
+.about-page-header__title .monthly-balances-page-heading-body {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.about-page-header__title .monthly-balances-page-heading-body h2 {
+  line-height: 1.2;
+}
+
+.about-page-header__back {
   width: 36px;
   height: 36px;
   min-width: 36px;
@@ -2215,42 +2483,23 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
   box-shadow: var(--glass-shadow);
 }
 
-.about-header-back:hover,
-.about-header-back:focus {
+.about-page-header__back:hover,
+.about-page-header__back:focus {
   background: var(--glass-bg) !important;
   border-color: var(--glass-border-subtle) !important;
   color: var(--text-primary) !important;
 }
 
-.about-header-pill {
-  border-radius: 999px;
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  backdrop-filter: blur(var(--glass-blur));
-  box-shadow: var(--glass-shadow);
-}
-
-.about-header-pill-text {
-  color: var(--text-on-glass);
-  letter-spacing: 0.04em;
-}
-
-[data-theme="light"] .about-header-back,
-[data-theme="light"] .about-header-pill {
+[data-theme="light"] .about-page-header__back {
   background: rgba(118, 118, 128, 0.12) !important;
   border-color: transparent !important;
   box-shadow: none;
 }
 
-[data-theme="light"] .about-header-back:hover,
-[data-theme="light"] .about-header-back:focus {
+[data-theme="light"] .about-page-header__back:hover,
+[data-theme="light"] .about-page-header__back:focus {
   background: rgba(118, 118, 128, 0.18) !important;
   border-color: transparent !important;
-}
-
-[data-theme="light"] .about-header-pill-text {
-  color: var(--text-primary);
 }
 
 /* About page card – consistent prose inside glass-card */
@@ -3235,6 +3484,180 @@ a:hover {
   font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--text-primary);
+}
+
+/* Home page: section title above assessment results */
+.home-page .home-page__assessments-title {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.home-page .home-page__assessments-title .monthly-balances-page-heading-body {
+  padding-bottom: 0.35rem;
+}
+
+/* Portfolio page: tighter gap between page title and Current Selection */
+.portfolio-page .portfolio-page__title {
+  margin-bottom: 0;
+}
+
+.portfolio-page .portfolio-page__title .monthly-balances-page-heading-body {
+  padding-bottom: 0.65rem;
+}
+
+.portfolio-page .portfolio-page__current-selection-heading {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.about-page .about-page__title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.about-page-header .about-page__title {
+  margin-bottom: 0;
+}
+
+
+/* Sector assessments page */
+.sector-assessments-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.sector-assessments-heading.monthly-balances-page-heading .monthly-balances-page-heading-body {
+  padding-bottom: 0.65rem;
+}
+
+.sector-assessments-lead {
+  margin-top: 0.45rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sector-assessments-filters {
+  margin-top: 0.1rem;
+}
+
+.sector-assessments-filters .accordion {
+  margin-bottom: 0;
+}
+
+.sector-assessments-meta {
+  padding: 0.4rem 0 0.9rem;
+  text-align: center;
+}
+
+.sector-assessments-meta p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.sector-assessments-results .sector-assessments-results-body {
+  padding: 1.15rem 1.1rem 1.3rem;
+}
+
+@media (min-width: 576px) {
+  .sector-assessments-results .sector-assessments-results-body {
+    padding: 1.25rem 1.35rem 1.45rem;
+  }
+}
+
+.sector-assessments-empty {
+  padding: 1.75rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.sector-assessments-sector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sector-assessments-sector-group {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.sector-assessments-sector-group:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.sector-assessments-sector-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin: 0 0 0.7rem;
+}
+
+.sector-assessments-sector-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  padding: 0.12em 0.5em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.sector-assessments-page .stock-card__inner-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sector-assessments-page .stock-card__inner-accordion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sector-assessments-assessment-text {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.sector-assessments-updated {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--text-tertiary);
+}
+
+.sector-assessments-loading {
+  border-radius: 16px;
+  border: 1px dashed var(--glass-border-subtle);
+  background: color-mix(in srgb, var(--glass-bg-subtle) 65%, transparent);
+}
+
+.sector-assessments-loading-body {
+  min-height: 12rem;
+  padding: 2.5rem 1.15rem;
+}
+
+[data-theme="light"] .sector-assessments-loading {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(60, 60, 67, 0.12);
 }
 
 /* Toolbar above chart/table — glass rail, grouped controls */

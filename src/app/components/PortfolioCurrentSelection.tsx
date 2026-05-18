@@ -72,7 +72,7 @@ export default function PortfolioCurrentSelection({
 
   return (
     <>
-      <div className="position-relative mb-3">
+      <div className="position-relative portfolio-page__current-selection-heading">
         <h3 className="glass-heading fs-6 fw-semibold mb-0 text-center px-4">
           Current Selection
         </h3>

@@ -599,7 +599,8 @@ export function HistoryChartsTrigger({
       title={triggerTitle}
     >
       <i className="bi bi-graph-up stock-card__action-icon" aria-hidden />
-      <span className="stock-card__action-label">View trends</span>
+      <span className="stock-card__action-label stock-card__action-label--full">View trends</span>
+      <span className="stock-card__action-label stock-card__action-label--short">Trends</span>
       <i
         className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
         aria-hidden
@@ -689,7 +690,7 @@ export function HistoryChartsPanel({
   return (
     <div
       id={collapseId}
-      className="collapse stock-card__panel"
+      className="collapse stock-card__panel stock-card__panel--trends"
       aria-label="Trends"
     >
       <div className="stock-card__panel-inner stock-card__trends-panel">

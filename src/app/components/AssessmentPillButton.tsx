@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 type AssessmentPillButtonProps = {
   collapseId: string;
   ariaLabel?: string;
+  compact?: boolean;
 };
 
 export default function AssessmentPillButton({
   collapseId,
   ariaLabel = "Toggle assessment",
+  compact = false,
 }: AssessmentPillButtonProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -29,14 +31,15 @@ export default function AssessmentPillButton({
   return (
     <button
       type="button"
-      className="stock-card__action stock-card__action--secondary"
+      className={`stock-card__action stock-card__action--secondary${compact ? " stock-card__action--compact" : ""}`}
       data-bs-toggle="collapse"
       data-bs-target={`#${collapseId}`}
       aria-expanded={expanded}
       aria-label={ariaLabel}
       title={ariaLabel}
     >
-      <span className="stock-card__action-label">AI Assessment</span>
+      <span className="stock-card__action-label stock-card__action-label--full">AI Assessment</span>
+      <span className="stock-card__action-label stock-card__action-label--short">AI</span>
       <i
         className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
         aria-hidden
