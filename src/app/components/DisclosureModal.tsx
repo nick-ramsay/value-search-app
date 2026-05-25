@@ -53,9 +53,10 @@ export default function DisclosureModal() {
         className="btn btn-sm disclaimer-pill-btn"
         data-bs-toggle="modal"
         data-bs-target={`#${DISCLAIMER_MODAL_ID}`}
-        aria-label="Read important disclaimer - Must Read"
+        aria-label="Read important disclaimer"
       >
-        ⚠️ Important Disclaimer - Must Read
+        <i className="bi bi-exclamation-triangle-fill disclaimer-pill-btn__icon" aria-hidden />
+        Important Disclaimer
       </button>
       {mounted && typeof document !== "undefined"
         ? createPortal(modalEl, document.body)

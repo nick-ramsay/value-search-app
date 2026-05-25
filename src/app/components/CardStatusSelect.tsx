@@ -3,23 +3,20 @@
 import { useEffect, useState } from "react";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "No status" },
-  { value: "Avoid", label: "Avoid" },
-  { value: "Watch", label: "Watch" },
-  { value: "Own", label: "Own" },
-  { value: "Hold", label: "Hold" },
+  { value: "Avoid", label: "Avoid",  colorClass: "status-btn--avoid" },
+  { value: "Watch", label: "Watch",  colorClass: "status-btn--watch" },
+  { value: "Own",   label: "Own",    colorClass: "status-btn--own"   },
+  { value: "Hold",  label: "Hold",   colorClass: "status-btn--hold"  },
 ] as const;
+
+type StatusValue = "" | "Avoid" | "Watch" | "Own" | "Hold";
 
 type CardStatusSelectProps = {
   symbol: string;
   compact?: boolean;
-  /** When provided, used as initial state and fetch is skipped (parent owns status). */
   initialStatus?: string;
-  /** Called when status is updated (after load when not using initialStatus, or after PATCH). */
   onStatusChange?: (status: string) => void;
-  /** Called when a PATCH to change status has started (so parent can show loader). */
   onStatusUpdateStart?: () => void;
-  /** Called when the PATCH completes (success or failure), so parent can hide loader. */
   onStatusUpdateEnd?: () => void;
 };
 
@@ -31,78 +28,76 @@ export default function CardStatusSelect({
   onStatusUpdateStart,
   onStatusUpdateEnd,
 }: CardStatusSelectProps) {
-  const [status, setStatus] = useState(initialStatus ?? "");
+  const [status, setStatus] = useState<StatusValue>((initialStatus ?? "") as StatusValue);
   const [loading, setLoading] = useState(typeof initialStatus === "undefined");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (typeof initialStatus !== "undefined") {
-      setStatus(initialStatus);
+      setStatus((initialStatus ?? "") as StatusValue);
       return;
     }
     if (!symbol) return;
     let cancelled = false;
     setLoading(true);
     fetch(`/api/user-stock-data?symbol=${encodeURIComponent(symbol)}`)
-      .then((r) => (r.ok ? r.json() : { status: "", comments: [] }))
+      .then((r) => (r.ok ? r.json() : { status: "" }))
       .then((data) => {
         if (!cancelled) {
-          const s = data.status ?? "";
+          const s = (data.status ?? "") as StatusValue;
           setStatus(s);
           onStatusChange?.(s);
         }
       })
-      .catch(() => {
-        if (!cancelled) {
-          setStatus("");
-          onStatusChange?.("");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => { if (!cancelled) { setStatus(""); onStatusChange?.(""); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [symbol, initialStatus, onStatusChange]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const next = e.target.value as "" | "Avoid" | "Watch" | "Own" | "Hold";
+  const pick = (next: StatusValue) => {
+    if (saving) return;
+    // Clicking the active status clears it
+    const value: StatusValue = next === status ? "" : next;
     setSaving(true);
     onStatusUpdateStart?.();
     fetch("/api/user-stock-data", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, status: next }),
+      body: JSON.stringify({ symbol, status: value }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const s = data?.status ?? next;
+        const s = (data?.status ?? value) as StatusValue;
         setStatus(s);
         onStatusChange?.(s);
       })
-      .finally(() => {
-        setSaving(false);
-        onStatusUpdateEnd?.();
-      });
+      .finally(() => { setSaving(false); onStatusUpdateEnd?.(); });
   };
 
-  if (loading) return null;
+  if (loading) return <div className="status-btn-group status-btn-group--loading" aria-hidden />;
 
   return (
-    <select
-      className={`form-select form-select-sm glass-select stock-card__status-select ${compact ? "py-1 stock-card__status-select--compact" : ""}`}
-      value={status}
-      onChange={handleChange}
-      disabled={saving}
+    <div
+      className={`status-btn-group${compact ? " status-btn-group--compact" : ""}${saving ? " status-btn-group--saving" : ""}`}
+      role="group"
       aria-label="Stock status"
-      title="Change status"
     >
-      {STATUS_OPTIONS.map((opt) => (
-        <option key={opt.value || "none"} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+      {STATUS_OPTIONS.map((opt) => {
+        const active = status === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            className={`status-btn ${opt.colorClass}${active ? " status-btn--active" : ""}`}
+            onClick={() => pick(opt.value)}
+            disabled={saving}
+            aria-pressed={active}
+            aria-label={`Set status to ${opt.label}`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

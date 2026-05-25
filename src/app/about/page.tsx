@@ -74,7 +74,8 @@ export default function AboutPage() {
 
                 <section className="about-page-section">
                   <h2 className="about-page-section-title">
-                    ⚠️ Important Disclaimer
+                    <i className="bi bi-exclamation-triangle-fill about-page-disclaimer-icon" aria-hidden />
+                    Important Disclaimer
                   </h2>
                   <p>
                     Nothing on this application should be considered investment advice.

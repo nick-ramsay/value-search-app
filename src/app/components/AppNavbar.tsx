@@ -183,41 +183,51 @@ export default function AppNavbar({
                   </li>
                 </ul>
               </div>
-            ) : (
+            ) : status === "unauthenticated" ? (
               <>
                 <ThemeSwitcher />
                 {!isSectorAssessments && (
                   <Link
                     href="/sector-assessments"
-                    className="btn btn-sm theme-switcher-btn"
+                    className="btn btn-sm theme-switcher-btn navbar-text-btn"
                     aria-label="Sector assessments"
                     title="Sector assessments"
                   >
                     <i className="bi bi-bar-chart-steps" aria-hidden />
+                    <span className="d-none d-sm-inline navbar-btn-label">Sectors</span>
                   </Link>
                 )}
                 {pathname !== "/about" && (
                   <Link
                     href="/about"
-                    className="btn btn-sm theme-switcher-btn"
+                    className="btn btn-sm theme-switcher-btn navbar-text-btn"
                     aria-label="About valuesearch.app"
                     title="About valuesearch.app"
                   >
                     <i className="bi bi-info-circle" aria-hidden />
+                    <span className="d-none d-sm-inline navbar-btn-label">About</span>
                   </Link>
                 )}
                 <button
                   type="button"
-                  className="btn btn-sm theme-switcher-btn"
+                  className="btn btn-sm theme-switcher-btn navbar-text-btn"
                   aria-label="Sign in"
                   title="Sign in"
                   data-bs-toggle="modal"
                   data-bs-target={`#${LOGIN_MODAL_ID}`}
                 >
                   <i className="bi bi-person-circle" aria-hidden />
+                  <span className="d-none d-sm-inline navbar-btn-label">Sign in</span>
                 </button>
               </>
-            )}
+            ) : status === "loading" ? (
+              /* Skeleton placeholder — same footprint as the authenticated button
+                 so the navbar doesn't shift when the session resolves */
+              <div className="navbar-auth-skeleton" aria-hidden="true">
+                <div className="navbar-auth-skeleton__avatar" />
+                <div className="navbar-auth-skeleton__name d-none d-sm-block" />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
