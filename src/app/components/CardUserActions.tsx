@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { buildTargetDistanceLine } from "@/lib/stock-card-display";
 import CardStatusSelect from "./CardStatusSelect";
-import CardComments from "./CardComments";
 
 const STATUS_LABELS: Record<string, string> = {
   "": "No status",
@@ -50,6 +49,8 @@ type CardUserActionsProps = {
   labelsSlotId?: string;
   /** Current stock price (from quote); used to show fulfilled icon next to target pill. */
   currentPrice?: number;
+  /** data-bs-parent selector for card-level accordion (closes other panels when this opens). */
+  accordionParentId?: string;
   /** When true and this panel is open, show a small "Close" button inside the panel. */
   showInlineCloseAll?: boolean;
   /** Called when the inline "Close" is clicked (closes only this panel). */
@@ -66,6 +67,7 @@ export default function CardUserActions({
   targetPillSlotId,
   labelsSlotId,
   currentPrice,
+  accordionParentId,
   showInlineCloseAll = false,
   onCloseThisPanel,
 }: CardUserActionsProps) {
@@ -80,7 +82,6 @@ export default function CardUserActions({
   const [labelSaving, setLabelSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const commentsCollapseId = `comments-${cardId}`;
   const userActionsCollapseId = `user-actions-${cardId}`;
 
   useEffect(() => {
@@ -355,6 +356,7 @@ export default function CardUserActions({
       id={userActionsCollapseId}
       className="collapse stock-card__panel stock-card__panel--portfolio"
       aria-label="Your position"
+      data-bs-parent={accordionParentId}
     >
       <div className="stock-card__panel-inner">
         <div className="stock-card__close-all-inline-wrap">
@@ -371,7 +373,6 @@ export default function CardUserActions({
           ) : null}
         </div>
         <div className="stock-card__user-form">
-          <span className="stock-card__user-label">Status</span>
           <CardStatusSelect
             symbol={symbol}
             compact={compact}
@@ -384,7 +385,8 @@ export default function CardUserActions({
         {showBuyTargetInput ? (
           <div className="stock-card__user-form stock-card__user-form--target">
             <label htmlFor={`buy-target-${cardId}`} className="stock-card__user-label">
-              Buy Target
+              Buy target
+              <span className="stock-card__user-label-hint">saves on blur</span>
             </label>
             <div className="stock-card__target-row">
               <div className="stock-card__target-input-wrap">
@@ -451,7 +453,8 @@ export default function CardUserActions({
         {showSellTargetInput ? (
           <div className="stock-card__user-form stock-card__user-form--target">
             <label htmlFor={`sell-target-${cardId}`} className="stock-card__user-label">
-              Sell Target
+              Sell target
+              <span className="stock-card__user-label-hint">saves on blur</span>
             </label>
             <div className="stock-card__target-row">
               <div className="stock-card__target-input-wrap">
@@ -516,67 +519,35 @@ export default function CardUserActions({
           </div>
         ) : null}
         <div className="stock-card__user-form stock-card__user-form--labels">
-          <label htmlFor={`label-${cardId}`} className="stock-card__user-label">
-            Label
-          </label>
-          <div className="stock-card__labels-editor d-flex flex-column gap-1">
-            <div className="stock-card__labels-list">
-              <>
-                {labels.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    className="stock-card__label-pill"
-                    onClick={() => {
-                      if (labelSaving) return;
-                      const next = labels.filter((l) => l !== name);
-                      saveLabels(next);
-                    }}
-                    disabled={labelSaving}
-                    aria-label={`Remove label ${name}`}
-                  >
-                    <span className="stock-card__label-pill-text">{name}</span>
-                    <i
-                      className="bi bi-x stock-card__label-pill-icon"
-                      aria-hidden
-                    />
-                  </button>
-                ))}
-                {labels.length === 0 && (
-                  <span className="stock-card__labels-empty">
-                    No label selected
-                  </span>
-                )}
-              </>
-            </div>
-            <select
-              id={`label-${cardId}`}
-              className="form-select form-select-sm glass-select stock-card__status-select"
-              value=""
-              onChange={(e) => {
-                const value = e.target.value;
-                if (!value) return;
-                const trimmed = value.trim();
-                if (!trimmed || labels.includes(trimmed)) return;
-                const next = [...labels, trimmed];
-                saveLabels(next);
-                e.target.value = "";
-              }}
-              disabled={labelSaving}
-            >
-              <option value="">Select label</option>
-              <option value="KPP">KPP</option>
-              <option value="Motley Fool">Motley Fool</option>
-              <option value="CNBC">CNBC</option>
-            </select>
+          <span className="stock-card__user-label">Labels</span>
+          <div
+            className={`label-toggle-group${labelSaving ? " label-toggle-group--saving" : ""}`}
+            role="group"
+            aria-label="Labels"
+          >
+            {["KPP", "Motley Fool", "CNBC"].map((name) => {
+              const active = labels.includes(name);
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={`label-toggle-btn${active ? " label-toggle-btn--active" : ""}`}
+                  onClick={() => {
+                    if (labelSaving) return;
+                    const next = active
+                      ? labels.filter((l) => l !== name)
+                      : [...labels, name];
+                    saveLabels(next);
+                  }}
+                  disabled={labelSaving}
+                  aria-pressed={active}
+                  aria-label={active ? `Remove label ${name}` : `Add label ${name}`}
+                >
+                  {name}
+                </button>
+              );
+            })}
           </div>
-        </div>
-        <div className="stock-card__comments-wrap">
-          <CardComments
-            symbol={symbol}
-            collapseId={commentsCollapseId}
-            compact={compact}
-          />
         </div>
       </div>
     </div>

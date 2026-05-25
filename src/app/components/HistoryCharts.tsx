@@ -612,11 +612,13 @@ export function HistoryChartsTrigger({
 export function HistoryChartsPanel({
   collapseId,
   symbol,
+  accordionParentId,
   showInlineCloseAll = false,
   onCloseThisPanel,
 }: {
   collapseId: string;
   symbol?: string;
+  accordionParentId?: string;
   showInlineCloseAll?: boolean;
   onCloseThisPanel?: () => void;
 }) {
@@ -692,6 +694,7 @@ export function HistoryChartsPanel({
       id={collapseId}
       className="collapse stock-card__panel stock-card__panel--trends"
       aria-label="Trends"
+      data-bs-parent={accordionParentId}
     >
       <div className="stock-card__panel-inner stock-card__trends-panel">
         <div className="stock-card__close-all-inline-wrap">

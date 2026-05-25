@@ -83,7 +83,7 @@ function FiltersSection({
                 <input type="hidden" name="q" value={query} />
                 {isSelected ? <input type="hidden" name="selected" value="1" /> : null}
                 <div className="col-md-4">
-                  <label htmlFor="industry" className="form-label fw-semibold">
+                  <label htmlFor="industry" className="form-label filter-form-label">
                     Industry
                   </label>
                   <select
@@ -101,7 +101,7 @@ function FiltersSection({
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <label htmlFor="sector" className="form-label fw-semibold">
+                  <label htmlFor="sector" className="form-label filter-form-label">
                     Sector
                   </label>
                   <select
@@ -119,7 +119,7 @@ function FiltersSection({
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <label htmlFor="country" className="form-label fw-semibold">
+                  <label htmlFor="country" className="form-label filter-form-label">
                     Country
                   </label>
                   <select
@@ -136,56 +136,50 @@ function FiltersSection({
                     ))}
                   </select>
                 </div>
-                <div className="col-md-4">
-                  <span className="form-label fw-semibold d-block">
-                    Exclude ETFs
-                  </span>
-                  <div className="filter-toggle">
-                    <input type="hidden" name="excludeEtfs" value="0" />
-                    <input
-                      type="checkbox"
-                      id="excludeEtfs"
-                      name="excludeEtfs"
-                      value="1"
-                      className="filter-toggle-input"
-                      defaultChecked={excludeEtfsEnabled}
-                    />
-                    <label htmlFor="excludeEtfs" className="filter-toggle-label">
-                      <span className="filter-toggle-slider" aria-hidden />
-                      <span className="filter-toggle-text" />
-                    </label>
+                <div className="col-12">
+                  <div className="filter-toggles-row">
+                    <div className="filter-toggle">
+                      <input type="hidden" name="excludeEtfs" value="0" />
+                      <input
+                        type="checkbox"
+                        id="excludeEtfs"
+                        name="excludeEtfs"
+                        value="1"
+                        className="filter-toggle-input"
+                        defaultChecked={excludeEtfsEnabled}
+                      />
+                      <label htmlFor="excludeEtfs" className="filter-toggle-label">
+                        <span className="filter-toggle-slider" aria-hidden />
+                        <span className="filter-toggle-label__text">Exclude ETFs</span>
+                      </label>
+                    </div>
+                    <div className="filter-toggle">
+                      <input type="hidden" name="maSupport" value="0" />
+                      <input
+                        type="checkbox"
+                        id="maSupport"
+                        name="maSupport"
+                        value="1"
+                        className="filter-toggle-input"
+                        defaultChecked={maSupportEnabled}
+                      />
+                      <label htmlFor="maSupport" className="filter-toggle-label">
+                        <span className="filter-toggle-slider" aria-hidden />
+                        <span className="filter-toggle-label__text">Moving average support</span>
+                      </label>
+                    </div>
+                    <div className="filter-toggles-actions">
+                      {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled || maSupportEnabled) && (
+                        <FilterClearButton className="btn btn-sm filter-clear-button" />
+                      )}
+                      <button
+                        type="submit"
+                        className="btn btn-sm filter-apply-button"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="col-md-4">
-                  <span className="form-label fw-semibold d-block">
-                    Moving average support
-                  </span>
-                  <div className="filter-toggle">
-                    <input type="hidden" name="maSupport" value="0" />
-                    <input
-                      type="checkbox"
-                      id="maSupport"
-                      name="maSupport"
-                      value="1"
-                      className="filter-toggle-input"
-                      defaultChecked={maSupportEnabled}
-                    />
-                    <label htmlFor="maSupport" className="filter-toggle-label">
-                      <span className="filter-toggle-slider" aria-hidden />
-                      <span className="filter-toggle-text" />
-                    </label>
-                  </div>
-                </div>
-                <div className="col-12 d-flex justify-content-end gap-2 mt-2">
-                  {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled || maSupportEnabled) && (
-                    <FilterClearButton className="btn btn-sm filter-clear-button" />
-                  )}
-                  <button
-                    type="submit"
-                    className="btn btn-sm filter-apply-button"
-                  >
-                    Apply
-                  </button>
                 </div>
               </form>
             </div>
@@ -550,27 +544,97 @@ async function ResultsCard({
     return search.length > 0 ? `/?${params.toString()}` : "/";
   };
 
+  // Build a URL that preserves all current params except the ones explicitly overridden
+  const buildChipHref = (overrides: {
+    industry?: string;
+    sector?: string;
+    country?: string;
+    excludeEtfs?: boolean;
+    maSupport?: boolean;
+  }) => {
+    const p = new URLSearchParams();
+    if (query) p.set("q", query);
+    if (isSelected) p.set("selected", "1");
+    const ind = "industry" in overrides ? overrides.industry : selectedIndustry;
+    const sec = "sector" in overrides ? overrides.sector : selectedSector;
+    const cou = "country" in overrides ? overrides.country : selectedCountry;
+    const exc = "excludeEtfs" in overrides ? overrides.excludeEtfs : excludeEtfsEnabled;
+    const mas = "maSupport" in overrides ? overrides.maSupport : maSupportEnabled;
+    if (ind) p.set("industry", ind);
+    if (sec) p.set("sector", sec);
+    if (cou) p.set("country", cou);
+    if (!exc) p.set("excludeEtfs", "0");
+    if (mas) p.set("maSupport", "1");
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  };
+
   return (
     <div>
       <section className="card-body pb-2">
-        <p className="text-muted small mb-0 text-center">
-          {(() => {
-            const appliedFilters: string[] = [];
-            if (selectedIndustry) appliedFilters.push(`Industry: ${selectedIndustry}`);
-            if (selectedSector) appliedFilters.push(`Sector: ${selectedSector}`);
-            if (selectedCountry) appliedFilters.push(`Country: ${selectedCountry}`);
-            if (!excludeEtfsEnabled) appliedFilters.push("Include ETFs");
-            if (maSupportEnabled) appliedFilters.push("Moving average support");
-
-            const baseText = `${totalCount} ${totalCount === 1 ? "result" : "results"}`;
-
-            if (appliedFilters.length === 0) {
-              return baseText;
-            }
-
-            return `${baseText} filtered by ${appliedFilters.join(", ")}`;
-          })()}
-        </p>
+        <div className="results-summary">
+          <p className="results-summary__count">
+            {totalCount.toLocaleString()} {totalCount === 1 ? "result" : "results"}
+          </p>
+          <div className="active-filter-chips" role="list" aria-label="Active filters">
+            {excludeEtfsEnabled && (
+              <a
+                href={buildChipHref({ excludeEtfs: false })}
+                className="active-filter-chip"
+                role="listitem"
+                title="Click to include ETFs in results"
+              >
+                <i className="bi bi-slash-circle active-filter-chip__icon" aria-hidden />
+                ETFs excluded
+                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
+              </a>
+            )}
+            {selectedIndustry && (
+              <a
+                href={buildChipHref({ industry: "" })}
+                className="active-filter-chip"
+                role="listitem"
+                title="Remove industry filter"
+              >
+                {selectedIndustry}
+                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
+              </a>
+            )}
+            {selectedSector && (
+              <a
+                href={buildChipHref({ sector: "" })}
+                className="active-filter-chip"
+                role="listitem"
+                title="Remove sector filter"
+              >
+                {selectedSector}
+                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
+              </a>
+            )}
+            {selectedCountry && (
+              <a
+                href={buildChipHref({ country: "" })}
+                className="active-filter-chip"
+                role="listitem"
+                title="Remove country filter"
+              >
+                {selectedCountry}
+                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
+              </a>
+            )}
+            {maSupportEnabled && (
+              <a
+                href={buildChipHref({ maSupport: false })}
+                className="active-filter-chip"
+                role="listitem"
+                title="Remove moving average support filter"
+              >
+                MA support
+                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
+              </a>
+            )}
+          </div>
+        </div>
         <p className="text-center small mb-0 mt-2">
           <DisclosureModal />
         </p>
@@ -612,8 +676,8 @@ function ResultsLoadingFallback() {
   return (
     <div className="d-flex flex-column flex-grow-1">
       <section className="card-body pb-2">
-        <p className="text-muted small mb-0 text-center">
-          0 results
+        <p className="text-muted small mb-0 text-center" aria-hidden="true">
+          &nbsp;
         </p>
         <p className="text-center small mb-0 mt-2">
           <DisclosureModal />
@@ -688,6 +752,9 @@ export default async function Home({
             >
               <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
                 <h2 className="h5 mb-0">Current Assessments</h2>
+                <p className="home-page__tagline mb-0">
+                  AI-powered value investing research — search by ticker or name
+                </p>
               </div>
             </section>
             <Suspense fallback={<FiltersLoadingFallback />}>

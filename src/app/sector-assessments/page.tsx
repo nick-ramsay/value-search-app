@@ -1,4 +1,5 @@
 import { cache } from "react";
+import ReactMarkdown from "react-markdown";
 
 import clientPromise from "@/lib/mongodb";
 import AppNavbar from "../components/AppNavbar";
@@ -129,74 +130,24 @@ export default async function SectorAssessmentsPage({
               </div>
             </section>
 
-            <section className="sector-assessments-filters" aria-label="Filters">
-              <div
-                className="accordion filters-accordion-glass"
-                id="filtersAccordion"
-              >
-                <div
-                  className="accordion-item"
+            <section className="sector-assessments-filters" aria-label="Filter by sector">
+              <nav className="sector-pill-list" aria-label="Sector filter">
+                <a
+                  href="/sector-assessments"
+                  className={`sector-pill${!selectedSector ? " sector-pill--active" : ""}`}
                 >
-                  <h2 className="accordion-header" id="filtersHeading">
-                    <button
-                      className="accordion-button collapsed ai-accordion-button fw-bold"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#filtersCollapse"
-                      aria-expanded="false"
-                      aria-controls="filtersCollapse"
-                    >
-                      Filters
-                    </button>
-                  </h2>
-                  <div
-                    id="filtersCollapse"
-                    className="accordion-collapse collapse"
-                    aria-labelledby="filtersHeading"
-                    data-bs-parent="#filtersAccordion"
+                  All
+                </a>
+                {sectors.map((s) => (
+                  <a
+                    key={s}
+                    href={`/sector-assessments?sector=${encodeURIComponent(s)}`}
+                    className={`sector-pill${selectedSector === s ? " sector-pill--active" : ""}`}
                   >
-                    <div className="accordion-body">
-                      <form method="get" action="/sector-assessments" className="row g-3">
-                        <div
-                          className="col-12"
-                        >
-                          <label htmlFor="sector" className="form-label fw-semibold">
-                            Sector
-                          </label>
-                          <select
-                            id="sector"
-                            name="sector"
-                            className="form-select glass-select"
-                            defaultValue={selectedSector}
-                          >
-                            <option value="">All sectors</option>
-                            {sectors.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div
-                          className="col-12 d-flex justify-content-end gap-2"
-                        >
-                          {selectedSector && (
-                            <a
-                              href="/sector-assessments"
-                              className="btn btn-sm filter-clear-button"
-                            >
-                              Clear
-                            </a>
-                          )}
-                          <button type="submit" className="btn btn-sm filter-apply-button">
-                            Apply
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    {s}
+                  </a>
+                ))}
+              </nav>
             </section>
 
             <section
@@ -268,9 +219,9 @@ export default async function SectorAssessmentsPage({
                                     <div
                                       className="accordion-body stock-card__inner-accordion-body"
                                     >
-                                      <p className="sector-assessments-assessment-text stock-card__description-text mb-0">
-                                        {item.assessment}
-                                      </p>
+                                      <div className="sector-assessments-assessment-text stock-card__assessment-markdown mb-2">
+                                        <ReactMarkdown>{item.assessment}</ReactMarkdown>
+                                      </div>
                                       <p className="sector-assessments-updated mb-0">
                                         Last updated {formatDate(item.lastUpdated)}
                                       </p>

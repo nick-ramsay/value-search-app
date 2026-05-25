@@ -8,6 +8,19 @@ import ScoreModalTrigger, { VALUE_SCORE_MA_SUPPORT_KEY } from "./ScoreModalTrigg
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
+import CardNotes from "./CardComments";
+import ReactMarkdown from "react-markdown";
+
+function getRatingAccentClass(rating: string): string {
+  switch (rating.trim().toUpperCase()) {
+    case "STRONG BUY":  return "stock-card--rating-strong-buy";
+    case "BUY":         return "stock-card--rating-buy";
+    case "NEUTRAL":     return "stock-card--rating-neutral";
+    case "SELL":        return "stock-card--rating-sell";
+    case "STRONG SELL": return "stock-card--rating-strong-sell";
+    default:            return "";
+  }
+}
 
 function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   if (calculatedScorePercentage > 0.66) return "badge bg-success text-white";
@@ -15,8 +28,96 @@ function getValueScoreBadgeClass(calculatedScorePercentage: number): string {
   return "badge bg-danger text-white";
 }
 
-/** Renders the LLM input data as a table (context, quote, fundamentals). */
-function AssessmentDetailTable({
+// ─── Research-inputs helpers ─────────────────────────────────────────────────
+
+const KEY_LABELS: Record<string, string> = {
+  trailingPE: "P/E (Trailing)",
+  forwardPE: "P/E (Forward)",
+  trailingEps: "EPS (Trailing)",
+  forwardEps: "EPS (Forward)",
+  priceToBook: "Price / Book",
+  marketCap: "Market Cap",
+  regularMarketPrice: "Price",
+  currentPrice: "Price",
+  fiftyTwoWeekHigh: "52w High",
+  fiftyTwoWeekLow: "52w Low",
+  fiftyDayAverage: "50d MA",
+  twoHundredDayAverage: "200d MA",
+  averageVolume: "Avg Volume",
+  averageVolume10days: "Avg Vol (10d)",
+  dividendYield: "Dividend Yield",
+  payoutRatio: "Payout Ratio",
+  debtToEquity: "Debt / Equity",
+  currentRatio: "Current Ratio",
+  quickRatio: "Quick Ratio",
+  profitMargins: "Profit Margin",
+  grossMargins: "Gross Margin",
+  operatingMargins: "Operating Margin",
+  earningsGrowth: "Earnings Growth",
+  revenueGrowth: "Revenue Growth",
+  earningsQuarterlyGrowth: "Quarterly EPS Growth",
+  returnOnAssets: "Return on Assets",
+  returnOnEquity: "Return on Equity",
+  operatingCashflow: "Operating Cash Flow",
+  freeCashflow: "Free Cash Flow",
+  totalRevenue: "Total Revenue",
+  revenuePerShare: "Revenue / Share",
+  totalCash: "Total Cash",
+  totalDebt: "Total Debt",
+  netIncomeToCommon: "Net Income",
+  investmentDescription: "Description",
+};
+
+function humanizeDataKey(key: string): string {
+  if (KEY_LABELS[key]) return KEY_LABELS[key];
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatLargeCurrency(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9)  return `${sign}$${(abs / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6)  return `${sign}$${(abs / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3)  return `${sign}$${(abs / 1e3).toFixed(1)}K`;
+  return `${sign}$${abs.toFixed(2)}`;
+}
+
+function formatDataValue(key: string, raw: string): string {
+  const n = Number(raw);
+  if (!isFinite(n) || raw.trim() === "") return raw;
+  const k = key.toLowerCase();
+  // Large currency amounts
+  if (/marketcap|totalrevenue|totaldebt|totalcash|freecashflow|operatingcashflow|ebitda|netincome/.test(k))
+    return formatLargeCurrency(n);
+  // Volume / share counts
+  if (/volume|sharesoutstanding|sharesfloat/.test(k)) {
+    const a = Math.abs(n);
+    if (a >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (a >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+    if (a >= 1e3) return `${Math.round(n / 1e3)}K`;
+    return Math.round(n).toLocaleString();
+  }
+  // Percentage fields stored as decimals (0.234 → 23.4%)
+  if (/margin|growth|returnon|yield|payoutratio/.test(k) && Math.abs(n) <= 10)
+    return `${(n * 100).toFixed(1)}%`;
+  // Price / per-share fields
+  if (/price$|high$|low$|open$|close$|average$|eps$|pershare$/.test(k))
+    return `$${n.toFixed(2)}`;
+  // Anything still large → abbreviate
+  if (Math.abs(n) >= 1e6) return formatLargeCurrency(n);
+  if (Math.abs(n) >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (Math.abs(n) >= 100)  return n.toFixed(1);
+  const twoDP = n.toFixed(2).replace(/\.?0+$/, "");
+  return twoDP === "" ? "0" : twoDP;
+}
+
+/** Renders the LLM input data as a clean grouped definition list. */
+function AssessmentDataPanel({
   data,
 }: {
   data: {
@@ -28,78 +129,86 @@ function AssessmentDetailTable({
     investmentDescription: string | null;
   };
 }) {
-  const rows: { section: string; key: string; value: string }[] = [];
+  type DataRow = { key: string; raw: string };
 
-  if (data.industry != null && data.industry !== "")
-    rows.push({ section: "Context", key: "Industry", value: String(data.industry) });
-  if (data.sector != null && data.sector !== "")
-    rows.push({ section: "Context", key: "Sector", value: String(data.sector) });
-  if (data.country != null && data.country !== "")
-    rows.push({ section: "Context", key: "Country", value: String(data.country) });
-  if (data.investmentDescription != null && data.investmentDescription !== "")
-    rows.push({
-      section: "Context",
-      key: "Investment description",
-      value: String(data.investmentDescription),
-    });
-
-  const quote = data.quote && typeof data.quote === "object" ? data.quote : null;
-  if (quote) {
-    for (const [k, v] of Object.entries(quote)) {
-      if (v === undefined || v === null) continue;
-      rows.push({
-        section: "Quote",
+  const toRows = (obj: Record<string, unknown> | null): DataRow[] =>
+    Object.entries(obj ?? {})
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => ({
         key: k,
-        value: typeof v === "object" ? JSON.stringify(v) : String(v),
-      });
-    }
+        raw: typeof v === "object" ? JSON.stringify(v) : String(v),
+      }));
+
+  const contextRows: DataRow[] = (
+    [
+      data.industry && { key: "Industry", raw: data.industry },
+      data.sector   && { key: "Sector",   raw: data.sector   },
+      data.country  && { key: "Country",  raw: data.country  },
+    ] as (DataRow | false)[]
+  ).filter((r): r is DataRow => Boolean(r));
+
+  const quoteRows = toRows(data.quote);
+  const fundRows  = toRows(data.fundamentals);
+  const hasAny    = contextRows.length > 0 || data.investmentDescription || quoteRows.length > 0 || fundRows.length > 0;
+
+  if (!hasAny) {
+    return <p className="mb-0 small text-secondary">No data available for this symbol.</p>;
   }
 
-  const fund =
-    data.fundamentals && typeof data.fundamentals === "object"
-      ? data.fundamentals
-      : null;
-  if (fund) {
-    for (const [k, v] of Object.entries(fund)) {
-      if (v === undefined || v === null) continue;
-      rows.push({
-        section: "Fundamentals",
-        key: k,
-        value: typeof v === "object" ? JSON.stringify(v) : String(v),
-      });
-    }
-  }
+  const renderRows = (rows: DataRow[]) =>
+    rows.map(({ key, raw }) => (
+      <div key={key} className="stock-card__detail-dl-row">
+        <dt className="stock-card__detail-dl-label">{humanizeDataKey(key)}</dt>
+        <dd className="stock-card__detail-dl-value">{formatDataValue(key, raw)}</dd>
+      </div>
+    ));
 
-  if (rows.length === 0) {
-    return (
-      <p className="mb-0 small text-secondary">
-        No structured data available for this symbol.
-      </p>
-    );
-  }
+  const hasContext = data.industry || data.sector || data.country || data.investmentDescription;
 
   return (
-    <div className="table-responsive">
-      <table className="table table-sm table-borderless mb-0 stock-card__detail-table">
-        <thead>
-          <tr>
-            <th scope="col" className="text-secondary small">Section</th>
-            <th scope="col" className="text-secondary small">Key</th>
-            <th scope="col" className="text-secondary small">Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={`${row.section}-${row.key}-${i}`}>
-              <td className="small text-secondary">{row.section}</td>
-              <td className="small">{row.key}</td>
-              <td className="small text-break" style={{ maxWidth: "20rem" }}>
-                {row.value}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="stock-card__assessment-detail">
+      {hasContext && (
+        <div>
+          <p className="stock-card__detail-group-title">Context</p>
+          {(data.industry || data.sector || data.country) && (
+            <div className="research-context-tags">
+              {data.industry && (
+                <span className="research-context-tag">
+                  <i className="bi bi-building research-context-tag__icon" aria-hidden />
+                  {data.industry}
+                </span>
+              )}
+              {data.sector && (
+                <span className="research-context-tag">
+                  <i className="bi bi-diagram-3 research-context-tag__icon" aria-hidden />
+                  {data.sector}
+                </span>
+              )}
+              {data.country && (
+                <span className="research-context-tag">
+                  <i className="bi bi-geo-alt research-context-tag__icon" aria-hidden />
+                  {data.country}
+                </span>
+              )}
+            </div>
+          )}
+          {data.investmentDescription && (
+            <p className="stock-card__detail-description">{data.investmentDescription}</p>
+          )}
+        </div>
+      )}
+      {quoteRows.length > 0 && (
+        <div>
+          <p className="stock-card__detail-group-title">Quote</p>
+          <dl className="mb-0">{renderRows(quoteRows)}</dl>
+        </div>
+      )}
+      {fundRows.length > 0 && (
+        <div>
+          <p className="stock-card__detail-group-title">Fundamentals</p>
+          <dl className="mb-0">{renderRows(fundRows)}</dl>
+        </div>
+      )}
     </div>
   );
 }
@@ -140,16 +249,17 @@ export default function StockResultCard({
   const cardDomId = `${item._id}-${instanceId}`;
   const collapseId = `collapse-${cardDomId}`;
   const trendsCollapseId = `trends-${cardDomId}`;
+  const notesCollapseId = `notes-${cardDomId}`;
   const companyDescCollapseId = `company-desc-${cardDomId}`;
   const assessmentDetailCollapseId = `assessment-detail-${cardDomId}`;
+  const notesSlotId = `stock-card-notes-slot-${cardDomId}`;
+  const accordionId = `stock-card-${cardDomId}`;
+  const accordionParentId = `#${accordionId}`;
   const [companyDescExpanded, setCompanyDescExpanded] = useState(false);
 
   const { status: sessionStatus } = useSession();
   const isLoggedIn = sessionStatus === "authenticated";
 
-  /** Bottom "Close all" + card padding; hidden when only the company description panel is open (that panel uses the header info toggle). */
-  const [showFixedCloseAll, setShowFixedCloseAll] = useState(false);
-  const [openCount, setOpenCount] = useState(0);
   const cardRef = useRef<HTMLElement>(null);
   const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
   const [showAssessmentLastUpdated, setShowAssessmentLastUpdated] = useState(false);
@@ -169,32 +279,6 @@ export default function StockResultCard({
       investmentDescription: string | null;
     } | null;
   }>({ status: "idle", data: null });
-
-  const updateAnyOpen = useCallback(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    const openPanels = card.querySelectorAll(".collapse.show");
-    const count = openPanels.length;
-    setOpenCount(count);
-    const onlyCompanyDescOpen =
-      count === 1 &&
-      openPanels[0] instanceof HTMLElement &&
-      openPanels[0].id === companyDescCollapseId;
-    setShowFixedCloseAll(count > 0 && !onlyCompanyDescOpen);
-  }, [companyDescCollapseId]);
-
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    const onShown = () => updateAnyOpen();
-    const onHidden = () => updateAnyOpen();
-    card.addEventListener("shown.bs.collapse", onShown);
-    card.addEventListener("hidden.bs.collapse", onHidden);
-    return () => {
-      card.removeEventListener("shown.bs.collapse", onShown);
-      card.removeEventListener("hidden.bs.collapse", onHidden);
-    };
-  }, [updateAnyOpen]);
 
   useEffect(() => {
     const el = document.getElementById(companyDescCollapseId);
@@ -232,50 +316,6 @@ export default function StockResultCard({
     };
   }, [companyDescCollapseId, item.symbol, companyDesc.status]);
 
-  const handleCloseAll = useCallback(async () => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    // Immediately hide the "Close all" buttons while accordions animate closed
-    setShowFixedCloseAll(false);
-    setOpenCount(0);
-
-    const bootstrap = await import(
-      "bootstrap/dist/js/bootstrap.bundle.min.js"
-    );
-    const Collapse = (bootstrap as { Collapse?: { getInstance: (el: Element) => { hide: () => void } | null } }).Collapse;
-    if (!Collapse) return;
-    card.querySelectorAll(".collapse.show").forEach((el) => {
-      const instance = Collapse.getInstance(el);
-      instance?.hide();
-    });
-    // Only scroll if the name/symbol row is behind the navbar or outside the viewport
-    const titleEl = card.querySelector(".stock-card__head");
-    if (titleEl instanceof HTMLElement) {
-      const rect = titleEl.getBoundingClientRect();
-      const val = getComputedStyle(document.documentElement)
-        .getPropertyValue("--navbar-height")
-        .trim();
-      let navbarPx = 72;
-      if (val) {
-        const num = parseFloat(val);
-        if (val.endsWith("rem"))
-          navbarPx = num * parseFloat(getComputedStyle(document.documentElement).fontSize);
-        else if (val.endsWith("px"))
-          navbarPx = num;
-      }
-      const paddingBelowNavbar = 12;
-      const minVisibleTop = navbarPx + paddingBelowNavbar;
-      const isBehindNavbar = rect.top < minVisibleTop;
-      const isAboveViewport = rect.bottom < 0;
-      const isBelowViewport = rect.top > window.innerHeight;
-      if (isBehindNavbar || isAboveViewport || isBelowViewport) {
-        const targetScrollY = window.scrollY + rect.top - minVisibleTop;
-        window.scrollTo({ top: Math.max(0, targetScrollY), behavior: "smooth" });
-      }
-    }
-  }, []);
-
   const handleClosePanel = useCallback(async (panelId: string) => {
     const el = document.getElementById(panelId);
     if (!el) return;
@@ -290,35 +330,36 @@ export default function StockResultCard({
   return (
     <article
       ref={cardRef}
-      className={`stock-card${compact ? " stock-card--compact" : ""}${showFixedCloseAll ? " stock-card--has-open" : ""}`}
+      id={accordionId}
+      className={`stock-card${compact ? " stock-card--compact" : ""}${item.aiRating ? ` ${getRatingAccentClass(item.aiRating)}` : ""}`}
       data-symbol={item.symbol ?? undefined}
       style={{ position: "relative", ...(minHeight != null ? { minHeight: `${minHeight}px` } : {}) }}
     >
-      {/* Identity: name/symbol + company info button */}
+      {/* Identity: ticker + company name + info button */}
       <header className="stock-card__head">
         <div className="stock-card__head-row">
-          {item.symbol ? (
-            <a
-              href={
-                "https://finviz.com/quote.ashx?t=" +
-                item.symbol.replace(".", "-") +
-                "&ty=l&ta=0&p=w"
-              }
-              target="_blank"
-              rel="noreferrer"
-              className="stock-card__title"
-            >
-              <span className="stock-card__title-text">
-                {item.name ?? item.symbol}
-                {item.symbol ? ` (${item.symbol})` : ""}
-              </span>
-              <i className="bi bi-box-arrow-up-right stock-card__title-icon" aria-hidden />
-            </a>
-          ) : (
-            <span className="stock-card__title-text">
-              {item.name ?? item.symbol}
-            </span>
-          )}
+          <div className="stock-card__identity">
+            {item.symbol ? (
+              <a
+                href={
+                  "https://finviz.com/quote.ashx?t=" +
+                  item.symbol.replace(".", "-") +
+                  "&ty=l&ta=0&p=w"
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="stock-card__ticker-link"
+              >
+                <span className="stock-card__ticker">{item.symbol}</span>
+                <i className="bi bi-box-arrow-up-right stock-card__title-icon" aria-hidden />
+              </a>
+            ) : (
+              <span className="stock-card__ticker">{item.name}</span>
+            )}
+            {item.name && item.name !== item.symbol && (
+              <p className="stock-card__company-name mb-0">{item.name}</p>
+            )}
+          </div>
           <button
             type="button"
             className="stock-card__company-info-btn"
@@ -329,40 +370,40 @@ export default function StockResultCard({
             title="Company description"
           >
             <i className="bi bi-info-circle" aria-hidden />
+            <span className="stock-card__company-info-label" aria-hidden>About</span>
           </button>
         </div>
-        {(item.industry ?? item.sector ?? item.country) && (
+        {(item.sector ?? item.country) && (
           <p className="stock-card__meta-row mb-0">
-            {[item.industry, item.sector, item.country]
+            {[item.sector, item.country]
               .filter((v): v is string => typeof v === "string" && v.trim() !== "")
               .join(" • ")}
           </p>
         )}
       </header>
 
-      {/* Company description panel – directly under name/symbol row */}
+      {/* Company description panel – directly under name/symbol row; intentionally NOT part of the card accordion so it can stay open alongside other panels */}
       <div
         id={companyDescCollapseId}
         className="collapse stock-card__panel stock-card__panel--company-desc"
         aria-label="Company description"
       >
         <div className="stock-card__panel-inner stock-card__panel-inner--company-desc">
-          {companyDesc.status === "loading" && (
-            <p className="mb-0 text-secondary small">Loading…</p>
+          {(companyDesc.status === "idle" || companyDesc.status === "loading") && (
+            <div className="stock-card__about-skeleton-wrap" aria-hidden>
+              <div className="stock-card__about-skeleton" />
+              <div className="stock-card__about-skeleton" />
+              <div className="stock-card__about-skeleton stock-card__about-skeleton--short" />
+            </div>
           )}
           {companyDesc.status === "error" && (
-            <p className="mb-0 text-secondary small">
+            <p className="mb-0 stock-card__about-text stock-card__about-text--muted">
               Could not load description.
             </p>
           )}
           {companyDesc.status === "loaded" && (
-            <p className="mb-0 small stock-card__description-text">
+            <p className="mb-0 stock-card__about-text">
               {companyDesc.text || "No description available."}
-            </p>
-          )}
-          {companyDesc.status === "idle" && (
-            <p className="mb-0 text-secondary small">
-              Loading…
             </p>
           )}
         </div>
@@ -412,7 +453,7 @@ export default function StockResultCard({
           <span
             className={`${getRatingBadgeClass(item.aiRating)} stock-card__badge`}
           >
-            <span>AI: {toTitleCase(item.aiRating)}</span>
+            <span>{toTitleCase(item.aiRating)}</span>
             <button
               type="button"
               className="stock-card__time-btn ms-1"
@@ -497,6 +538,7 @@ export default function StockResultCard({
           compact={compact}
         />
         <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle AI assessment" />
+        <div id={notesSlotId} />
         <div
           className="stock-card__actions-slot"
           id={`stock-card-actions-slot-${cardDomId}`}
@@ -508,6 +550,7 @@ export default function StockResultCard({
       <HistoryChartsPanel
         collapseId={trendsCollapseId}
         symbol={item.symbol}
+        accordionParentId={accordionParentId}
         showInlineCloseAll
         onCloseThisPanel={() => handleClosePanel(trendsCollapseId)}
       />
@@ -517,6 +560,7 @@ export default function StockResultCard({
         id={collapseId}
         className="collapse stock-card__panel"
         aria-label="AI Assessment"
+        data-bs-parent={accordionParentId}
       >
         <div className="stock-card__panel-inner">
           <div className="stock-card__close-all-inline-wrap">
@@ -531,12 +575,13 @@ export default function StockResultCard({
             </button>
           </div>
           {item.assessment ? (
-            <p className="stock-card__assessment-text">{item.assessment}</p>
+            <div className="stock-card__assessment-text stock-card__assessment-markdown">
+              <ReactMarkdown>{item.assessment}</ReactMarkdown>
+            </div>
           ) : null}
           {item.aiAssessmentLastUpdated ? (
             <p className="stock-card__assessment-updated">
-              - Last updated{" "}
-              <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
+              Updated <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
             </p>
           ) : null}
 
@@ -597,7 +642,7 @@ export default function StockResultCard({
                       }
                     }}
                   >
-                    <span className="stock-card__action-label">Data used for AI assessment</span>
+                    <span className="stock-card__action-label">Research inputs</span>
                     <i className="bi bi-chevron-down stock-card__action-chevron stock-card__assessment-data-chevron-down" aria-hidden />
                     <i className="bi bi-chevron-up stock-card__action-chevron stock-card__assessment-data-chevron-up" aria-hidden />
                   </button>
@@ -618,11 +663,11 @@ export default function StockResultCard({
                     )}
                     {assessmentDetail.status === "loaded" &&
                       assessmentDetail.data && (
-                      <AssessmentDetailTable data={assessmentDetail.data} />
+                      <AssessmentDataPanel data={assessmentDetail.data} />
                     )}
                     {assessmentDetail.status === "idle" && (
                       <p className="mb-0 text-secondary small">
-                        Open to view the data fed into the LLM.
+                        The quote and fundamentals data used to generate this assessment.
                       </p>
                     )}
                   </div>
@@ -633,7 +678,16 @@ export default function StockResultCard({
         </div>
       </div>
 
-      {/* User status + notes (when logged in) */}
+      {/* Notes panel (when logged in) */}
+      <CardNotes
+        symbol={item.symbol ?? ""}
+        collapseId={notesCollapseId}
+        compact={compact}
+        notesSlotId={notesSlotId}
+        accordionParentId={accordionParentId}
+      />
+
+      {/* User status (when logged in) */}
       <CardUserActions
         symbol={item.symbol}
         cardId={cardDomId}
@@ -643,24 +697,11 @@ export default function StockResultCard({
         targetPillSlotId={`stock-card-signals-slot-${cardDomId}`}
         labelsSlotId={`stock-card-labels-slot-${cardDomId}`}
         currentPrice={typeof item.price === "number" && !Number.isNaN(item.price) ? item.price : undefined}
+        accordionParentId={accordionParentId}
         showInlineCloseAll
         onCloseThisPanel={() => handleClosePanel(`user-actions-${cardDomId}`)}
       />
 
-      {/* Close all accordions – fixed to bottom when any is open */}
-      {showFixedCloseAll ? (
-        <div className="stock-card__close-all-wrap">
-          <button
-            type="button"
-            className="stock-card__close-all"
-            onClick={handleCloseAll}
-            aria-label="Close all"
-          >
-            <i className="bi bi-chevron-double-up" aria-hidden />
-            Close all
-          </button>
-        </div>
-      ) : null}
     </article>
   );
 }

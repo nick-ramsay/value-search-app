@@ -2,37 +2,81 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 
-type Comment = { id: string; text: string; createdAt: string };
+type Note = { id: string; text: string; createdAt: string };
 
-type CardCommentsProps = {
+type CardNotesProps = {
   symbol: string;
   collapseId: string;
   compact?: boolean;
+  /** ID of a slot element in the action bar to portal the trigger button into. */
+  notesSlotId?: string;
+  /** data-bs-parent selector for card-level accordion (closes other panels when this opens). */
+  accordionParentId?: string;
 };
 
-const DELETE_MODAL_ID_PREFIX = "card-comment-delete-modal-";
+const CONFIRM_WORD = "confirmed";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export default function CardComments({
+function formatRelative(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const diffMs = Date.now() - d.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return "just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDays = Math.floor(diffHr / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+function formatFull(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+export default function CardNotes({
   symbol,
   collapseId,
   compact = false,
-}: CardCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
+  notesSlotId,
+  accordionParentId,
+}: CardNotesProps) {
+  const { status: sessionStatus } = useSession();
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [newText, setNewText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{
-    commentId: string;
-    commentText: string;
-  } | null>(null);
-  const openTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const deleteModalId = `${DELETE_MODAL_ID_PREFIX}${symbol}`;
+  const [mounted, setMounted] = useState(false);
+
+  // Delete confirmation modal state
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const confirmInputRef = useRef<HTMLInputElement>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const el = document.getElementById(collapseId);
@@ -47,275 +91,273 @@ export default function CardComments({
     };
   }, [collapseId]);
 
-  const load = () => {
-    if (!symbol) return;
+  useEffect(() => {
+    if (!symbol || sessionStatus !== "authenticated") return;
     fetch(`/api/user-stock-data?symbol=${encodeURIComponent(symbol)}`)
       .then((r) => (r.ok ? r.json() : { comments: [] }))
-      .then((data) => setComments(data.comments ?? []))
-      .catch(() => setComments([]))
+      .then((data) => setNotes(data.comments ?? []))
+      .catch(() => setNotes([]))
       .finally(() => setLoading(false));
-  };
+  }, [symbol, sessionStatus]);
 
+  // Focus the confirm input whenever the modal opens
   useEffect(() => {
-    load();
-  }, [symbol]);
+    if (pendingDeleteId) {
+      setConfirmText("");
+      // Small delay so the portal has rendered
+      const t = setTimeout(() => confirmInputRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
+  }, [pendingDeleteId]);
 
-  const addComment = (e: React.FormEvent) => {
-    e.preventDefault();
+  const persist = (nextNotes: Note[]) =>
+    fetch("/api/user-stock-data", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, comments: nextNotes }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.comments) setNotes(data.comments); });
+
+  const addNote = () => {
     const text = newText.trim();
     if (!text || submitting) return;
-    const form = e.currentTarget as HTMLFormElement;
     setSubmitting(true);
-    const newComment: Comment = {
-      id: generateId(),
-      text,
-      createdAt: new Date().toISOString(),
-    };
-    const nextComments = [...comments, newComment];
-    fetch("/api/user-stock-data", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, comments: nextComments }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setComments(data.comments);
-        setNewText("");
-        const nextEl = form.querySelector<HTMLElement>("button[type='submit']");
-        nextEl?.focus();
-      })
-      .finally(() => setSubmitting(false));
+    const next = [...notes, { id: generateId(), text, createdAt: new Date().toISOString() }];
+    setNotes(next);
+    setNewText("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    persist(next).finally(() => setSubmitting(false));
   };
 
-  const confirmDelete = (commentId: string) => {
-    const comment = comments.find((c) => c.id === commentId);
-    if (comment) setDeleteModal({ commentId, commentText: comment.text });
-  };
-
-  const doDelete = () => {
-    if (!deleteModal) return;
-    const nextComments = comments.filter((c) => c.id !== deleteModal.commentId);
-    setSubmitting(true);
-    fetch("/api/user-stock-data", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, comments: nextComments }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setComments(data.comments);
-        setDeleteModal(null);
-      })
-      .finally(() => setSubmitting(false));
-  };
-
-  useEffect(() => {
-    if (!deleteModal) return;
-    const t = setTimeout(() => {
-      openTriggerRef.current?.click();
-    }, 50);
-    return () => clearTimeout(t);
-  }, [deleteModal]);
-
-  useEffect(() => {
-    if (!deleteModal) return;
-    const el = document.getElementById(deleteModalId);
-    if (!el) return;
-    const onHidden = () => {
-      restoreBodyScroll();
-      setDeleteModal(null);
-    };
-    el.addEventListener("hidden.bs.modal", onHidden);
-    return () => el.removeEventListener("hidden.bs.modal", onHidden);
-  }, [deleteModal, deleteModalId]);
-
-  /** Restore body scroll when modals/collapse leave it stuck */
-  const restoreBodyScroll = () => {
-    if (typeof document === "undefined") return;
-    document.body.classList.remove("modal-open");
-    document.body.style.overflow = "";
-    document.body.style.paddingRight = "";
-    document.body.removeAttribute("inert");
-    document.querySelectorAll("[inert]").forEach((el) => el.removeAttribute("inert"));
-  };
-
-  useEffect(() => {
-    const el = document.getElementById(collapseId);
-    if (!el) return;
-    const onCollapseHidden = () => restoreBodyScroll();
-    el.addEventListener("hidden.bs.collapse", onCollapseHidden);
-    return () => el.removeEventListener("hidden.bs.collapse", onCollapseHidden);
-  }, [collapseId]);
-
-  const handleModalHidden = () => setDeleteModal(null);
-
-  const formatDateTime = (iso: string) => {
-    try {
-      const d = new Date(iso);
-      return d.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      addNote();
     }
   };
 
-  const commentsNewestFirst = [...comments].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewText(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
+  const openDeleteModal = (id: string) => setPendingDeleteId(id);
+
+  const closeDeleteModal = () => {
+    setPendingDeleteId(null);
+    setConfirmText("");
+  };
+
+  const confirmDelete = () => {
+    if (!pendingDeleteId || confirmText.trim().toLowerCase() !== CONFIRM_WORD) return;
+    const next = notes.filter((n) => n.id !== pendingDeleteId);
+    setNotes(next);
+    persist(next);
+    closeDeleteModal();
+  };
+
+  if (sessionStatus !== "authenticated" || !symbol) return null;
+
+  const notesOldestFirst = [...notes].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  const pendingNote = pendingDeleteId ? notes.find((n) => n.id === pendingDeleteId) : null;
+
+  const slotEl =
+    mounted && notesSlotId && typeof document !== "undefined"
+      ? document.getElementById(notesSlotId)
+      : null;
+
+  const triggerBtn = (
+    <button
+      type="button"
+      className={`stock-card__action stock-card__action--secondary${compact ? " stock-card__action--compact" : ""}`}
+      data-bs-toggle="collapse"
+      data-bs-target={`#${collapseId}`}
+      aria-expanded={expanded}
+      aria-controls={collapseId}
+      aria-label="Toggle notes"
+    >
+      <i className="bi bi-journal-text stock-card__action-icon" aria-hidden />
+      <span className="stock-card__action-label stock-card__action-label--full">Notes</span>
+      <span className="stock-card__action-label stock-card__action-label--short">Notes</span>
+      {notes.length > 0 && !loading && (
+        <span className="stock-card__notes-count">{notes.length}</span>
+      )}
+      <i
+        className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"} stock-card__action-chevron`}
+        aria-hidden
+      />
+    </button>
+  );
+
+  const deleteModal = pendingDeleteId && mounted && typeof document !== "undefined"
+    ? createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className="note-delete-backdrop"
+            onClick={closeDeleteModal}
+            aria-hidden="true"
+          />
+          {/* Dialog */}
+          <div
+            className="note-delete-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="note-delete-title"
+          >
+            <div className="note-delete-dialog__header">
+              <h5 className="note-delete-dialog__title" id="note-delete-title">
+                <i className="bi bi-trash note-delete-dialog__icon" aria-hidden />
+                Delete note?
+              </h5>
+              <button
+                type="button"
+                className="note-delete-dialog__close"
+                onClick={closeDeleteModal}
+                aria-label="Cancel"
+              >
+                <i className="bi bi-x" aria-hidden />
+              </button>
+            </div>
+
+            {pendingNote && (
+              <blockquote className="note-delete-dialog__preview">
+                {pendingNote.text}
+              </blockquote>
+            )}
+
+            <p className="note-delete-dialog__instruction">
+              Type <strong>{CONFIRM_WORD}</strong> to permanently delete this note.
+            </p>
+
+            <input
+              ref={confirmInputRef}
+              type="text"
+              className="note-delete-dialog__input"
+              placeholder={CONFIRM_WORD}
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmDelete();
+                if (e.key === "Escape") closeDeleteModal();
+              }}
+              aria-label={`Type ${CONFIRM_WORD} to confirm deletion`}
+              autoComplete="off"
+              spellCheck={false}
+            />
+
+            <div className="note-delete-dialog__footer">
+              <button
+                type="button"
+                className="note-delete-dialog__cancel"
+                onClick={closeDeleteModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="note-delete-dialog__confirm"
+                onClick={confirmDelete}
+                disabled={confirmText.trim().toLowerCase() !== CONFIRM_WORD}
+              >
+                Delete note
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )
+    : null;
+
+  const panel = (
+    <div
+      id={collapseId}
+      className="collapse stock-card__panel"
+      aria-label="Notes"
+      data-bs-parent={accordionParentId}
+    >
+      <div className="stock-card__panel-inner">
+        <span className="stock-card__panel-heading">Notes</span>
+
+        {loading ? (
+          <p className="stock-card__muted small mt-2">Loading…</p>
+        ) : (
+          <>
+            {notesOldestFirst.length > 0 && (
+              <ul className="stock-card__notes-list">
+                {notesOldestFirst.map((note) => (
+                  <li key={note.id} className="stock-card__note-item">
+                    <p className="stock-card__note-text">{note.text}</p>
+                    <div className="stock-card__note-footer">
+                      <time
+                        className="stock-card__note-time"
+                        dateTime={note.createdAt}
+                        title={formatFull(note.createdAt)}
+                      >
+                        {formatRelative(note.createdAt)}
+                      </time>
+                      <button
+                        type="button"
+                        className="stock-card__note-delete"
+                        onClick={() => openDeleteModal(note.id)}
+                        disabled={submitting}
+                        aria-label="Delete note"
+                        title="Delete note"
+                      >
+                        <i className="bi bi-trash" aria-hidden />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {notesOldestFirst.length === 0 && (
+              <p className="stock-card__muted stock-card__notes-empty">
+                No notes yet — add one below.
+              </p>
+            )}
+
+            <div className="stock-card__note-form">
+              <textarea
+                ref={textareaRef}
+                className="stock-card__note-input"
+                placeholder="Write a note…"
+                value={newText}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                disabled={submitting}
+                aria-label="New note"
+                rows={2}
+              />
+              <div className="stock-card__note-form-footer">
+                <span className="stock-card__note-hint">⌘↵ to save</span>
+                <button
+                  type="button"
+                  className="stock-card__action stock-card__action--primary stock-card__action--compact"
+                  onClick={addNote}
+                  disabled={submitting || !newText.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 
   return (
     <>
-      <div className="stock-card__comments">
-        <button
-          type="button"
-          className="stock-card__action stock-card__action--secondary stock-card__comments-trigger"
-          data-bs-toggle="collapse"
-          data-bs-target={`#${collapseId}`}
-          aria-expanded={expanded}
-          aria-controls={collapseId}
-          id={`${collapseId}-label`}
-        >
-          <span className="stock-card__comments-trigger-left">
-            <span className="stock-card__action-label">Comments</span>
-            {comments.length > 0 && (
-              <span className="stock-card__comments-count">{comments.length}</span>
-            )}
-          </span>
-          <i className="bi bi-chevron-down stock-card__action-chevron stock-card__comments-chevron-down" aria-hidden />
-          <i className="bi bi-chevron-up stock-card__action-chevron stock-card__comments-chevron-up" aria-hidden />
-        </button>
-        <div
-          id={collapseId}
-          className="collapse stock-card__comments-panel"
-          aria-labelledby={`${collapseId}-label`}
-        >
-          <div className="stock-card__comments-body">
-            {loading ? (
-              <p className="stock-card__muted">Loading…</p>
-            ) : (
-              <>
-                <form onSubmit={addComment} className="stock-card__comment-form">
-                  <input
-                    type="text"
-                    className="stock-card__comment-input"
-                    placeholder="Add a comment…"
-                    value={newText}
-                    onChange={(e) => setNewText(e.target.value)}
-                    disabled={submitting}
-                    aria-label="New comment"
-                  />
-                  <button
-                    type="submit"
-                    className="stock-card__action stock-card__action--primary stock-card__action--compact"
-                    disabled={submitting || !newText.trim()}
-                  >
-                    Add
-                  </button>
-                </form>
-                <ul className="stock-card__comment-list">
-                  {commentsNewestFirst.map((c) => (
-                    <li key={c.id} className="stock-card__comment-item">
-                      <div className="stock-card__comment-content">
-                        <p className="stock-card__comment-text">{c.text}</p>
-                        <span className="stock-card__comment-date">
-                          {formatDateTime(c.createdAt)}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className="stock-card__comment-delete"
-                        aria-label="Delete comment"
-                        onClick={() => confirmDelete(c.id)}
-                        disabled={submitting}
-                      >
-                        <i className="bi bi-trash" aria-hidden />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {deleteModal &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <>
-            <button
-              ref={openTriggerRef}
-              type="button"
-              className="d-none"
-              data-bs-toggle="modal"
-              data-bs-target={`#${deleteModalId}`}
-              aria-hidden
-            />
-            <div
-              className="modal fade"
-              id={deleteModalId}
-              tabIndex={-1}
-              aria-labelledby={`${deleteModalId}-label`}
-              aria-hidden="true"
-              data-bs-backdrop="static"
-            >
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content score-breakdown-modal">
-                  <div className="modal-header">
-                    <h5 className="modal-title" id={`${deleteModalId}-label`}>
-                      Delete comment?
-                    </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"
-                      onClick={handleModalHidden}
-                    />
-                  </div>
-                  <div className="modal-body">
-                    <p className="mb-0">Are you sure? This cannot be undone.</p>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      className="btn glass-btn glass-btn-secondary"
-                      data-bs-dismiss="modal"
-                      onClick={handleModalHidden}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="btn glass-btn glass-btn-primary"
-                      onClick={() => {
-                        doDelete();
-                        const el = document.getElementById(deleteModalId);
-                        if (el) {
-                          el.classList.remove("show");
-                          el.setAttribute("aria-hidden", "true");
-                          el.style.display = "none";
-                          const backdrop = document.querySelector(".modal-backdrop");
-                          if (backdrop) backdrop.remove();
-                          restoreBodyScroll();
-                        }
-                      }}
-                      disabled={submitting}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>,
-          document.body
-        )}
+      {slotEl ? createPortal(triggerBtn, slotEl) : null}
+      {panel}
+      {deleteModal}
     </>
   );
 }
