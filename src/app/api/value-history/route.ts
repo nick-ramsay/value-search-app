@@ -142,7 +142,7 @@ export async function GET(request: Request) {
 
   const dbName = process.env.MONGODB_DB;
   const scoreHistoryCollection =
-    process.env.MONGODB_SCORE_HISTORY_COLLECTION ?? "stock_score_history";
+    process.env.MONGODB_SCORE_HISTORY_COLLECTION ?? "stock-score-history";
   const ratingHistoryCollection =
     process.env.MONGODB_AI_ASSESSMENTS_HISTORY_COLLECTION ??
     "stock-ai-assessment-history";
