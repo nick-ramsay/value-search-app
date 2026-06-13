@@ -1,14 +1,14 @@
-import Link from "next/link";
 import { cache, Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
 import { docToValueRecord, getPricesBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
 import AppNavbar from "../app/components/AppNavbar";
-import FilterClearButton from "../app/components/FilterClearButton";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
 import StockResultCard from "../app/components/StockResultCard";
 import ScoreExplanationModal from "../app/components/ScoreExplanationModal";
 import DisclosureModal from "../app/components/DisclosureModal";
+import ResultsSummaryClient from "../app/components/ResultsSummaryClient";
+import FiltersFormClient from "../app/components/FiltersFormClient";
 
 const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyPE", label: "Healthy P/E (0–15)" },
@@ -79,109 +79,18 @@ function FiltersSection({
             data-bs-parent="#filtersAccordion"
           >
             <div className="accordion-body">
-              <form method="get" action="/" className="row g-3">
-                <input type="hidden" name="q" value={query} />
-                {isSelected ? <input type="hidden" name="selected" value="1" /> : null}
-                <div className="col-md-4">
-                  <label htmlFor="industry" className="form-label filter-form-label">
-                    Industry
-                  </label>
-                  <select
-                    id="industry"
-                    name="industry"
-                    className="form-select glass-select"
-                    defaultValue={selectedIndustry}
-                  >
-                    <option value="">All industries</option>
-                    {industries.map((industry) => (
-                      <option key={industry} value={industry}>
-                        {industry}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <label htmlFor="sector" className="form-label filter-form-label">
-                    Sector
-                  </label>
-                  <select
-                    id="sector"
-                    name="sector"
-                    className="form-select glass-select"
-                    defaultValue={selectedSector}
-                  >
-                    <option value="">All sectors</option>
-                    {sectors.map((sector) => (
-                      <option key={sector} value={sector}>
-                        {sector}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <label htmlFor="country" className="form-label filter-form-label">
-                    Country
-                  </label>
-                  <select
-                    id="country"
-                    name="country"
-                    className="form-select glass-select"
-                    defaultValue={selectedCountry}
-                  >
-                    <option value="">All countries</option>
-                    {countries.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-12">
-                  <div className="filter-toggles-row">
-                    <div className="filter-toggle">
-                      <input type="hidden" name="excludeEtfs" value="0" />
-                      <input
-                        type="checkbox"
-                        id="excludeEtfs"
-                        name="excludeEtfs"
-                        value="1"
-                        className="filter-toggle-input"
-                        defaultChecked={excludeEtfsEnabled}
-                      />
-                      <label htmlFor="excludeEtfs" className="filter-toggle-label">
-                        <span className="filter-toggle-slider" aria-hidden />
-                        <span className="filter-toggle-label__text">Exclude ETFs</span>
-                      </label>
-                    </div>
-                    <div className="filter-toggle">
-                      <input type="hidden" name="maSupport" value="0" />
-                      <input
-                        type="checkbox"
-                        id="maSupport"
-                        name="maSupport"
-                        value="1"
-                        className="filter-toggle-input"
-                        defaultChecked={maSupportEnabled}
-                      />
-                      <label htmlFor="maSupport" className="filter-toggle-label">
-                        <span className="filter-toggle-slider" aria-hidden />
-                        <span className="filter-toggle-label__text">Moving average support</span>
-                      </label>
-                    </div>
-                    <div className="filter-toggles-actions">
-                      {(selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled || maSupportEnabled) && (
-                        <FilterClearButton className="btn btn-sm filter-clear-button" />
-                      )}
-                      <button
-                        type="submit"
-                        className="btn btn-sm filter-apply-button"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
+              <FiltersFormClient
+                industries={industries}
+                sectors={sectors}
+                countries={countries}
+                selectedIndustry={selectedIndustry}
+                selectedSector={selectedSector}
+                selectedCountry={selectedCountry}
+                excludeEtfsEnabled={excludeEtfsEnabled}
+                maSupportEnabled={maSupportEnabled}
+                query={query}
+                isSelected={isSelected}
+              />
             </div>
           </div>
         </div>
@@ -527,8 +436,10 @@ async function ResultsCard({
     maSupport: maSupportEnabled,
   };
 
-  const { values, hasMore } = await getValues(isFiltered ? 1 : currentPage, filterParams);
-  const totalCount = await getValuesCount(filterParams);
+  const [{ values, hasMore }, totalCount] = await Promise.all([
+    getValues(isFiltered ? 1 : currentPage, filterParams),
+    getValuesCount(filterParams),
+  ]);
 
   const buildPageHref = (page: number) => {
     const params = new URLSearchParams();
@@ -541,7 +452,7 @@ async function ResultsCard({
     if (!excludeEtfsEnabled) params.set("excludeEtfs", "0");
     if (maSupportEnabled) params.set("maSupport", "1");
     const search = params.toString();
-    return search.length > 0 ? `/?${params.toString()}` : "/";
+    return search.length > 0 ? `/?${search}` : "/";
   };
 
   // Build a URL that preserves all current params except the ones explicitly overridden
@@ -569,75 +480,44 @@ async function ResultsCard({
     return s ? `/?${s}` : "/";
   };
 
+  const chips = [
+    ...(excludeEtfsEnabled ? [{
+      id: "excludeEtfs",
+      label: "ETFs excluded",
+      icon: "bi-slash-circle",
+      removeHref: buildChipHref({ excludeEtfs: false }),
+      ariaLabel: "Remove ETFs excluded filter",
+    }] : []),
+    ...(selectedIndustry ? [{
+      id: "industry",
+      label: selectedIndustry,
+      removeHref: buildChipHref({ industry: "" }),
+      ariaLabel: "Remove industry filter",
+    }] : []),
+    ...(selectedSector ? [{
+      id: "sector",
+      label: selectedSector,
+      removeHref: buildChipHref({ sector: "" }),
+      ariaLabel: "Remove sector filter",
+    }] : []),
+    ...(selectedCountry ? [{
+      id: "country",
+      label: selectedCountry,
+      removeHref: buildChipHref({ country: "" }),
+      ariaLabel: "Remove country filter",
+    }] : []),
+    ...(maSupportEnabled ? [{
+      id: "maSupport",
+      label: "MA support",
+      removeHref: buildChipHref({ maSupport: false }),
+      ariaLabel: "Remove moving average support filter",
+    }] : []),
+  ];
+
   return (
     <div>
       <section className="card-body pb-2">
-        <div className="results-summary">
-          <p className="results-summary__count">
-            {totalCount.toLocaleString()} {totalCount === 1 ? "result" : "results"}
-          </p>
-          <div className="active-filter-chips" role="list" aria-label="Active filters">
-            {excludeEtfsEnabled && (
-              <a
-                href={buildChipHref({ excludeEtfs: false })}
-                className="active-filter-chip"
-                role="listitem"
-                title="Click to include ETFs in results"
-              >
-                <i className="bi bi-slash-circle active-filter-chip__icon" aria-hidden />
-                ETFs excluded
-                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
-              </a>
-            )}
-            {selectedIndustry && (
-              <a
-                href={buildChipHref({ industry: "" })}
-                className="active-filter-chip"
-                role="listitem"
-                title="Remove industry filter"
-              >
-                {selectedIndustry}
-                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
-              </a>
-            )}
-            {selectedSector && (
-              <a
-                href={buildChipHref({ sector: "" })}
-                className="active-filter-chip"
-                role="listitem"
-                title="Remove sector filter"
-              >
-                {selectedSector}
-                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
-              </a>
-            )}
-            {selectedCountry && (
-              <a
-                href={buildChipHref({ country: "" })}
-                className="active-filter-chip"
-                role="listitem"
-                title="Remove country filter"
-              >
-                {selectedCountry}
-                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
-              </a>
-            )}
-            {maSupportEnabled && (
-              <a
-                href={buildChipHref({ maSupport: false })}
-                className="active-filter-chip"
-                role="listitem"
-                title="Remove moving average support filter"
-              >
-                MA support
-                <i className="bi bi-x active-filter-chip__remove" aria-hidden />
-              </a>
-            )}
-          </div>
-        </div>
-        <p className="text-center small mb-0 mt-2">
-          <DisclosureModal />
-        </p>
+        <ResultsSummaryClient totalCount={totalCount} chips={chips} />
       </section>
       <section className="card glass-card mb-4 pt-3">
         <div className="card-body pt-0">
@@ -672,16 +552,58 @@ async function ResultsCard({
   );
 }
 
-function ResultsLoadingFallback() {
+function ResultsLoadingFallback({
+  selectedIndustry = "",
+  selectedSector = "",
+  selectedCountry = "",
+  excludeEtfsEnabled = true,
+  maSupportEnabled = false,
+}: {
+  selectedIndustry?: string;
+  selectedSector?: string;
+  selectedCountry?: string;
+  excludeEtfsEnabled?: boolean;
+  maSupportEnabled?: boolean;
+}) {
   return (
     <div className="d-flex flex-column flex-grow-1">
-      <section className="card-body pb-2">
-        <p className="text-muted small mb-0 text-center" aria-hidden="true">
-          &nbsp;
-        </p>
-        <p className="text-center small mb-0 mt-2">
-          <DisclosureModal />
-        </p>
+      <section className="card-body pb-2" aria-hidden="true">
+        <div className="results-summary">
+          <div className="active-filter-chips">
+            {excludeEtfsEnabled && (
+              <span className="active-filter-chip active-filter-chip--skeleton">
+                <i className="bi bi-slash-circle active-filter-chip__icon" />
+                ETFs excluded
+                <i className="bi bi-x" />
+              </span>
+            )}
+            {selectedIndustry && (
+              <span className="active-filter-chip active-filter-chip--skeleton">
+                {selectedIndustry}
+                <i className="bi bi-x" />
+              </span>
+            )}
+            {selectedSector && (
+              <span className="active-filter-chip active-filter-chip--skeleton">
+                {selectedSector}
+                <i className="bi bi-x" />
+              </span>
+            )}
+            {selectedCountry && (
+              <span className="active-filter-chip active-filter-chip--skeleton">
+                {selectedCountry}
+                <i className="bi bi-x" />
+              </span>
+            )}
+            {maSupportEnabled && (
+              <span className="active-filter-chip active-filter-chip--skeleton">
+                MA support
+                <i className="bi bi-x" />
+              </span>
+            )}
+          </div>
+          <p className="results-summary__count--skeleton" />
+        </div>
       </section>
       <section className="card glass-card mb-4 pt-3 page-loading-results-card flex-grow-1 d-flex flex-column">
         <div className="card-body pt-0 page-loading-results-card-body d-flex flex-column">
@@ -731,11 +653,17 @@ export default async function Home({
     sector?: string;
     country?: string;
     excludeEtfs?: string | string[];
+    maSupport?: string | string[];
   }>;
 }) {
   const resolvedSearchParams = await searchParams;
   const query = resolvedSearchParams?.q?.trim() ?? "";
   const isSelected = resolvedSearchParams?.selected === "1";
+  const selectedIndustry = resolvedSearchParams?.industry ?? "";
+  const selectedSector = resolvedSearchParams?.sector ?? "";
+  const selectedCountry = resolvedSearchParams?.country ?? "";
+  const excludeEtfsEnabled = getSearchParamValue(resolvedSearchParams?.excludeEtfs) !== "0";
+  const maSupportEnabled = getSearchParamValue(resolvedSearchParams?.maSupport) === "1";
 
   return (
     <div className="min-vh-100">
@@ -753,14 +681,25 @@ export default async function Home({
               <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
                 <h2 className="h5 mb-0">Current Assessments</h2>
                 <p className="home-page__tagline mb-0">
-                  AI-powered value investing research — search by ticker or name
+                  AI-powered value investing research — search by ticker or name — not investing advice.
                 </p>
               </div>
             </section>
+            <div className="text-center mb-2 mt-1">
+              <DisclosureModal />
+            </div>
             <Suspense fallback={<FiltersLoadingFallback />}>
               <FiltersAsyncWrapper searchParams={searchParams} />
             </Suspense>
-            <Suspense fallback={<ResultsLoadingFallback />}>
+            <Suspense fallback={
+              <ResultsLoadingFallback
+                selectedIndustry={selectedIndustry}
+                selectedSector={selectedSector}
+                selectedCountry={selectedCountry}
+                excludeEtfsEnabled={excludeEtfsEnabled}
+                maSupportEnabled={maSupportEnabled}
+              />
+            }>
               <ResultsCard searchParams={searchParams} />
             </Suspense>
           </div>

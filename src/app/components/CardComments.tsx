@@ -14,6 +14,7 @@ type CardNotesProps = {
   notesSlotId?: string;
   /** data-bs-parent selector for card-level accordion (closes other panels when this opens). */
   accordionParentId?: string;
+  onCloseThisPanel?: () => void;
 };
 
 const CONFIRM_WORD = "confirmed";
@@ -60,6 +61,7 @@ export default function CardNotes({
   compact = false,
   notesSlotId,
   accordionParentId,
+  onCloseThisPanel,
 }: CardNotesProps) {
   const { status: sessionStatus } = useSession();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -282,7 +284,9 @@ export default function CardNotes({
       data-bs-parent={accordionParentId}
     >
       <div className="stock-card__panel-inner">
-        <span className="stock-card__panel-heading">Notes</span>
+        <div className="stock-card__close-all-inline-wrap">
+          <span className="stock-card__panel-heading">Notes</span>
+        </div>
 
         {loading ? (
           <p className="stock-card__muted small mt-2">Loading…</p>
@@ -348,6 +352,18 @@ export default function CardNotes({
               </div>
             </div>
           </>
+        )}
+        {onCloseThisPanel && (
+          <div className="stock-card__panel-close-row">
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              Close <i className="bi bi-x" aria-hidden />
+            </button>
+          </div>
         )}
       </div>
     </div>

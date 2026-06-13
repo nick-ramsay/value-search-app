@@ -699,16 +699,6 @@ export function HistoryChartsPanel({
       <div className="stock-card__panel-inner stock-card__trends-panel">
         <div className="stock-card__close-all-inline-wrap">
           <span className="stock-card__panel-heading">Trends</span>
-          {showInlineCloseAll && onCloseThisPanel ? (
-            <button
-              type="button"
-              className="stock-card__panel-close-btn"
-              onClick={onCloseThisPanel}
-              aria-label="Close this section"
-            >
-              <i className="bi bi-x" aria-hidden />
-            </button>
-          ) : null}
         </div>
         <p className="stock-card__trends-intro small text-muted mb-3">
           Explore how the value score and AI rating have evolved over time.
@@ -776,6 +766,18 @@ export function HistoryChartsPanel({
             )}
           </div>
         )}
+        {showInlineCloseAll && onCloseThisPanel ? (
+          <div className="stock-card__panel-close-row">
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              Close <i className="bi bi-x" aria-hidden />
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

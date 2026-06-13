@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 
 const DISCLAIMER_MODAL_ID = "disclaimer-modal";
 
-export default function DisclosureModal() {
+export default function DisclosureModal({ iconOnly = false }: { iconOnly?: boolean }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -46,18 +46,33 @@ export default function DisclosureModal() {
     </div>
   );
 
+  const trigger = iconOnly ? (
+    <button
+      type="button"
+      className="btn btn-sm disclaimer-icon-btn"
+      data-bs-toggle="modal"
+      data-bs-target={`#${DISCLAIMER_MODAL_ID}`}
+      aria-label="Read important disclaimer"
+      title="Important disclaimer"
+    >
+      <i className="bi bi-exclamation-triangle-fill" aria-hidden />
+    </button>
+  ) : (
+    <button
+      type="button"
+      className="btn btn-sm disclaimer-pill-btn"
+      data-bs-toggle="modal"
+      data-bs-target={`#${DISCLAIMER_MODAL_ID}`}
+      aria-label="Read important disclaimer"
+    >
+      <i className="bi bi-exclamation-triangle-fill disclaimer-pill-btn__icon" aria-hidden />
+      Important Disclaimer
+    </button>
+  );
+
   return (
     <>
-      <button
-        type="button"
-        className="btn btn-sm disclaimer-pill-btn"
-        data-bs-toggle="modal"
-        data-bs-target={`#${DISCLAIMER_MODAL_ID}`}
-        aria-label="Read important disclaimer"
-      >
-        <i className="bi bi-exclamation-triangle-fill disclaimer-pill-btn__icon" aria-hidden />
-        Important Disclaimer
-      </button>
+      {trigger}
       {mounted && typeof document !== "undefined"
         ? createPortal(modalEl, document.body)
         : null}

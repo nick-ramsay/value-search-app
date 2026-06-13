@@ -24,7 +24,6 @@ export default function AppNavbar({
   const isPortfolio = pathname === "/portfolio";
   const isMonthlyBalances = pathname === "/monthly-balances";
   const isSectorAssessments = pathname === "/sector-assessments";
-  /** Monthly balances sub-routes and sector assessments: no stock search in the bar */
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true || isSectorAssessments;
   const headerHref = isPortfolio ? "/portfolio" : "/";
@@ -44,8 +43,95 @@ export default function AppNavbar({
     session?.user?.email ||
     "User";
 
-  const userLabel =
-    status === "loading" ? "Loading…" : displayName;
+  const userLabel = status === "loading" ? "Loading…" : displayName;
+
+  const authDropdownItems = (
+    <>
+      {pathname !== "/portfolio" && (
+        <li>
+          <Link href="/portfolio" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-grid" aria-hidden /> Portfolio
+          </Link>
+        </li>
+      )}
+      {!isMonthlyBalances && (
+        <li>
+          <Link href="/monthly-balances" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-table" aria-hidden /> Monthly balances
+          </Link>
+        </li>
+      )}
+      {!isSectorAssessments && (
+        <li>
+          <Link href="/sector-assessments" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-bar-chart-steps" aria-hidden /> Sector assessments
+          </Link>
+        </li>
+      )}
+      {pathname !== "/" && (
+        <li>
+          <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-house" aria-hidden /> Home
+          </Link>
+        </li>
+      )}
+      <li className="px-2 py-1">
+        <span className="dropdown-item-text small fw-semibold text-muted">Theme</span>
+      </li>
+      <ThemeSwitcher inline />
+      <li><hr className="dropdown-divider my-2" /></li>
+      {pathname !== "/about" && (
+        <li>
+          <Link href="/about" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-info-circle" aria-hidden /> About
+          </Link>
+        </li>
+      )}
+      <li>
+        <button
+          type="button"
+          className="dropdown-item d-flex align-items-center gap-2 py-2"
+          onClick={handleLogout}
+        >
+          <i className="bi bi-box-arrow-right" aria-hidden /> Logout
+        </button>
+      </li>
+    </>
+  );
+
+  const unauthDropdownItems = (
+    <>
+      <li className="px-2 py-1">
+        <span className="dropdown-item-text small fw-semibold text-muted">Theme</span>
+      </li>
+      <ThemeSwitcher inline />
+      <li><hr className="dropdown-divider my-2" /></li>
+      {!isSectorAssessments && (
+        <li>
+          <Link href="/sector-assessments" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-bar-chart-steps" aria-hidden /> Sectors
+          </Link>
+        </li>
+      )}
+      {pathname !== "/about" && (
+        <li>
+          <Link href="/about" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-info-circle" aria-hidden /> About
+          </Link>
+        </li>
+      )}
+      <li>
+        <button
+          type="button"
+          className="dropdown-item d-flex align-items-center gap-2 py-2"
+          data-bs-toggle="modal"
+          data-bs-target={`#${LOGIN_MODAL_ID}`}
+        >
+          <i className="bi bi-person-circle" aria-hidden /> Sign in
+        </button>
+      </li>
+    </>
+  );
 
   return (
     <nav
@@ -54,21 +140,18 @@ export default function AppNavbar({
     >
       <div className="container-fluid px-3">
         <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
-          <span
-            className="navbar-brand mb-0 h1 text-truncate"
-            style={{ minWidth: 0 }}
-          >
-            <Link
-              href={headerHref}
-              className="navbar-brand-link"
-            >
+
+          {/* Brand */}
+          <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0 }}>
+            <Link href={headerHref} className="navbar-brand-link">
               valuesearch.app
             </Link>
           </span>
-          <div
-            className="ms-auto d-flex align-items-center gap-2"
-            style={{ minWidth: 0 }}
-          >
+
+          {/* Right group */}
+          <div className="ms-auto d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+
+            {/* Search — always visible when applicable */}
             {!hideNavbarSearch ? (
               <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
                 <SearchBar
@@ -78,8 +161,9 @@ export default function AppNavbar({
               </div>
             ) : null}
 
+            {/* ── Desktop nav items (sm+, hidden on mobile) ── */}
             {status === "authenticated" ? (
-              <div className="dropdown">
+              <div className="dropdown d-none d-sm-flex">
                 <button
                   type="button"
                   className="btn btn-sm theme-switcher-btn dropdown-toggle d-flex align-items-center gap-2"
@@ -92,8 +176,7 @@ export default function AppNavbar({
                     style={{
                       width: 28,
                       height: 28,
-                      background:
-                        "linear-gradient(135deg, var(--accent) 0%, #30B0C7 100%)",
+                      background: "linear-gradient(135deg, var(--accent) 0%, #30B0C7 100%)",
                       fontSize: "0.8rem",
                     }}
                   >
@@ -103,88 +186,12 @@ export default function AppNavbar({
                     {userLabel}
                   </span>
                 </button>
-                <ul
-                  className="dropdown-menu dropdown-menu-end user-dropdown-menu"
-                  aria-labelledby="userDropdown"
-                >
-                  {pathname !== "/portfolio" && (
-                    <li>
-                      <Link
-                        href="/portfolio"
-                        className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      >
-                        <i className="bi bi-grid" aria-hidden />
-                        Portfolio
-                      </Link>
-                    </li>
-                  )}
-                  {!isMonthlyBalances && (
-                    <li>
-                      <Link
-                        href="/monthly-balances"
-                        className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      >
-                        <i className="bi bi-table" aria-hidden />
-                        Monthly balances
-                      </Link>
-                    </li>
-                  )}
-                  {!isSectorAssessments && (
-                    <li>
-                      <Link
-                        href="/sector-assessments"
-                        className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      >
-                        <i className="bi bi-bar-chart-steps" aria-hidden />
-                        Sector assessments
-                      </Link>
-                    </li>
-                  )}
-                  {pathname !== "/" && (
-                    <li>
-                      <Link
-                        href="/"
-                        className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      >
-                        <i className="bi bi-house" aria-hidden />
-                        Home
-                      </Link>
-                    </li>
-                  )}
-                  <li className="px-2 py-1">
-                    <span className="dropdown-item-text small fw-semibold text-muted">
-                      Theme
-                    </span>
-                  </li>
-                  <ThemeSwitcher inline />
-                  <li>
-                    <hr className="dropdown-divider my-2" />
-                  </li>
-                  {pathname !== "/about" && (
-                    <li>
-                      <Link
-                        href="/about"
-                        className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      >
-                        <i className="bi bi-info-circle" aria-hidden />
-                        About
-                      </Link>
-                    </li>
-                  )}
-                  <li>
-                    <button
-                      type="button"
-                      className="dropdown-item d-flex align-items-center gap-2 py-2"
-                      onClick={handleLogout}
-                    >
-                      <i className="bi bi-box-arrow-right" aria-hidden />
-                      Logout
-                    </button>
-                  </li>
+                <ul className="dropdown-menu dropdown-menu-end user-dropdown-menu" aria-labelledby="userDropdown">
+                  {authDropdownItems}
                 </ul>
               </div>
             ) : status === "unauthenticated" ? (
-              <>
+              <div className="d-none d-sm-flex align-items-center gap-2">
                 <ThemeSwitcher />
                 {!isSectorAssessments && (
                   <Link
@@ -194,7 +201,7 @@ export default function AppNavbar({
                     title="Sector assessments"
                   >
                     <i className="bi bi-bar-chart-steps" aria-hidden />
-                    <span className="d-none d-sm-inline navbar-btn-label">Sectors</span>
+                    <span className="navbar-btn-label">Sectors</span>
                   </Link>
                 )}
                 {pathname !== "/about" && (
@@ -205,7 +212,7 @@ export default function AppNavbar({
                     title="About valuesearch.app"
                   >
                     <i className="bi bi-info-circle" aria-hidden />
-                    <span className="d-none d-sm-inline navbar-btn-label">About</span>
+                    <span className="navbar-btn-label">About</span>
                   </Link>
                 )}
                 <button
@@ -217,17 +224,63 @@ export default function AppNavbar({
                   data-bs-target={`#${LOGIN_MODAL_ID}`}
                 >
                   <i className="bi bi-person-circle" aria-hidden />
-                  <span className="d-none d-sm-inline navbar-btn-label">Sign in</span>
+                  <span className="navbar-btn-label">Sign in</span>
                 </button>
-              </>
-            ) : status === "loading" ? (
-              /* Skeleton placeholder — same footprint as the authenticated button
-                 so the navbar doesn't shift when the session resolves */
-              <div className="navbar-auth-skeleton" aria-hidden="true">
-                <div className="navbar-auth-skeleton__avatar" />
-                <div className="navbar-auth-skeleton__name d-none d-sm-block" />
               </div>
-            ) : null}
+            ) : (
+              <div className="d-none d-sm-flex navbar-auth-skeleton" aria-hidden="true">
+                <div className="navbar-auth-skeleton__avatar" />
+                <div className="navbar-auth-skeleton__name" />
+              </div>
+            )}
+
+            {/* ── Mobile hamburger (hidden on sm+) ── */}
+            {status === "loading" ? (
+              <div className="d-flex d-sm-none navbar-auth-skeleton" aria-hidden="true">
+                <div className="navbar-auth-skeleton__avatar" />
+                <i className="bi bi-chevron-down navbar-auth-skeleton__caret" />
+              </div>
+            ) : (
+              <div className="dropdown d-flex d-sm-none">
+                <button
+                  type="button"
+                  className={`btn btn-sm theme-switcher-btn d-flex align-items-center gap-2${status === "authenticated" ? " dropdown-toggle" : ""}`}
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Menu"
+                >
+                  {status === "authenticated" ? (
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-medium"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        background: "linear-gradient(135deg, var(--accent) 0%, #30B0C7 100%)",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {userLabel.charAt(0).toUpperCase()}
+                    </span>
+                  ) : (
+                    <i className="bi bi-list" style={{ fontSize: "1.25rem", lineHeight: 1 }} aria-hidden />
+                  )}
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                  {status === "authenticated" ? (
+                    <>
+                      <li className="px-3 py-2">
+                        <small className="text-muted fw-semibold">{userLabel}</small>
+                      </li>
+                      <li><hr className="dropdown-divider my-1" /></li>
+                      {authDropdownItems}
+                    </>
+                  ) : (
+                    unauthDropdownItems
+                  )}
+                </ul>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

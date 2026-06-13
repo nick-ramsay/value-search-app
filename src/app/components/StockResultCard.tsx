@@ -327,6 +327,22 @@ export default function StockResultCard({
     instance?.hide();
   }, []);
 
+  const closeAllOpenPanels = useCallback(async () => {
+    const card = cardRef.current;
+    if (!card) return;
+    const openPanels = card.querySelectorAll(".collapse.show");
+    if (openPanels.length === 0) return;
+    const bootstrap = await import("bootstrap/dist/js/bootstrap.bundle.min.js");
+    const Collapse = (bootstrap as { Collapse?: { getInstance: (el: Element) => { hide: () => void } | null } }).Collapse;
+    openPanels.forEach((el) => Collapse?.getInstance(el)?.hide());
+  }, []);
+
+  const handleCardClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, select, textarea, label, [data-bs-toggle], [role="button"]')) return;
+    closeAllOpenPanels();
+  }, [closeAllOpenPanels]);
+
   return (
     <article
       ref={cardRef}
@@ -334,6 +350,7 @@ export default function StockResultCard({
       className={`stock-card${compact ? " stock-card--compact" : ""}${item.aiRating ? ` ${getRatingAccentClass(item.aiRating)}` : ""}`}
       data-symbol={item.symbol ?? undefined}
       style={{ position: "relative", ...(minHeight != null ? { minHeight: `${minHeight}px` } : {}) }}
+      onClick={handleCardClick}
     >
       {/* Identity: ticker + company name + info button */}
       <header className="stock-card__head">
@@ -565,14 +582,6 @@ export default function StockResultCard({
         <div className="stock-card__panel-inner">
           <div className="stock-card__close-all-inline-wrap">
             <span className="stock-card__panel-heading">AI Assessment</span>
-            <button
-              type="button"
-              className="stock-card__panel-close-btn"
-              onClick={() => handleClosePanel(collapseId)}
-              aria-label="Close this section"
-            >
-              <i className="bi bi-x" aria-hidden />
-            </button>
           </div>
           {item.assessment ? (
             <div className="stock-card__assessment-text stock-card__assessment-markdown">
@@ -675,6 +684,16 @@ export default function StockResultCard({
               </div>
             </div>
             )}
+          <div className="stock-card__panel-close-row">
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={() => handleClosePanel(collapseId)}
+              aria-label="Close this section"
+            >
+              Close <i className="bi bi-x" aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -685,6 +704,7 @@ export default function StockResultCard({
         compact={compact}
         notesSlotId={notesSlotId}
         accordionParentId={accordionParentId}
+        onCloseThisPanel={() => handleClosePanel(notesCollapseId)}
       />
 
       {/* User status (when logged in) */}
