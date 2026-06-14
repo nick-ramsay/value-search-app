@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { ValueRecord } from "@/lib/value-search";
-import StockResultCard from "./StockResultCard";
 import DisclosureModal from "./DisclosureModal";
+import StockResultCard from "./StockResultCard";
 
 type PortfolioCurrentSelectionProps = {
   initialSymbol: string | null;
@@ -149,7 +149,7 @@ export default function PortfolioCurrentSelection({
           </article>
         )}
       </div>
-      <p className="text-center small mb-0 mt-2">
+      <p className="text-center small mb-0" style={{ marginTop: "0.1rem" }}>
         <DisclosureModal />
       </p>
     </>

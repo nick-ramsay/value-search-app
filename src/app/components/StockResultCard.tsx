@@ -250,7 +250,6 @@ export default function StockResultCard({
   const collapseId = `collapse-${cardDomId}`;
   const trendsCollapseId = `trends-${cardDomId}`;
   const notesCollapseId = `notes-${cardDomId}`;
-  const companyDescCollapseId = `company-desc-${cardDomId}`;
   const assessmentDetailCollapseId = `assessment-detail-${cardDomId}`;
   const notesSlotId = `stock-card-notes-slot-${cardDomId}`;
   const accordionId = `stock-card-${cardDomId}`;
@@ -281,40 +280,22 @@ export default function StockResultCard({
   }>({ status: "idle", data: null });
 
   useEffect(() => {
-    const el = document.getElementById(companyDescCollapseId);
-    if (!el) return;
-    const onShown = () => {
-      setCompanyDescExpanded(true);
-      if (companyDesc.status === "idle" && item.symbol) {
-        setCompanyDesc((s) => ({ ...s, status: "loading" }));
-        fetch(
-          `/api/company-description?symbol=${encodeURIComponent(item.symbol)}`
-        )
-          .then((r) => r.json())
-          .then(
-            (data: {
-              companyDescription?: string | null;
-              investmentDescription?: string | null;
-            }) => {
-              const text =
-                data.companyDescription ?? data.investmentDescription ?? null;
-              setCompanyDesc({
-                status: "loaded",
-                text: text ?? null,
-              });
-            }
-          )
-          .catch(() => setCompanyDesc((s) => ({ ...s, status: "error" })));
-      }
-    };
-    const onHidden = () => setCompanyDescExpanded(false);
-    el.addEventListener("shown.bs.collapse", onShown);
-    el.addEventListener("hidden.bs.collapse", onHidden);
-    return () => {
-      el.removeEventListener("shown.bs.collapse", onShown);
-      el.removeEventListener("hidden.bs.collapse", onHidden);
-    };
-  }, [companyDescCollapseId, item.symbol, companyDesc.status]);
+    if (!companyDescExpanded || companyDesc.status !== "idle" || !item.symbol) return;
+    setCompanyDesc((s) => ({ ...s, status: "loading" }));
+    fetch(`/api/company-description?symbol=${encodeURIComponent(item.symbol)}`)
+      .then((r) => r.json())
+      .then(
+        (data: {
+          companyDescription?: string | null;
+          investmentDescription?: string | null;
+        }) => {
+          const text =
+            data.companyDescription ?? data.investmentDescription ?? null;
+          setCompanyDesc({ status: "loaded", text: text ?? null });
+        }
+      )
+      .catch(() => setCompanyDesc((s) => ({ ...s, status: "error" })));
+  }, [companyDescExpanded, item.symbol, companyDesc.status]);
 
   const handleClosePanel = useCallback(async (panelId: string) => {
     const el = document.getElementById(panelId);
@@ -380,49 +361,50 @@ export default function StockResultCard({
           <button
             type="button"
             className="stock-card__company-info-btn"
-            data-bs-toggle="collapse"
-            data-bs-target={`#${companyDescCollapseId}`}
             aria-expanded={companyDescExpanded}
             aria-label="Toggle company description"
             title="Company description"
+            onClick={() => setCompanyDescExpanded((prev) => !prev)}
           >
             <i className="bi bi-info-circle" aria-hidden />
             <span className="stock-card__company-info-label" aria-hidden>About</span>
           </button>
         </div>
-        {(item.sector ?? item.country) && (
+        {(item.industry ?? item.sector ?? item.country) && (
           <p className="stock-card__meta-row mb-0">
-            {[item.sector, item.country]
+            {[item.industry, item.sector, item.country]
               .filter((v): v is string => typeof v === "string" && v.trim() !== "")
               .join(" • ")}
           </p>
         )}
       </header>
 
-      {/* Company description panel – directly under name/symbol row; intentionally NOT part of the card accordion so it can stay open alongside other panels */}
+      {/* Company description panel – React state–driven so Bootstrap accordion cannot close it when another panel opens */}
       <div
-        id={companyDescCollapseId}
-        className="collapse stock-card__panel stock-card__panel--company-desc"
+        className={`stock-card__company-desc-outer${companyDescExpanded ? " stock-card__company-desc-outer--open" : ""}`}
         aria-label="Company description"
+        aria-hidden={!companyDescExpanded}
       >
-        <div className="stock-card__panel-inner stock-card__panel-inner--company-desc">
-          {(companyDesc.status === "idle" || companyDesc.status === "loading") && (
-            <div className="stock-card__about-skeleton-wrap" aria-hidden>
-              <div className="stock-card__about-skeleton" />
-              <div className="stock-card__about-skeleton" />
-              <div className="stock-card__about-skeleton stock-card__about-skeleton--short" />
-            </div>
-          )}
-          {companyDesc.status === "error" && (
-            <p className="mb-0 stock-card__about-text stock-card__about-text--muted">
-              Could not load description.
-            </p>
-          )}
-          {companyDesc.status === "loaded" && (
-            <p className="mb-0 stock-card__about-text">
-              {companyDesc.text || "No description available."}
-            </p>
-          )}
+        <div className="stock-card__panel stock-card__panel--company-desc">
+          <div className="stock-card__panel-inner stock-card__panel-inner--company-desc">
+            {(companyDesc.status === "idle" || companyDesc.status === "loading") && (
+              <div className="stock-card__about-skeleton-wrap" aria-hidden>
+                <div className="stock-card__about-skeleton" />
+                <div className="stock-card__about-skeleton" />
+                <div className="stock-card__about-skeleton stock-card__about-skeleton--short" />
+              </div>
+            )}
+            {companyDesc.status === "error" && (
+              <p className="mb-0 stock-card__about-text stock-card__about-text--muted">
+                Could not load description.
+              </p>
+            )}
+            {companyDesc.status === "loaded" && (
+              <p className="mb-0 stock-card__about-text">
+                {companyDesc.text || "No description available."}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -575,13 +557,21 @@ export default function StockResultCard({
       {/* AI Assessment panel */}
       <div
         id={collapseId}
-        className="collapse stock-card__panel"
+        className="collapse stock-card__panel stock-card__panel--assessment"
         aria-label="AI Assessment"
         data-bs-parent={accordionParentId}
       >
         <div className="stock-card__panel-inner">
           <div className="stock-card__close-all-inline-wrap">
             <span className="stock-card__panel-heading">AI Assessment</span>
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={() => handleClosePanel(collapseId)}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+            </button>
           </div>
           {item.assessment ? (
             <div className="stock-card__assessment-text stock-card__assessment-markdown">
@@ -684,16 +674,6 @@ export default function StockResultCard({
               </div>
             </div>
             )}
-          <div className="stock-card__panel-close-row">
-            <button
-              type="button"
-              className="stock-card__panel-close-btn"
-              onClick={() => handleClosePanel(collapseId)}
-              aria-label="Close this section"
-            >
-              Close <i className="bi bi-x" aria-hidden />
-            </button>
-          </div>
         </div>
       </div>
 

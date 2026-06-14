@@ -111,7 +111,7 @@ export default function PortfolioStatusTabs() {
   }, [activeStatus]);
 
   return (
-    <section className="portfolio-tabs-glass mt-4" aria-label="Portfolio by status">
+    <section className="portfolio-tabs-glass mt-2" aria-label="Portfolio by status">
       <div className="portfolio-tabs-nav" role="tablist">
         {STATUSES.map((status) => (
           <button

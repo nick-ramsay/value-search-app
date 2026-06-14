@@ -279,13 +279,23 @@ export default function CardNotes({
   const panel = (
     <div
       id={collapseId}
-      className="collapse stock-card__panel"
+      className="collapse stock-card__panel stock-card__panel--notes"
       aria-label="Notes"
       data-bs-parent={accordionParentId}
     >
       <div className="stock-card__panel-inner">
         <div className="stock-card__close-all-inline-wrap">
           <span className="stock-card__panel-heading">Notes</span>
+          {onCloseThisPanel && (
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -352,18 +362,6 @@ export default function CardNotes({
               </div>
             </div>
           </>
-        )}
-        {onCloseThisPanel && (
-          <div className="stock-card__panel-close-row">
-            <button
-              type="button"
-              className="stock-card__panel-close-btn"
-              onClick={onCloseThisPanel}
-              aria-label="Close this section"
-            >
-              Close <i className="bi bi-x" aria-hidden />
-            </button>
-          </div>
         )}
       </div>
     </div>

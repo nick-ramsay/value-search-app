@@ -361,6 +361,16 @@ export default function CardUserActions({
       <div className="stock-card__panel-inner">
         <div className="stock-card__close-all-inline-wrap">
           <span className="stock-card__panel-heading">Your position</span>
+          {showInlineCloseAll && onCloseThisPanel && (
+            <button
+              type="button"
+              className="stock-card__panel-close-btn"
+              onClick={onCloseThisPanel}
+              aria-label="Close this section"
+            >
+              <i className="bi bi-chevron-up" aria-hidden />
+            </button>
+          )}
         </div>
         <div className="stock-card__user-form">
           <CardStatusSelect
@@ -539,18 +549,6 @@ export default function CardUserActions({
             })}
           </div>
         </div>
-        {showInlineCloseAll && onCloseThisPanel ? (
-          <div className="stock-card__panel-close-row">
-            <button
-              type="button"
-              className="stock-card__panel-close-btn"
-              onClick={onCloseThisPanel}
-              aria-label="Close this section"
-            >
-              Close <i className="bi bi-x" aria-hidden />
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   );
