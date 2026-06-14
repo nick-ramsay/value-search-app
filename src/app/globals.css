@@ -41,10 +41,10 @@
   --text-tertiary: rgba(0, 0, 0, 0.42);
   --text-on-glass: rgba(0, 0, 0, 0.9);
 
-  /* Background (taskboard: focused sunrise → calm teal → crisp sky) */
-  --bg-start: #f9efe0;
-  --bg-mid: #d9f2f0;
-  --bg-end: #d6e9ff;
+  /* Background (trust: cornflower blue → blue-slate → soft indigo) */
+  --bg-start: #dce8f5;
+  --bg-mid: #e2e8f8;
+  --bg-end: #eae5f8;
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -88,10 +88,10 @@
     --text-tertiary: rgba(255, 255, 255, 0.48);
     --text-on-glass: rgba(255, 255, 255, 0.96);
 
-    /* Taskboard dark gradient: deep navy → teal → indigo */
-    --bg-start: #0c1442;
-    --bg-mid: #0e3d4a;
-    --bg-end: #1e1b4b;
+    /* Finance dark gradient: midnight navy → royal navy → deep indigo */
+    --bg-start: #08102e;
+    --bg-mid: #0e1a45;
+    --bg-end: #1a1248;
 
     --dropdown-bg: rgb(35, 35, 48);
     --dropdown-border: rgba(255, 255, 255, 0.1);
@@ -127,10 +127,10 @@
   --text-tertiary: rgba(255, 255, 255, 0.48);
   --text-on-glass: rgba(255, 255, 255, 0.96);
 
-  /* Taskboard dark gradient: deep navy → teal → indigo */
-  --bg-start: #0c1442;
-  --bg-mid: #0e3d4a;
-  --bg-end: #1e1b4b;
+  /* Finance dark gradient: midnight navy → royal navy → deep indigo */
+  --bg-start: #08102e;
+  --bg-mid: #0e1a45;
+  --bg-end: #1a1248;
 
   --dropdown-bg: rgba(35, 35, 48, 0.9);
   --dropdown-border: rgba(255, 255, 255, 0.1);
@@ -1162,11 +1162,16 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 .stock-card__action--secondary:hover:not(:disabled),
-.stock-card__action--secondary:focus-visible,
-.stock-card__action--secondary[aria-expanded="true"] {
+.stock-card__action--secondary:focus-visible {
   background: var(--glass-bg-strong);
   color: var(--text-primary);
   border-color: var(--glass-border);
+}
+
+.stock-card__action--secondary[aria-expanded="true"] {
+  background: var(--accent-glass);
+  border-color: rgba(0, 113, 227, 0.35);
+  color: var(--accent);
 }
 
 .stock-card__action--icon {
@@ -1301,11 +1306,16 @@ button.stock-card__user-pill-trigger .stock-card__action-chevron {
 
 /* Hover/focus/active on the whole pill (it is the trigger button) */
 button.stock-card__user-pill-trigger:hover:not(:disabled),
-button.stock-card__user-pill-trigger:focus-visible,
-button.stock-card__user-pill-trigger[aria-expanded="true"] {
+button.stock-card__user-pill-trigger:focus-visible {
   background: var(--glass-bg-strong);
   color: var(--text-primary);
   border-color: var(--glass-border);
+}
+
+button.stock-card__user-pill-trigger[aria-expanded="true"] {
+  background: var(--accent-glass);
+  border-color: rgba(0, 113, 227, 0.35);
+  color: var(--accent);
 }
 
 .stock-card__action--compact {
@@ -1983,16 +1993,20 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 .label-toggle-btn--active {
-  background: rgba(34, 140, 132, 0.18);
-  border-color: rgba(34, 140, 132, 0.4);
-  color: #1a7a74;
+  background: rgba(34, 140, 132, 0.2);
+  border-color: rgba(34, 140, 132, 0.65);
+  color: #0e6b65;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(34, 140, 132, 0.25);
 }
 
 [data-theme="dark"] .label-toggle-btn--active,
 :root:not([data-theme="light"]) .label-toggle-btn--active {
-  background: rgba(45, 160, 155, 0.22);
-  border-color: rgba(45, 160, 155, 0.45);
-  color: rgba(200, 240, 238, 0.95);
+  background: rgba(45, 160, 155, 0.38);
+  border-color: rgba(45, 160, 155, 0.7);
+  color: #b8f0ec;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(45, 160, 155, 0.25);
 }
 
 /* Status dropdown – clearly clickable */
@@ -3163,6 +3177,77 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   box-shadow: none;
 }
 
+/* Light theme: open-accordion trigger — !important needed to override the base light-theme rule at line 3077 */
+[data-theme="light"] .stock-card__action--secondary[aria-expanded="true"] {
+  background: rgba(0, 113, 227, 0.12) !important;
+  border-color: rgba(0, 113, 227, 0.26) !important;
+  color: var(--accent);
+}
+
+[data-theme="light"] button.stock-card__user-pill-trigger[aria-expanded="true"] {
+  background: rgba(0, 113, 227, 0.12) !important;
+  border-color: rgba(0, 113, 227, 0.26) !important;
+  color: var(--accent);
+}
+
+/* Light theme: status buttons need visible borders on light glass backgrounds */
+[data-theme="light"] .status-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(60, 60, 67, 0.22);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .status-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(60, 60, 67, 0.32);
+  color: var(--text-primary);
+}
+
+/* Light theme: stronger active states so selected status/label is obvious */
+[data-theme="light"] .status-btn--avoid.status-btn--active {
+  background: rgba(215, 0, 21, 0.14);
+  border-color: rgba(215, 0, 21, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(215, 0, 21, 0.2);
+}
+
+[data-theme="light"] .status-btn--watch.status-btn--active {
+  background: rgba(200, 130, 0, 0.13);
+  border-color: rgba(200, 130, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(200, 130, 0, 0.18);
+}
+
+[data-theme="light"] .status-btn--own.status-btn--active {
+  background: rgba(36, 138, 61, 0.13);
+  border-color: rgba(36, 138, 61, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(36, 138, 61, 0.18);
+}
+
+[data-theme="light"] .status-btn--hold.status-btn--active {
+  background: rgba(0, 113, 227, 0.13);
+  border-color: rgba(0, 113, 227, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(0, 113, 227, 0.18);
+}
+
+/* Light theme: label toggle chips — visible base + active state */
+[data-theme="light"] .label-toggle-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(60, 60, 67, 0.22);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .label-toggle-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(60, 60, 67, 0.32);
+}
+
+[data-theme="light"] .label-toggle-btn--active {
+  background: rgba(34, 140, 132, 0.18);
+  border-color: rgba(34, 140, 132, 0.65);
+  color: #0e6b65;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(34, 140, 132, 0.22);
+}
+
 /* Light theme: stronger outlining for accordion inputs */
 [data-theme="light"] .stock-card__user-form select,
 [data-theme="light"] .stock-card__user-form .stock-card__target-input-wrap {
@@ -3436,13 +3521,18 @@ a:hover {
 
 /* Filters accordion wrapper – match stock card background; no difference between header and body */
 .filters-accordion-glass .accordion-item {
-  background: var(--glass-bg);
+  background: var(--glass-bg-subtle);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   overflow: hidden;
   box-shadow: var(--glass-shadow);
+}
+
+[data-theme="light"] .filters-accordion-glass .accordion-item {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .filters-accordion-glass .accordion-button {
@@ -5537,3 +5627,49 @@ a:hover {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(60, 60, 67, 0.2);
 }
+
+/* ── Back-to-top floating button ─────────────────────────────────────────── */
+.back-to-top-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1040;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  box-shadow: var(--glass-shadow-floating);
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(0.5rem);
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast),
+    background var(--transition-fast), color var(--transition-fast);
+}
+
+.back-to-top-btn--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.back-to-top-btn:hover {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+}
+
+.back-to-top-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+

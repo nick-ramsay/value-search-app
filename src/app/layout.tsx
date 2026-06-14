@@ -8,6 +8,7 @@ import ThemeInitScript from "./components/ThemeInitScript";
 import SessionProvider from "./components/SessionProvider";
 import LoginModal from "./components/LoginModal";
 import ScrollToTop from "./components/ScrollToTop";
+import BackToTopButton from "./components/BackToTopButton";
 
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
@@ -35,6 +36,7 @@ export default function RootLayout({
           <BootstrapClient />
           {children}
           <LoginModal />
+          <BackToTopButton />
         </SessionProvider>
       </body>
     </html>
