@@ -10,6 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   "": "No status",
   Avoid: "Avoid",
   Watch: "Watch",
+  Queued: "Queued",
   Own: "Own",
   Hold: "Hold",
 };
@@ -220,7 +221,7 @@ export default function CardUserActions({
     });
   };
 
-  const showBuyTargetInput = status === "Avoid" || status === "Watch";
+  const showBuyTargetInput = status === "Avoid" || status === "Watch" || status === "Queued";
   const showSellTargetInput = status === "Own" || status === "Hold";
   const showStatusLoader = statusLoading || statusUpdating;
   const showTargetPill =

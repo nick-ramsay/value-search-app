@@ -31,7 +31,7 @@ export default function AssessmentPillButton({
   return (
     <button
       type="button"
-      className={`stock-card__action stock-card__action--secondary${compact ? " stock-card__action--compact" : ""}`}
+      className={`stock-card__action stock-card__action--secondary stock-card__action--assessment${compact ? " stock-card__action--compact" : ""}`}
       data-bs-toggle="collapse"
       data-bs-target={`#${collapseId}`}
       aria-expanded={expanded}

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 
 const STATUS_OPTIONS = [
-  { value: "Avoid", label: "Avoid",  colorClass: "status-btn--avoid" },
-  { value: "Watch", label: "Watch",  colorClass: "status-btn--watch" },
-  { value: "Own",   label: "Own",    colorClass: "status-btn--own"   },
-  { value: "Hold",  label: "Hold",   colorClass: "status-btn--hold"  },
+  { value: "Avoid",  label: "Avoid",  colorClass: "status-btn--avoid"  },
+  { value: "Watch",  label: "Watch",  colorClass: "status-btn--watch"  },
+  { value: "Queued", label: "Queued", colorClass: "status-btn--queued" },
+  { value: "Own",    label: "Own",    colorClass: "status-btn--own"    },
+  { value: "Hold",   label: "Hold",   colorClass: "status-btn--hold"   },
 ] as const;
 
-type StatusValue = "" | "Avoid" | "Watch" | "Own" | "Hold";
+type StatusValue = "" | "Avoid" | "Watch" | "Queued" | "Own" | "Hold";
 
 type CardStatusSelectProps = {
   symbol: string;

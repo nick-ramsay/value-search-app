@@ -166,7 +166,7 @@ export function buildTargetDistanceLine(
 ): TargetDistanceLine | null {
   if (currentPrice == null || Number.isNaN(currentPrice)) return null;
 
-  const showBuy = status === "Avoid" || status === "Watch";
+  const showBuy = status === "Avoid" || status === "Watch" || status === "Queued";
   const showSell = status === "Own" || status === "Hold";
 
   if (showBuy && buyTarget != null && buyTarget > 0) {

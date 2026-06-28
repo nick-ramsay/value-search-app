@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export type StatusType = "" | "Avoid" | "Watch" | "Own" | "Hold";
+export type StatusType = "" | "Avoid" | "Watch" | "Queued" | "Own" | "Hold";
 
 export interface IComment {
   id: string;
@@ -38,7 +38,7 @@ const UserStockDataSchema = new mongoose.Schema<IUserStockData>(
     symbol: { type: String, required: true, uppercase: true, trim: true },
     status: {
       type: String,
-      enum: ["", "Avoid", "Watch", "Own", "Hold"],
+      enum: ["", "Avoid", "Watch", "Queued", "Own", "Hold"],
       default: "",
     },
     comments: { type: [CommentSchema], default: [] },

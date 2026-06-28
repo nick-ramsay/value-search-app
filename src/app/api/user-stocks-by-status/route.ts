@@ -6,7 +6,7 @@ import UserStockData from "@/models/UserStockData";
 import { docToValueRecord, getPricesBySymbols, type ValueRecord } from "@/lib/value-search";
 import mongoose from "mongoose";
 
-const STATUSES = ["Avoid", "Watch", "Own", "Hold"] as const;
+const STATUSES = ["Avoid", "Watch", "Queued", "Own", "Hold"] as const;
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const full = searchParams.get("full") === "1" || searchParams.get("full") === "true";
   if (!STATUSES.includes(status as (typeof STATUSES)[number])) {
     return NextResponse.json(
-      { message: "Valid status is required (Avoid, Watch, Own, Hold)" },
+      { message: "Valid status is required (Avoid, Watch, Queued, Own, Hold)" },
       { status: 400 }
     );
   }

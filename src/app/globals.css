@@ -453,6 +453,24 @@ button.accordion-button.ai-accordion-button:focus-visible {
   padding: 0.2rem 0.4rem;
 }
 
+/* In the signals row: hide the tag icon (it's larger than the pill text and inflates height),
+   use line-height: 1 to match the score pill, and subtract 1px from vertical padding to
+   compensate for the border that badges don't have */
+.stock-card__labels-inline .stock-card__label-pill-icon {
+  display: none;
+}
+
+.stock-card__labels-inline .stock-card__label-pill {
+  line-height: 1;
+  padding: calc(0.25rem - 1px) 0.5rem;
+}
+
+.stock-card--compact .stock-card__signals .stock-card__label-pill {
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: calc(0.2rem - 1px) 0.4rem;
+}
+
 .stock-card--compact .stock-card__action {
   padding: var(--stock-card-action-pad-y) var(--stock-card-action-pad-x);
   font-size: var(--stock-card-action-font-size);
@@ -982,6 +1000,12 @@ button.accordion-button.ai-accordion-button:focus-visible {
     padding: 0.18rem 0.35rem !important;
   }
 
+  .stock-card--compact .stock-card__signals .stock-card__label-pill {
+    font-size: 0.625rem;
+    line-height: 1;
+    padding: calc(0.18rem - 1px) 0.35rem;
+  }
+
   .stock-card__labels-inline .stock-card__label-pill {
     max-width: 100%;
   }
@@ -1013,22 +1037,26 @@ button.accordion-button.ai-accordion-button:focus-visible {
   .stock-card__actions .stock-card__user-actions-row,
   .stock-card__actions .stock-card__user-pill {
     flex: 1 1 0;
-    flex-shrink: 1;
     min-width: 0;
     justify-content: center;
     min-height: 2rem;
   }
 
-  .stock-card__actions .stock-card__action {
-    padding: 0.2rem 0.35rem;
-    font-size: 0.65rem;
-    line-height: var(--stock-card-action-line-height);
-    gap: 0.18rem;
+  /* Guarantee enough room for the longest status label ("Queued") */
+  .stock-card__actions .stock-card__user-actions-row {
+    min-width: 4.2rem;
   }
 
-  .stock-card__actions .stock-card__action--icon .bi,
-  .stock-card__actions .stock-card__action-icon {
-    font-size: 0.75rem;
+  .stock-card__actions .stock-card__action {
+    padding: 0.2rem 0.25rem;
+    font-size: 0.65rem;
+    line-height: var(--stock-card-action-line-height);
+    gap: 0.15rem;
+  }
+
+  /* Hide decorative icons from action buttons — label text is sufficient at small sizes */
+  .stock-card__actions .stock-card__action .stock-card__action-icon {
+    display: none;
   }
 
   .stock-card__actions .stock-card__action-chevron {
@@ -1037,7 +1065,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
   }
 
   .stock-card__actions .stock-card__user-pill {
-    padding: 0.2rem 0.35rem;
+    padding: 0.2rem 0.25rem;
     font-size: 0.65rem;
     line-height: var(--stock-card-action-line-height);
     gap: 0.15rem;
@@ -1046,7 +1074,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
   .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
     font-size: 0.6rem !important;
-    padding: 0.08rem 0.3rem !important;
+    padding: 0.05rem 0.2rem !important;
   }
 
   .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
@@ -1836,6 +1864,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   box-shadow: none !important;
 }
 
+
 .stock-card__status-badge--avoid {
   background: var(--danger-glass) !important;
   color: var(--danger) !important;
@@ -1844,6 +1873,17 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .stock-card__status-badge--watch {
   background: var(--accent-soft) !important;
   color: var(--accent) !important;
+}
+
+.stock-card__status-badge--queued {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #7c3aed !important;
+}
+
+[data-theme="dark"] .stock-card__status-badge--queued,
+:root:not([data-theme="light"]) .stock-card__status-badge--queued {
+  background: rgba(167, 139, 250, 0.2) !important;
+  color: #c4b5fd !important;
 }
 
 .stock-card__status-badge--own,
@@ -1888,6 +1928,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 /* ---- Status segmented buttons ---- */
 .status-btn-group {
   display: flex;
+  flex-wrap: nowrap;
   width: 100%;
   gap: 0.35rem;
 }
@@ -1907,8 +1948,10 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .status-btn {
   flex: 1 1 0;
-  padding: 0.35rem 0.25rem;
-  font-size: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(0.28rem, 1vw, 0.35rem) clamp(0.25rem, 2vw, 0.55rem);
+  font-size: clamp(0.6rem, 2.8vw, 0.75rem);
   font-weight: 600;
   line-height: 1.2;
   border-radius: 8px;
@@ -1949,6 +1992,13 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   box-shadow: inset 0 0 0 1px rgba(36, 138, 61, 0.12);
 }
 
+.status-btn--queued.status-btn--active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #7c3aed;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.12);
+}
+
 .status-btn--hold.status-btn--active {
   background: var(--accent-soft);
   border-color: rgba(0, 122, 255, 0.3);
@@ -1959,6 +2009,13 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 [data-theme="dark"] .status-btn--watch.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--watch.status-btn--active {
   color: #f4a800;
+}
+
+[data-theme="dark"] .status-btn--queued.status-btn--active,
+:root:not([data-theme="light"]) .status-btn--queued.status-btn--active {
+  background: rgba(167, 139, 250, 0.2);
+  border-color: rgba(167, 139, 250, 0.45);
+  color: #c4b5fd;
 }
 
 /* ---- Label toggle chips ---- */
@@ -2084,7 +2141,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.15rem 0.5rem;
+  padding: 0.25rem 0.5rem;
+  line-height: 1.3;
   border-radius: 999px;
   border: 1px solid rgba(34, 140, 132, 0.35);
   background: rgba(34, 140, 132, 0.18);
@@ -3684,11 +3742,12 @@ a:hover {
 .portfolio-tabs-glass .portfolio-tab-btn {
   flex: 1 1 0;
   min-width: 0;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(0.28rem, 1.5vw, 0.4rem) clamp(0.4rem, 2.5vw, 0.9rem);
-  font-size: clamp(0.65rem, 2.2vw, 0.8125rem);
+  padding: clamp(0.22rem, 1vw, 0.4rem) clamp(0.25rem, 1.8vw, 0.9rem);
+  font-size: clamp(0.6rem, 3.2vw, 0.8125rem);
   font-weight: 500;
   border-radius: 999px;
   border: 1px solid var(--glass-border-subtle);
@@ -3728,6 +3787,13 @@ a:hover {
   background: var(--accent-glass);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Hide the "(n)" count badges when buttons are too narrow to show them */
+@media (max-width: 540px) {
+  .portfolio-tabs-glass .portfolio-tab-count {
+    display: none;
+  }
 }
 
 .portfolio-tabs-glass .portfolio-tabpanel {

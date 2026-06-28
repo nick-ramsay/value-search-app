@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
 import UserStockData from "@/models/UserStockData";
 
-const STATUSES = ["Avoid", "Watch", "Own", "Hold"] as const;
+const STATUSES = ["Avoid", "Watch", "Queued", "Own", "Hold"] as const;
 
 export async function GET() {
   const session = await getServerSession(authOptions);

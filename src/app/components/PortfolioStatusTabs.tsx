@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { ValueRecord } from "@/lib/value-search";
 import StockResultCard from "./StockResultCard";
 
-const STATUSES = ["Avoid", "Watch", "Own", "Hold"] as const;
+const STATUSES = ["Avoid", "Watch", "Queued", "Own", "Hold"] as const;
 
 type Counts = Record<(typeof STATUSES)[number], number>;
 
@@ -129,7 +129,7 @@ export default function PortfolioStatusTabs() {
           >
             {status}
             {counts != null && (
-              <span className="ms-1 opacity-85">({counts[status] ?? 0})</span>
+              <span className="ms-1 opacity-85 portfolio-tab-count">({counts[status] ?? 0})</span>
             )}
           </button>
         ))}

@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
       { status: 400 }
     );
   }
-  const validStatuses: StatusType[] = ["", "Avoid", "Watch", "Own", "Hold"];
+  const validStatuses: StatusType[] = ["", "Avoid", "Watch", "Queued", "Own", "Hold"];
   if (
     body.status !== undefined &&
     !validStatuses.includes(body.status as StatusType)
