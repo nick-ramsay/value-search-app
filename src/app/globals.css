@@ -21,30 +21,30 @@
   /* Typography */
   --font-sans: system-ui, ui-sans-serif, "Segoe UI", sans-serif;
 
-  /* Accent */
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --accent-glass: rgba(0, 113, 227, 0.15);
-  --accent-soft: rgba(0, 113, 227, 0.15);
+  /* Accent – verdigris teal */
+  --accent: #1E8A72;
+  --accent-hover: #1A9E83;
+  --accent-glass: rgba(30, 138, 114, 0.13);
+  --accent-soft: rgba(30, 138, 114, 0.13);
 
-  /* Semantic – darkened for text contrast on light backgrounds */
-  --danger: #D70015;
-  --danger-glass: rgba(215, 0, 21, 0.12);
-  --danger-soft: rgba(215, 0, 21, 0.12);
-  --danger-clear: #D70015;
-  --success: #248A3D;
-  --success-glass: rgba(36, 138, 61, 0.12);
+  /* Semantic */
+  --danger: #C4202C;
+  --danger-glass: rgba(196, 32, 44, 0.11);
+  --danger-soft: rgba(196, 32, 44, 0.11);
+  --danger-clear: #C4202C;
+  --success: #1E7A44;
+  --success-glass: rgba(30, 122, 68, 0.11);
 
   /* Text */
-  --text-primary: rgba(0, 0, 0, 0.85);
-  --text-secondary: rgba(0, 0, 0, 0.55);
-  --text-tertiary: rgba(0, 0, 0, 0.42);
-  --text-on-glass: rgba(0, 0, 0, 0.9);
+  --text-primary: rgba(18, 22, 30, 0.87);
+  --text-secondary: rgba(18, 22, 30, 0.54);
+  --text-tertiary: rgba(18, 22, 30, 0.38);
+  --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background (trust: cornflower blue → blue-slate → soft indigo) */
-  --bg-start: #dce8f5;
-  --bg-mid: #e2e8f8;
-  --bg-end: #eae5f8;
+  /* Background – cool stone, near-neutral */
+  --bg-start: #EAECF0;
+  --bg-mid: #E6E9EE;
+  --bg-end: #E3E6EF;
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -61,79 +61,79 @@
 /* System preference dark (when theme is "system" and OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glass-bg: rgba(30, 30, 40, 0.6);
-    --glass-bg-strong: rgba(40, 40, 55, 0.75);
-    --glass-bg-subtle: rgba(28, 28, 40, 0.45);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-border-subtle: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
-    --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.56);
-    --glass-highlight: rgba(255, 255, 255, 0.06);
+    --glass-bg: rgba(22, 24, 32, 0.68);
+    --glass-bg-strong: rgba(30, 32, 42, 0.82);
+    --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-border-subtle: rgba(255, 255, 255, 0.06);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
+    --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
+    --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
+    --glass-highlight: rgba(255, 255, 255, 0.05);
 
-    --accent: #0A84FF;
-    --accent-hover: #409CFF;
-    --accent-glass: rgba(10, 132, 255, 0.25);
-    --accent-soft: rgba(10, 132, 255, 0.25);
+    --accent: #28BFA4;
+    --accent-hover: #33CEAE;
+    --accent-glass: rgba(40, 191, 164, 0.22);
+    --accent-soft: rgba(40, 191, 164, 0.22);
 
-    --danger: #FF453A;
-    --danger-glass: rgba(255, 69, 58, 0.2);
-    --danger-soft: rgba(255, 69, 58, 0.2);
-    --danger-clear: #FF453A;
-    --success: #32D74B;
-    --success-glass: rgba(50, 215, 75, 0.2);
+    --danger: #FF4D55;
+    --danger-glass: rgba(255, 77, 85, 0.20);
+    --danger-soft: rgba(255, 77, 85, 0.20);
+    --danger-clear: #FF4D55;
+    --success: #3AD476;
+    --success-glass: rgba(58, 212, 118, 0.20);
 
-    --text-primary: rgba(255, 255, 255, 0.92);
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-tertiary: rgba(255, 255, 255, 0.48);
-    --text-on-glass: rgba(255, 255, 255, 0.96);
+    --text-primary: rgba(232, 236, 242, 0.93);
+    --text-secondary: rgba(232, 236, 242, 0.58);
+    --text-tertiary: rgba(232, 236, 242, 0.42);
+    --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Finance dark gradient: midnight navy → royal navy → deep indigo */
-    --bg-start: #08102e;
-    --bg-mid: #0e1a45;
-    --bg-end: #1a1248;
+    /* Near-black anthracite – no saturated navy */
+    --bg-start: #0C0E14;
+    --bg-mid: #10141E;
+    --bg-end: #121018;
 
-    --dropdown-bg: rgb(35, 35, 48);
-    --dropdown-border: rgba(255, 255, 255, 0.1);
+    --dropdown-bg: rgba(28, 30, 40, 0.95);
+    --dropdown-border: rgba(255, 255, 255, 0.09);
   }
 }
 
 /* Forced dark theme */
 [data-theme="dark"] {
-  --glass-bg: rgba(30, 30, 40, 0.6);
-  --glass-bg-strong: rgba(40, 40, 55, 0.75);
-  --glass-bg-subtle: rgba(28, 28, 40, 0.45);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-subtle: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.56);
-  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-bg: rgba(22, 24, 32, 0.68);
+  --glass-bg-strong: rgba(30, 32, 42, 0.82);
+  --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
+  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
+  --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
 
-  --accent: #0A84FF;
-  --accent-hover: #409CFF;
-  --accent-glass: rgba(10, 132, 255, 0.25);
-  --accent-soft: rgba(10, 132, 255, 0.25);
+  --accent: #28BFA4;
+  --accent-hover: #33CEAE;
+  --accent-glass: rgba(40, 191, 164, 0.22);
+  --accent-soft: rgba(40, 191, 164, 0.22);
 
-  --danger: #FF453A;
-  --danger-glass: rgba(255, 69, 58, 0.2);
-  --danger-soft: rgba(255, 69, 58, 0.2);
-  --danger-clear: #FF453A;
-  --success: #32D74B;
-  --success-glass: rgba(50, 215, 75, 0.2);
+  --danger: #FF4D55;
+  --danger-glass: rgba(255, 77, 85, 0.20);
+  --danger-soft: rgba(255, 77, 85, 0.20);
+  --danger-clear: #FF4D55;
+  --success: #3AD476;
+  --success-glass: rgba(58, 212, 118, 0.20);
 
-  --text-primary: rgba(255, 255, 255, 0.92);
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  --text-tertiary: rgba(255, 255, 255, 0.48);
-  --text-on-glass: rgba(255, 255, 255, 0.96);
+  --text-primary: rgba(232, 236, 242, 0.93);
+  --text-secondary: rgba(232, 236, 242, 0.58);
+  --text-tertiary: rgba(232, 236, 242, 0.42);
+  --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Finance dark gradient: midnight navy → royal navy → deep indigo */
-  --bg-start: #08102e;
-  --bg-mid: #0e1a45;
-  --bg-end: #1a1248;
+  /* Near-black anthracite – no saturated navy */
+  --bg-start: #0C0E14;
+  --bg-mid: #10141E;
+  --bg-end: #121018;
 
-  --dropdown-bg: rgba(35, 35, 48, 0.9);
-  --dropdown-border: rgba(255, 255, 255, 0.1);
+  --dropdown-bg: rgba(28, 30, 40, 0.95);
+  --dropdown-border: rgba(255, 255, 255, 0.09);
 }
 
 /* Navbar toggler icon visibility in dark mode (taskboard) */
@@ -271,7 +271,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
 [data-theme="light"] button.accordion-button.ai-accordion-button:focus-visible {
   background: rgba(248, 248, 250, 0.98) !important;
   border-color: rgba(60, 60, 67, 0.18) !important;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(30, 138, 114, 0.10) !important;
 }
 
 /* All modals – clean rounded edges, no dividers */
@@ -1198,7 +1198,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__action--secondary[aria-expanded="true"] {
   background: var(--accent-glass);
-  border-color: rgba(0, 113, 227, 0.35);
+  border-color: rgba(30, 138, 114, 0.38);
   color: var(--accent);
 }
 
@@ -1342,7 +1342,7 @@ button.stock-card__user-pill-trigger:focus-visible {
 
 button.stock-card__user-pill-trigger[aria-expanded="true"] {
   background: var(--accent-glass);
-  border-color: rgba(0, 113, 227, 0.35);
+  border-color: rgba(30, 138, 114, 0.38);
   color: var(--accent);
 }
 
@@ -1871,8 +1871,14 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 .stock-card__status-badge--watch {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
+  background: rgba(168, 96, 0, 0.12) !important;
+  color: #A86000 !important;
+}
+
+[data-theme="dark"] .stock-card__status-badge--watch,
+:root:not([data-theme="light"]) .stock-card__status-badge--watch {
+  background: rgba(253, 180, 75, 0.18) !important;
+  color: #FDB44B !important;
 }
 
 .stock-card__status-badge--queued {
@@ -1886,10 +1892,20 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: #c4b5fd !important;
 }
 
-.stock-card__status-badge--own,
-.stock-card__status-badge--hold {
+.stock-card__status-badge--own {
   background: var(--success-glass) !important;
   color: var(--success) !important;
+}
+
+.stock-card__status-badge--hold {
+  background: rgba(45, 69, 184, 0.12) !important;
+  color: #2D45B8 !important;
+}
+
+[data-theme="dark"] .stock-card__status-badge--hold,
+:root:not([data-theme="light"]) .stock-card__status-badge--hold {
+  background: rgba(123, 144, 255, 0.20) !important;
+  color: #7B90FF !important;
 }
 
 .stock-card__user-form {
@@ -1973,23 +1989,23 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 /* Active states — colour-coded per status */
 .status-btn--avoid.status-btn--active {
   background: var(--danger-glass);
-  border-color: rgba(215, 0, 21, 0.3);
+  border-color: rgba(196, 32, 44, 0.30);
   color: var(--danger);
-  box-shadow: inset 0 0 0 1px rgba(215, 0, 21, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(196, 32, 44, 0.14);
 }
 
 .status-btn--watch.status-btn--active {
-  background: rgba(245, 160, 0, 0.12);
-  border-color: rgba(245, 160, 0, 0.35);
-  color: #c07d00;
-  box-shadow: inset 0 0 0 1px rgba(245, 160, 0, 0.12);
+  background: rgba(168, 96, 0, 0.12);
+  border-color: rgba(168, 96, 0, 0.35);
+  color: #A86000;
+  box-shadow: inset 0 0 0 1px rgba(168, 96, 0, 0.12);
 }
 
-.status-btn--own.status-btn--active {
-  background: var(--success-glass);
-  border-color: rgba(36, 138, 61, 0.3);
-  color: var(--success);
-  box-shadow: inset 0 0 0 1px rgba(36, 138, 61, 0.12);
+[data-theme="dark"] .status-btn--watch.status-btn--active,
+:root:not([data-theme="light"]) .status-btn--watch.status-btn--active {
+  background: rgba(253, 180, 75, 0.16);
+  border-color: rgba(253, 180, 75, 0.40);
+  color: #FDB44B;
 }
 
 .status-btn--queued.status-btn--active {
@@ -1999,23 +2015,37 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.12);
 }
 
-.status-btn--hold.status-btn--active {
-  background: var(--accent-soft);
-  border-color: rgba(0, 122, 255, 0.3);
-  color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.1);
-}
-
-[data-theme="dark"] .status-btn--watch.status-btn--active,
-:root:not([data-theme="light"]) .status-btn--watch.status-btn--active {
-  color: #f4a800;
-}
-
 [data-theme="dark"] .status-btn--queued.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--queued.status-btn--active {
   background: rgba(167, 139, 250, 0.2);
   border-color: rgba(167, 139, 250, 0.45);
   color: #c4b5fd;
+}
+
+.status-btn--own.status-btn--active {
+  background: var(--success-glass);
+  border-color: rgba(30, 122, 68, 0.36);
+  color: var(--success);
+  box-shadow: inset 0 0 0 1px rgba(30, 122, 68, 0.10);
+}
+
+[data-theme="dark"] .status-btn--own.status-btn--active,
+:root:not([data-theme="light"]) .status-btn--own.status-btn--active {
+  border-color: rgba(58, 212, 118, 0.40);
+}
+
+.status-btn--hold.status-btn--active {
+  background: rgba(45, 69, 184, 0.12);
+  border-color: rgba(45, 69, 184, 0.38);
+  color: #2D45B8;
+  box-shadow: inset 0 0 0 1px rgba(45, 69, 184, 0.10);
+}
+
+[data-theme="dark"] .status-btn--hold.status-btn--active,
+:root:not([data-theme="light"]) .status-btn--hold.status-btn--active {
+  background: rgba(123, 144, 255, 0.20);
+  border-color: rgba(123, 144, 255, 0.42);
+  color: #7B90FF;
 }
 
 /* ---- Label toggle chips ---- */
@@ -2595,7 +2625,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 [data-theme="light"] .search-input-glass:focus {
   background: #ffffff !important;
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(30, 138, 114, 0.14);
 }
 
 /* Suggestions dropdown – taskboard-style glass */
@@ -3237,14 +3267,14 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 /* Light theme: open-accordion trigger — !important needed to override the base light-theme rule at line 3077 */
 [data-theme="light"] .stock-card__action--secondary[aria-expanded="true"] {
-  background: rgba(0, 113, 227, 0.12) !important;
-  border-color: rgba(0, 113, 227, 0.26) !important;
+  background: rgba(30, 138, 114, 0.12) !important;
+  border-color: rgba(30, 138, 114, 0.28) !important;
   color: var(--accent);
 }
 
 [data-theme="light"] button.stock-card__user-pill-trigger[aria-expanded="true"] {
-  background: rgba(0, 113, 227, 0.12) !important;
-  border-color: rgba(0, 113, 227, 0.26) !important;
+  background: rgba(30, 138, 114, 0.12) !important;
+  border-color: rgba(30, 138, 114, 0.28) !important;
   color: var(--accent);
 }
 
@@ -3263,27 +3293,27 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 /* Light theme: stronger active states so selected status/label is obvious */
 [data-theme="light"] .status-btn--avoid.status-btn--active {
-  background: rgba(215, 0, 21, 0.14);
-  border-color: rgba(215, 0, 21, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(215, 0, 21, 0.2);
+  background: rgba(196, 32, 44, 0.14);
+  border-color: rgba(196, 32, 44, 0.50);
+  box-shadow: inset 0 0 0 1px rgba(196, 32, 44, 0.20);
 }
 
 [data-theme="light"] .status-btn--watch.status-btn--active {
-  background: rgba(200, 130, 0, 0.13);
-  border-color: rgba(200, 130, 0, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(200, 130, 0, 0.18);
+  background: rgba(168, 96, 0, 0.13);
+  border-color: rgba(168, 96, 0, 0.50);
+  box-shadow: inset 0 0 0 1px rgba(168, 96, 0, 0.18);
 }
 
 [data-theme="light"] .status-btn--own.status-btn--active {
-  background: rgba(36, 138, 61, 0.13);
-  border-color: rgba(36, 138, 61, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(36, 138, 61, 0.18);
+  background: rgba(30, 122, 68, 0.13);
+  border-color: rgba(30, 122, 68, 0.50);
+  box-shadow: inset 0 0 0 1px rgba(30, 122, 68, 0.18);
 }
 
 [data-theme="light"] .status-btn--hold.status-btn--active {
-  background: rgba(0, 113, 227, 0.13);
-  border-color: rgba(0, 113, 227, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(0, 113, 227, 0.18);
+  background: rgba(45, 69, 184, 0.13);
+  border-color: rgba(45, 69, 184, 0.50);
+  box-shadow: inset 0 0 0 1px rgba(45, 69, 184, 0.18);
 }
 
 /* Light theme: label toggle chips — visible base + active state */
@@ -4068,7 +4098,7 @@ a:hover {
 
 [data-theme="light"] .login-modal .form-control:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(30, 138, 114, 0.14);
   background: #ffffff !important;
 }
 
