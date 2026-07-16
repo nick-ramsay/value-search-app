@@ -27,6 +27,11 @@
   --accent-glass: rgba(30, 138, 114, 0.13);
   --accent-soft: rgba(30, 138, 114, 0.13);
 
+  /* Signature gradient – electric teal → violet, used sparingly for the one bold moment */
+  --gradient-start: #00A87C;
+  --gradient-end: #6C4CE0;
+  --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+
   /* Semantic */
   --danger: #C4202C;
   --danger-glass: rgba(196, 32, 44, 0.11);
@@ -41,10 +46,12 @@
   --text-tertiary: rgba(18, 22, 30, 0.38);
   --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background – cool stone, near-neutral */
-  --bg-start: #EAECF0;
-  --bg-mid: #E6E9EE;
-  --bg-end: #E3E6EF;
+  /* Background – soft stone with a teal/violet undertone (echoes the signature gradient) */
+  --bg-start: #E9F3EE;
+  --bg-mid: #E9EAF1;
+  --bg-end: #ECE7F5;
+  --bg-glow-1: rgba(0, 168, 124, 0.20);
+  --bg-glow-2: rgba(108, 76, 224, 0.16);
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -76,6 +83,10 @@
     --accent-glass: rgba(40, 191, 164, 0.22);
     --accent-soft: rgba(40, 191, 164, 0.22);
 
+    --gradient-start: #00D9A3;
+    --gradient-end: #9C87FF;
+    --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+
     --danger: #FF4D55;
     --danger-glass: rgba(255, 77, 85, 0.20);
     --danger-soft: rgba(255, 77, 85, 0.20);
@@ -88,10 +99,12 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Near-black anthracite – no saturated navy */
-    --bg-start: #0C0E14;
-    --bg-mid: #10141E;
-    --bg-end: #121018;
+    /* Near-black with teal/violet undertones – deep, moody, still dark */
+    --bg-start: #071612;
+    --bg-mid: #0F0F1C;
+    --bg-end: #160E22;
+    --bg-glow-1: rgba(0, 217, 163, 0.24);
+    --bg-glow-2: rgba(156, 135, 255, 0.22);
 
     --dropdown-bg: rgba(28, 30, 40, 0.95);
     --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -115,6 +128,10 @@
   --accent-glass: rgba(40, 191, 164, 0.22);
   --accent-soft: rgba(40, 191, 164, 0.22);
 
+  --gradient-start: #00D9A3;
+  --gradient-end: #9C87FF;
+  --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+
   --danger: #FF4D55;
   --danger-glass: rgba(255, 77, 85, 0.20);
   --danger-soft: rgba(255, 77, 85, 0.20);
@@ -127,10 +144,12 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Near-black anthracite – no saturated navy */
-  --bg-start: #0C0E14;
-  --bg-mid: #10141E;
-  --bg-end: #121018;
+  /* Near-black with teal/violet undertones – deep, moody, still dark */
+  --bg-start: #071612;
+  --bg-mid: #0F0F1C;
+  --bg-end: #160E22;
+  --bg-glow-1: rgba(0, 217, 163, 0.24);
+  --bg-glow-2: rgba(156, 135, 255, 0.22);
 
   --dropdown-bg: rgba(28, 30, 40, 0.95);
   --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -161,12 +180,15 @@ body {
 
 body {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    var(--bg-start) 0%,
-    var(--bg-mid) 40%,
-    var(--bg-end) 100%
-  );
+  background:
+    radial-gradient(circle at 12% 15%, var(--bg-glow-1), transparent 45%),
+    radial-gradient(circle at 88% 85%, var(--bg-glow-2), transparent 45%),
+    linear-gradient(
+      135deg,
+      var(--bg-start) 0%,
+      var(--bg-mid) 45%,
+      var(--bg-end) 100%
+    );
   background-attachment: fixed;
 }
 
@@ -1716,17 +1738,12 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .stock-card__about-skeleton {
   height: 0.72rem;
   border-radius: 4px;
-  background: var(--glass-bg);
-  animation: aboutSkeletonPulse 1.5s ease-in-out infinite;
+  background: rgba(128, 128, 140, 0.3);
+  animation: navbarSkeletonPulse 1.4s ease-in-out infinite;
 }
 
 .stock-card__about-skeleton--short {
   width: 55%;
-}
-
-@keyframes aboutSkeletonPulse {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 0.85; }
 }
 
 /* Research inputs — context tags (Industry / Sector / Country) */
@@ -1981,71 +1998,70 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   text-align: center;
 }
 
-.status-btn:hover:not(:disabled) {
+.status-btn:not(.status-btn--active):hover:not(:disabled) {
   background: var(--glass-bg-strong);
   color: var(--text-secondary);
 }
 
-/* Active states — colour-coded per status */
+/* Active states — colour-coded per status; solid border + outer glow ring,
+   matching the clarity of the selected tab on the Portfolio page */
 .status-btn--avoid.status-btn--active {
   background: var(--danger-glass);
-  border-color: rgba(196, 32, 44, 0.30);
+  border-color: var(--danger);
   color: var(--danger);
-  box-shadow: inset 0 0 0 1px rgba(196, 32, 44, 0.14);
+  box-shadow: 0 0 0 1px var(--danger-glass);
 }
 
 .status-btn--watch.status-btn--active {
   background: rgba(168, 96, 0, 0.12);
-  border-color: rgba(168, 96, 0, 0.35);
+  border-color: #A86000;
   color: #A86000;
-  box-shadow: inset 0 0 0 1px rgba(168, 96, 0, 0.12);
+  box-shadow: 0 0 0 1px rgba(168, 96, 0, 0.16);
 }
 
 [data-theme="dark"] .status-btn--watch.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--watch.status-btn--active {
   background: rgba(253, 180, 75, 0.16);
-  border-color: rgba(253, 180, 75, 0.40);
+  border-color: #FDB44B;
   color: #FDB44B;
+  box-shadow: 0 0 0 1px rgba(253, 180, 75, 0.22);
 }
 
 .status-btn--queued.status-btn--active {
   background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: #7c3aed;
   color: #7c3aed;
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.12);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.18);
 }
 
 [data-theme="dark"] .status-btn--queued.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--queued.status-btn--active {
   background: rgba(167, 139, 250, 0.2);
-  border-color: rgba(167, 139, 250, 0.45);
+  border-color: #c4b5fd;
   color: #c4b5fd;
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.24);
 }
 
 .status-btn--own.status-btn--active {
   background: var(--success-glass);
-  border-color: rgba(30, 122, 68, 0.36);
+  border-color: var(--success);
   color: var(--success);
-  box-shadow: inset 0 0 0 1px rgba(30, 122, 68, 0.10);
-}
-
-[data-theme="dark"] .status-btn--own.status-btn--active,
-:root:not([data-theme="light"]) .status-btn--own.status-btn--active {
-  border-color: rgba(58, 212, 118, 0.40);
+  box-shadow: 0 0 0 1px var(--success-glass);
 }
 
 .status-btn--hold.status-btn--active {
   background: rgba(45, 69, 184, 0.12);
-  border-color: rgba(45, 69, 184, 0.38);
+  border-color: #2D45B8;
   color: #2D45B8;
-  box-shadow: inset 0 0 0 1px rgba(45, 69, 184, 0.10);
+  box-shadow: 0 0 0 1px rgba(45, 69, 184, 0.16);
 }
 
 [data-theme="dark"] .status-btn--hold.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--hold.status-btn--active {
   background: rgba(123, 144, 255, 0.20);
-  border-color: rgba(123, 144, 255, 0.42);
+  border-color: #7B90FF;
   color: #7B90FF;
+  box-shadow: 0 0 0 1px rgba(123, 144, 255, 0.24);
 }
 
 /* ---- Label toggle chips ---- */
@@ -2901,15 +2917,15 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .filter-toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
   cursor: pointer;
   user-select: none;
 }
 
 .filter-toggle-slider {
   position: relative;
-  width: 51px;
-  height: 31px;
+  width: 34px;
+  height: 20px;
   background: rgba(120, 120, 128, 0.32);
   border: none;
   border-radius: 999px;
@@ -2926,8 +2942,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 27px;
-  height: 27px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), 0 0.5px 1px rgba(0, 0, 0, 0.12);
@@ -2940,12 +2956,12 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 .filter-toggle-input:checked + .filter-toggle-label .filter-toggle-slider {
-  background: var(--accent);
+  background: var(--accent-gradient);
   box-shadow: none;
 }
 
 .filter-toggle-input:checked + .filter-toggle-label .filter-toggle-slider::before {
-  transform: translateX(20px);
+  transform: translateX(14px);
   background: #ffffff;
 }
 
@@ -2964,7 +2980,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 /* Inline label text next to toggle (replaces separate label + toggle-text) */
 .filter-toggle-label__text {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-secondary);
   user-select: none;
@@ -2983,6 +2999,20 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+}
+
+/* On narrow viewports the actions wrap onto their own line below the
+   toggles; give them breathing room and shrink the clear button. */
+@media (max-width: 576px) {
+  .filter-toggles-actions {
+    margin-top: 0.65rem;
+    width: 100%;
+  }
+
+  .filter-clear-button {
+    padding: 0.3rem 0.85rem;
+    font-size: 0.78rem;
+  }
 }
 
 /* Compact uppercase label for filter selects */
@@ -3251,6 +3281,9 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   border: 1px solid var(--glass-border-subtle);
   border-radius: 10px;
   color: var(--text-primary);
+  padding: 0.3rem 2rem 0.3rem 0.65rem;
+  font-size: 0.85rem;
+  min-height: 0;
 }
 
 .form-select.glass-select:focus {
@@ -3278,44 +3311,22 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: var(--accent);
 }
 
-/* Light theme: status buttons need visible borders on light glass backgrounds */
-[data-theme="light"] .status-btn {
+/* Light theme: status buttons need visible borders on light glass backgrounds.
+   Scoped to :not(.status-btn--active) so it never clobbers the per-status
+   active colours/borders defined above. */
+[data-theme="light"] .status-btn:not(.status-btn--active) {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(60, 60, 67, 0.22);
   color: var(--text-secondary);
 }
 
-[data-theme="light"] .status-btn:hover:not(:disabled) {
+[data-theme="light"] .status-btn:not(.status-btn--active):hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.08);
   border-color: rgba(60, 60, 67, 0.32);
   color: var(--text-primary);
 }
 
 /* Light theme: stronger active states so selected status/label is obvious */
-[data-theme="light"] .status-btn--avoid.status-btn--active {
-  background: rgba(196, 32, 44, 0.14);
-  border-color: rgba(196, 32, 44, 0.50);
-  box-shadow: inset 0 0 0 1px rgba(196, 32, 44, 0.20);
-}
-
-[data-theme="light"] .status-btn--watch.status-btn--active {
-  background: rgba(168, 96, 0, 0.13);
-  border-color: rgba(168, 96, 0, 0.50);
-  box-shadow: inset 0 0 0 1px rgba(168, 96, 0, 0.18);
-}
-
-[data-theme="light"] .status-btn--own.status-btn--active {
-  background: rgba(30, 122, 68, 0.13);
-  border-color: rgba(30, 122, 68, 0.50);
-  box-shadow: inset 0 0 0 1px rgba(30, 122, 68, 0.18);
-}
-
-[data-theme="light"] .status-btn--hold.status-btn--active {
-  background: rgba(45, 69, 184, 0.13);
-  border-color: rgba(45, 69, 184, 0.50);
-  box-shadow: inset 0 0 0 1px rgba(45, 69, 184, 0.18);
-}
-
 /* Light theme: label toggle chips — visible base + active state */
 [data-theme="light"] .label-toggle-btn {
   background: rgba(0, 0, 0, 0.04);
@@ -3875,15 +3886,19 @@ a:hover {
 }
 
 .glass-btn-primary {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
+  background: var(--accent-gradient) !important;
+  border-color: transparent !important;
   color: #fff !important;
+  box-shadow: 0 4px 16px var(--accent-glass);
+  transition: transform var(--transition-fast), box-shadow var(--transition-smooth);
 }
 
 .glass-btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover) !important;
-  border-color: var(--accent-hover) !important;
+  background: var(--accent-gradient) !important;
+  border-color: transparent !important;
   color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glass);
 }
 
 .glass-btn-secondary {
@@ -4167,8 +4182,13 @@ a:hover {
   font-size: clamp(1.1rem, 4.5vw, 1.5rem);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--text-primary);
   font-family: var(--font-plex-mono), ui-monospace, monospace;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 /* Home page: section title above assessment results */

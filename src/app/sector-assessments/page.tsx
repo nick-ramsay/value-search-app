@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 
 import clientPromise from "@/lib/mongodb";
 import AppNavbar from "../components/AppNavbar";
+import SectorFilterClient from "../components/SectorFilterClient";
 
 const COLLECTION = "stock-sector-industry-assessments";
 
@@ -130,114 +131,96 @@ export default async function SectorAssessmentsPage({
               </div>
             </section>
 
-            <section className="sector-assessments-filters" aria-label="Filter by sector">
-              <nav className="sector-pill-list" aria-label="Sector filter">
-                <a
-                  href="/sector-assessments"
-                  className={`sector-pill${!selectedSector ? " sector-pill--active" : ""}`}
-                >
-                  All
-                </a>
-                {sectors.map((s) => (
-                  <a
-                    key={s}
-                    href={`/sector-assessments?sector=${encodeURIComponent(s)}`}
-                    className={`sector-pill${selectedSector === s ? " sector-pill--active" : ""}`}
-                  >
-                    {s}
-                  </a>
-                ))}
-              </nav>
-            </section>
-
-            <section
-              className="sector-assessments-meta"
-              aria-live="polite"
-            >
-              <p>
-                {assessments.length} {countLabel}
-                {countSuffix}
-              </p>
-            </section>
-
-            <section
-              className="card glass-card sector-assessments-results mb-4"
-              aria-label="Assessment results"
-            >
-              <div
-                className="card-body sector-assessments-results-body"
+            <SectorFilterClient sectors={sectors} selectedSector={selectedSector}>
+              <section
+                className="sector-assessments-meta"
+                aria-live="polite"
               >
-                {assessments.length === 0 ? (
-                  <p className="sector-assessments-empty text-muted text-center mb-0">
-                    No assessments found
-                  </p>
-                ) : (
-                  <div
-                    className="sector-assessments-sector-list"
-                  >
-                    {sectorKeys.map((sector) => {
-                      const items = grouped.get(sector)!;
-                      const sectorId = `sector-${sector.replace(/\W+/g, "-")}`;
-                      return (
-                        <div
-                          key={sector}
-                          className="sector-assessments-sector-group"
-                        >
-                          <h3 className="sector-assessments-sector-title">
-                            <span>{sector}</span>
-                            <span className="sector-assessments-sector-count">
-                              {items.length}
-                            </span>
-                          </h3>
+                <p>
+                  {assessments.length} {countLabel}
+                  {countSuffix}
+                </p>
+              </section>
+
+              <section
+                className="card glass-card sector-assessments-results mb-4"
+                aria-label="Assessment results"
+              >
+                <div
+                  className="card-body sector-assessments-results-body"
+                >
+                  {assessments.length === 0 ? (
+                    <p className="sector-assessments-empty text-muted text-center mb-0">
+                      No assessments found
+                    </p>
+                  ) : (
+                    <div
+                      className="sector-assessments-sector-list"
+                    >
+                      {sectorKeys.map((sector) => {
+                        const items = grouped.get(sector)!;
+                        const sectorId = `sector-${sector.replace(/\W+/g, "-")}`;
+                        return (
                           <div
-                            className="accordion stock-card__inner-accordion"
-                            id={sectorId}
+                            key={sector}
+                            className="sector-assessments-sector-group"
                           >
-                            {items.map((item, idx) => {
-                              const collapseId = `${sectorId}-industry-${idx}`;
-                              const headingId = `${collapseId}-heading`;
-                              return (
-                                <div className="accordion-item" key={item._id}>
-                                  <h4 className="accordion-header" id={headingId}>
-                                    <button
-                                      className="accordion-button stock-card__inner-accordion-btn collapsed"
-                                      type="button"
-                                      data-bs-toggle="collapse"
-                                      data-bs-target={`#${collapseId}`}
-                                      aria-expanded="false"
-                                      aria-controls={collapseId}
-                                    >
-                                      {item.industry}
-                                    </button>
-                                  </h4>
-                                  <div
-                                    id={collapseId}
-                                    className="accordion-collapse collapse"
-                                    aria-labelledby={headingId}
-                                    data-bs-parent={`#${sectorId}`}
-                                  >
+                            <h3 className="sector-assessments-sector-title">
+                              <span>{sector}</span>
+                              <span className="sector-assessments-sector-count">
+                                {items.length}
+                              </span>
+                            </h3>
+                            <div
+                              className="accordion stock-card__inner-accordion"
+                              id={sectorId}
+                            >
+                              {items.map((item, idx) => {
+                                const collapseId = `${sectorId}-industry-${idx}`;
+                                const headingId = `${collapseId}-heading`;
+                                return (
+                                  <div className="accordion-item" key={item._id}>
+                                    <h4 className="accordion-header" id={headingId}>
+                                      <button
+                                        className="accordion-button stock-card__inner-accordion-btn collapsed"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target={`#${collapseId}`}
+                                        aria-expanded="false"
+                                        aria-controls={collapseId}
+                                      >
+                                        {item.industry}
+                                      </button>
+                                    </h4>
                                     <div
-                                      className="accordion-body stock-card__inner-accordion-body"
+                                      id={collapseId}
+                                      className="accordion-collapse collapse"
+                                      aria-labelledby={headingId}
+                                      data-bs-parent={`#${sectorId}`}
                                     >
-                                      <div className="sector-assessments-assessment-text stock-card__assessment-markdown mb-2">
-                                        <ReactMarkdown>{item.assessment}</ReactMarkdown>
+                                      <div
+                                        className="accordion-body stock-card__inner-accordion-body"
+                                      >
+                                        <div className="sector-assessments-assessment-text stock-card__assessment-markdown mb-2">
+                                          <ReactMarkdown>{item.assessment}</ReactMarkdown>
+                                        </div>
+                                        <p className="sector-assessments-updated mb-0">
+                                          Last updated {formatDate(item.lastUpdated)}
+                                        </p>
                                       </div>
-                                      <p className="sector-assessments-updated mb-0">
-                                        Last updated {formatDate(item.lastUpdated)}
-                                      </p>
                                     </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </section>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </SectorFilterClient>
 
           </div>
         </div>

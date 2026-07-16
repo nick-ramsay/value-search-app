@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useId } from "react";
+import { useState, useCallback, useRef, useId } from "react";
 import { useSession } from "next-auth/react";
 import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
@@ -279,23 +279,46 @@ export default function StockResultCard({
     } | null;
   }>({ status: "idle", data: null });
 
-  useEffect(() => {
-    if (!companyDescExpanded || companyDesc.status !== "idle" || !item.symbol) return;
-    setCompanyDesc((s) => ({ ...s, status: "loading" }));
-    fetch(`/api/company-description?symbol=${encodeURIComponent(item.symbol)}`)
-      .then((r) => r.json())
-      .then(
-        (data: {
-          companyDescription?: string | null;
-          investmentDescription?: string | null;
-        }) => {
-          const text =
-            data.companyDescription ?? data.investmentDescription ?? null;
-          setCompanyDesc({ status: "loaded", text: text ?? null });
-        }
-      )
-      .catch(() => setCompanyDesc((s) => ({ ...s, status: "error" })));
-  }, [companyDescExpanded, item.symbol, companyDesc.status]);
+  const handleToggleCompanyDesc = useCallback(() => {
+    setCompanyDescExpanded((prev) => {
+      const next = !prev;
+      if (next) {
+        setCompanyDesc((s) => {
+          if (s.status !== "idle" || !item.symbol) return s;
+          const startedAt = Date.now();
+          // Panel open animation takes ~300ms, and local API calls can resolve
+          // in well under that — enforce a minimum visible duration so the
+          // loading skeleton is never swapped out before a user can see it.
+          const MIN_LOADING_MS = 450;
+          fetch(`/api/company-description?symbol=${encodeURIComponent(item.symbol)}`)
+            .then((r) => r.json())
+            .then(
+              (data: {
+                companyDescription?: string | null;
+                investmentDescription?: string | null;
+              }) => {
+                const text =
+                  data.companyDescription ?? data.investmentDescription ?? null;
+                const elapsed = Date.now() - startedAt;
+                const delay = Math.max(0, MIN_LOADING_MS - elapsed);
+                setTimeout(() => {
+                  setCompanyDesc({ status: "loaded", text: text ?? null });
+                }, delay);
+              }
+            )
+            .catch(() => {
+              const elapsed = Date.now() - startedAt;
+              const delay = Math.max(0, MIN_LOADING_MS - elapsed);
+              setTimeout(() => {
+                setCompanyDesc((s2) => ({ ...s2, status: "error" }));
+              }, delay);
+            });
+          return { ...s, status: "loading" };
+        });
+      }
+      return next;
+    });
+  }, [item.symbol]);
 
   const handleClosePanel = useCallback(async (panelId: string) => {
     const el = document.getElementById(panelId);
@@ -364,7 +387,7 @@ export default function StockResultCard({
             aria-expanded={companyDescExpanded}
             aria-label="Toggle company description"
             title="Company description"
-            onClick={() => setCompanyDescExpanded((prev) => !prev)}
+            onClick={handleToggleCompanyDesc}
           >
             <i className="bi bi-info-circle" aria-hidden />
             <span className="stock-card__company-info-label" aria-hidden>About</span>

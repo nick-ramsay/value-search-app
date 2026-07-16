@@ -200,7 +200,7 @@ function ValueScoreHistoryChart({
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#7c3aed" />
+              <stop offset="0%" stopColor="#00A87C" />
               <stop offset="100%" stopColor="#8b5cf6" />
             </linearGradient>
           </defs>
