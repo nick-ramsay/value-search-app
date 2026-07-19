@@ -61,6 +61,12 @@ export async function GET(request: Request) {
             record.priceLastUpdated = snapshot.lastUpdated;
           }
         }
+        // Industry/sector/country live in stock-quotes, not the assessment doc.
+        if (snapshot) {
+          record.industry = record.industry ?? snapshot.industry;
+          record.sector = record.sector ?? snapshot.sector;
+          record.country = record.country ?? snapshot.country;
+        }
       }
       return record;
     });

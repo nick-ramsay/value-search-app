@@ -302,6 +302,31 @@ export default function CardNotes({
           <p className="stock-card__muted small mt-2">Loading…</p>
         ) : (
           <>
+            <div className="stock-card__note-form">
+              <textarea
+                ref={textareaRef}
+                className="stock-card__note-input"
+                placeholder="Write a note…"
+                value={newText}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                disabled={submitting}
+                aria-label="New note"
+                rows={2}
+              />
+              <div className="stock-card__note-form-footer">
+                <span className="stock-card__note-hint">⌘↵ to save</span>
+                <button
+                  type="button"
+                  className="stock-card__action stock-card__action--primary stock-card__action--compact"
+                  onClick={addNote}
+                  disabled={submitting || !newText.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
             {notesOldestFirst.length > 0 && (
               <ul className="stock-card__notes-list">
                 {notesOldestFirst.map((note) => (
@@ -333,34 +358,9 @@ export default function CardNotes({
 
             {notesOldestFirst.length === 0 && (
               <p className="stock-card__muted stock-card__notes-empty">
-                No notes yet — add one below.
+                No notes yet — add one above.
               </p>
             )}
-
-            <div className="stock-card__note-form">
-              <textarea
-                ref={textareaRef}
-                className="stock-card__note-input"
-                placeholder="Write a note…"
-                value={newText}
-                onChange={handleTextareaChange}
-                onKeyDown={handleKeyDown}
-                disabled={submitting}
-                aria-label="New note"
-                rows={2}
-              />
-              <div className="stock-card__note-form-footer">
-                <span className="stock-card__note-hint">⌘↵ to save</span>
-                <button
-                  type="button"
-                  className="stock-card__action stock-card__action--primary stock-card__action--compact"
-                  onClick={addNote}
-                  disabled={submitting || !newText.trim()}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>

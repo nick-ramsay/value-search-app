@@ -343,7 +343,16 @@ export default function StockResultCard({
 
   const handleCardClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
+    // Interactive controls (incl. dedicated close buttons) handle their own behavior.
     if (target.closest('button, a, input, select, textarea, label, [data-bs-toggle], [role="button"]')) return;
+    // Clicks inside an open panel's content must not close it — only the panel's
+    // own close button (handled above) should. Covers the Bootstrap collapse
+    // panels and the React-driven company-description panel.
+    if (target.closest('.collapse, .stock-card__company-desc-outer')) return;
+    // Only a click on genuinely empty space closes the panels: a structural
+    // container element, never a piece of content (text, icon, image, badge…).
+    const STRUCTURAL_TAGS = new Set(["ARTICLE", "HEADER", "SECTION", "DIV"]);
+    if (!STRUCTURAL_TAGS.has(target.tagName)) return;
     closeAllOpenPanels();
   }, [closeAllOpenPanels]);
 

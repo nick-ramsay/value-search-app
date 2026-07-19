@@ -324,6 +324,13 @@ async function getValues(
           record.priceLastUpdated = snapshot.lastUpdated;
         }
       }
+      // Industry/sector/country live in stock-quotes, not the assessment doc.
+      // Prefer the assessment value when present, else fall back to the quote.
+      if (snapshot) {
+        record.industry = record.industry ?? snapshot.industry;
+        record.sector = record.sector ?? snapshot.sector;
+        record.country = record.country ?? snapshot.country;
+      }
     }
     return record;
   });

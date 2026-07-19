@@ -46,12 +46,12 @@
   --text-tertiary: rgba(18, 22, 30, 0.38);
   --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background – soft stone with a teal/violet undertone (echoes the signature gradient) */
-  --bg-start: #E9F3EE;
-  --bg-mid: #E9EAF1;
-  --bg-end: #ECE7F5;
-  --bg-glow-1: rgba(0, 168, 124, 0.20);
-  --bg-glow-2: rgba(108, 76, 224, 0.16);
+  /* Background – "Slate & Sapphire": cool near-white canvas, barely-there gradient */
+  --bg-start: #F6F8FB;
+  --bg-mid: #EFF2F7;
+  --bg-end: #EAEEF5;
+  --bg-glow-1: rgba(58, 112, 200, 0.10); /* cool sapphire */
+  --bg-glow-2: rgba(96, 100, 165, 0.07); /* slate-violet */
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -99,12 +99,12 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Near-black with teal/violet undertones – deep, moody, still dark */
-    --bg-start: #071612;
-    --bg-mid: #0F0F1C;
-    --bg-end: #160E22;
-    --bg-glow-1: rgba(0, 217, 163, 0.24);
-    --bg-glow-2: rgba(156, 135, 255, 0.22);
+    /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
+    --bg-start: #0E141F;
+    --bg-mid: #121826;
+    --bg-end: #161C2B;
+    --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
+    --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
 
     --dropdown-bg: rgba(28, 30, 40, 0.95);
     --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -144,12 +144,12 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Near-black with teal/violet undertones – deep, moody, still dark */
-  --bg-start: #071612;
-  --bg-mid: #0F0F1C;
-  --bg-end: #160E22;
-  --bg-glow-1: rgba(0, 217, 163, 0.24);
-  --bg-glow-2: rgba(156, 135, 255, 0.22);
+  /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
+  --bg-start: #0E141F;
+  --bg-mid: #121826;
+  --bg-end: #161C2B;
+  --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
+  --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
 
   --dropdown-bg: rgba(28, 30, 40, 0.95);
   --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -180,6 +180,9 @@ body {
 
 body {
   min-height: 100vh;
+  /* dvh tracks the *visible* viewport, so mobile browser toolbars don't
+     leave blank space below the content. vh above is the fallback. */
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 12% 15%, var(--bg-glow-1), transparent 45%),
     radial-gradient(circle at 88% 85%, var(--bg-glow-2), transparent 45%),
@@ -193,6 +196,13 @@ body {
 }
 
 
+
+/* Prefer the dynamic viewport height so mobile browser chrome (address bar)
+   doesn't force the page taller than the screen, leaving blank space at the
+   bottom. Overrides Bootstrap's .min-vh-100 (which uses 100vh). */
+.min-vh-100 {
+  min-height: 100dvh !important;
+}
 
 /* Glass utility – taskboard-style */
 .glass {
@@ -1145,7 +1155,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
     gap: 0.75rem;
   }
 
-  .stock-card__target-input,
   .stock-card__status-select {
     font-size: 16px; /* prevents iOS zoom on focus */
   }
@@ -1483,27 +1492,6 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   padding: 0.5rem var(--stock-card-side-padding) 0.5rem;
   background: var(--glass-bg-subtle);
   min-width: 0;
-  border-left: 3px solid var(--glass-border);
-}
-
-.stock-card__panel--trends .stock-card__panel-inner {
-  border-left-color: color-mix(in srgb, var(--accent) 55%, var(--glass-border));
-}
-
-.stock-card__panel--assessment .stock-card__panel-inner {
-  border-left-color: #8b5cf6;
-}
-
-.stock-card__panel--portfolio .stock-card__panel-inner {
-  border-left-color: color-mix(in srgb, var(--success) 50%, var(--glass-border));
-}
-
-.stock-card__panel--notes .stock-card__panel-inner {
-  border-left-color: color-mix(in srgb, #f59e0b 50%, var(--glass-border));
-}
-
-.stock-card__panel--company-desc .stock-card__panel-inner {
-  border-left: none;
 }
 
 /* Smoother accordion transitions (cards + other Bootstrap collapse elements) */
@@ -1605,6 +1593,16 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .stock-card__trends-view-toggle.btn-group .btn:last-child {
   border-radius: 0 999px 999px 0;
   border-left-width: 0;
+}
+
+/* Active history-toggle pill uses the signature accent gradient (matches the Sign in button) */
+.stock-card__trends-view-toggle.btn-group .btn-primary,
+.stock-card__trends-view-toggle.btn-group .btn-primary:hover,
+.stock-card__trends-view-toggle.btn-group .btn-primary:focus,
+.stock-card__trends-view-toggle.btn-group .btn-primary:active {
+  background: var(--accent-gradient) !important;
+  border-color: transparent !important;
+  color: #fff !important;
 }
 
 .stock-card__assessment-text {
@@ -1947,15 +1945,6 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
-}
-
-.stock-card__user-label-hint {
-  font-size: 0.68rem;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--text-tertiary);
-  opacity: 0.75;
 }
 
 /* ---- Status segmented buttons ---- */
@@ -3428,6 +3417,7 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 5rem);
+  min-height: calc(100dvh - 5rem);
 }
 
 .page-loading-results-card {
@@ -3442,6 +3432,7 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: calc(100vh - 18rem);
+  min-height: calc(100dvh - 18rem);
 }
 
 /* Results count */

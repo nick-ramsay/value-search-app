@@ -295,9 +295,23 @@ async function getPriceFromStockQuotes(
 
 /** Fetch prices from stock-quotes (quote.price) for many symbols. Returns map of uppercase symbol -> price. */
 export type QuotePriceSnapshot = {
-  price: number;
+  price?: number;
   lastUpdated?: string;
+  industry?: string;
+  sector?: string;
+  country?: string;
 };
+
+/** Read a trimmed non-empty string field from a stock-quotes document. */
+function readStringField(
+  doc: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const v = doc[key];
+  if (typeof v !== "string") return undefined;
+  const t = v.trim();
+  return t === "" ? undefined : t;
+}
 
 export async function getPricesBySymbols(
   symbols: string[]
@@ -334,11 +348,22 @@ export async function getPricesBySymbols(
     const sym = (typeof d.symbol === "string" ? d.symbol : typeof d.ticker === "string" ? d.ticker : typeof (d as { Symbol?: string }).Symbol === "string" ? (d as { Symbol: string }).Symbol : "") as string;
     if (!sym) continue;
     const num = readPriceFromQuoteDoc(d);
-    if (num !== undefined) {
-      const lastUpdated = readLastUpdatedFromQuoteDoc(d);
-      map[sym.toUpperCase()] = lastUpdated
-        ? { price: num, lastUpdated }
-        : { price: num };
+    const industry = readStringField(d, "industry");
+    const sector = readStringField(d, "sector");
+    const country = readStringField(d, "country");
+    // Include the entry whenever we have any usable data (price and/or context),
+    // so industry/sector/country enrich the card even when a price is missing.
+    if (num !== undefined || industry || sector || country) {
+      const snapshot: QuotePriceSnapshot = {};
+      if (num !== undefined) {
+        snapshot.price = num;
+        const lastUpdated = readLastUpdatedFromQuoteDoc(d);
+        if (lastUpdated) snapshot.lastUpdated = lastUpdated;
+      }
+      if (industry) snapshot.industry = industry;
+      if (sector) snapshot.sector = sector;
+      if (country) snapshot.country = country;
+      map[sym.toUpperCase()] = snapshot;
     }
   }
   return map;

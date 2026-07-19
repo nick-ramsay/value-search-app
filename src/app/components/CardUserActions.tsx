@@ -386,9 +386,7 @@ export default function CardUserActions({
         {showBuyTargetInput ? (
           <div className="stock-card__user-form stock-card__user-form--target">
             <label htmlFor={`buy-target-${cardId}`} className="stock-card__user-label">
-              Buy target
-              <span className="stock-card__user-label-hint">saves on blur</span>
-            </label>
+              Buy target            </label>
             <div className="stock-card__target-row">
               <div className="stock-card__target-input-wrap">
                 <span className="stock-card__target-input-prefix" aria-hidden="true">
@@ -454,9 +452,7 @@ export default function CardUserActions({
         {showSellTargetInput ? (
           <div className="stock-card__user-form stock-card__user-form--target">
             <label htmlFor={`sell-target-${cardId}`} className="stock-card__user-label">
-              Sell target
-              <span className="stock-card__user-label-hint">saves on blur</span>
-            </label>
+              Sell target            </label>
             <div className="stock-card__target-row">
               <div className="stock-card__target-input-wrap">
                 <span className="stock-card__target-input-prefix" aria-hidden="true">
