@@ -267,32 +267,6 @@ function readLastUpdatedFromQuoteDoc(
   return readQuoteLastUpdatedFromAny(doc);
 }
 
-/** Fetch price from stock-quotes collection (quote.price) for one symbol. */
-async function getPriceFromStockQuotes(
-  db: { collection: (name: string) => { findOne: (filter: object) => Promise<Record<string, unknown> | null> } },
-  symbol: string
-): Promise<number | undefined> {
-  const trimmed = symbol.trim();
-  if (!trimmed) return undefined;
-  const coll = getStockQuotesCollectionName();
-  const exact = trimmed.toUpperCase();
-  const filter = {
-    $or: [
-      { symbol: exact },
-      { symbol: trimmed },
-      { symbol: { $regex: `^${escapeRegExp(trimmed)}$`, $options: "i" } },
-      { ticker: exact },
-      { ticker: trimmed },
-      { ticker: { $regex: `^${escapeRegExp(trimmed)}$`, $options: "i" } },
-      { Symbol: exact },
-      { Symbol: trimmed },
-    ],
-  };
-  const doc = await db.collection(coll).findOne(filter);
-  if (!doc) return undefined;
-  return readPriceFromQuoteDoc(doc);
-}
-
 /** Fetch prices from stock-quotes (quote.price) for many symbols. Returns map of uppercase symbol -> price. */
 export type QuotePriceSnapshot = {
   price?: number;
@@ -403,7 +377,23 @@ export async function getValueBySymbol(
   if (!doc) return null;
 
   const record = docToValueRecord(doc);
-  const price = await getPriceFromStockQuotes(db, trimmed);
-  if (price !== undefined) record.price = price;
+
+  // Price, industry/sector/country all live in stock-quotes, not the
+  // assessment doc — enrich the same way the search results list does,
+  // preferring the assessment's own value when present.
+  const sym = trimmed.toUpperCase();
+  const baseSym = sym.includes(".") ? sym.split(".")[0] : sym;
+  const priceMap = await getPricesBySymbols([trimmed]);
+  const snapshot = priceMap[sym] ?? priceMap[baseSym];
+  if (snapshot) {
+    if (snapshot.price !== undefined) {
+      record.price = snapshot.price;
+      if (snapshot.lastUpdated) record.priceLastUpdated = snapshot.lastUpdated;
+    }
+    record.industry = record.industry ?? snapshot.industry;
+    record.sector = record.sector ?? snapshot.sector;
+    record.country = record.country ?? snapshot.country;
+  }
+
   return record;
 }

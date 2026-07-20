@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useId } from "react";
+import { Fragment, useState, useCallback, useRef, useId } from "react";
 import { useSession } from "next-auth/react";
 import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
@@ -402,13 +402,31 @@ export default function StockResultCard({
             <span className="stock-card__company-info-label" aria-hidden>About</span>
           </button>
         </div>
-        {(item.industry ?? item.sector ?? item.country) && (
-          <p className="stock-card__meta-row mb-0">
-            {[item.industry, item.sector, item.country]
-              .filter((v): v is string => typeof v === "string" && v.trim() !== "")
-              .join(" • ")}
-          </p>
-        )}
+        {(() => {
+          const metaItems = (
+            [
+              item.industry && { icon: "bi-building", label: "Industry", text: item.industry },
+              item.sector && { icon: "bi-diagram-3", label: "Sector", text: item.sector },
+              item.country && { icon: "bi-geo-alt", label: "Country", text: item.country },
+            ] as ({ icon: string; label: string; text: string } | false | undefined)[]
+          ).filter((m): m is { icon: string; label: string; text: string } => Boolean(m));
+
+          if (metaItems.length === 0) return null;
+
+          return (
+            <p className="stock-card__meta-row mb-0">
+              {metaItems.map((m, i) => (
+                <Fragment key={m.text}>
+                  {i > 0 && " • "}
+                  <span title={m.label}>
+                    <i className={`bi ${m.icon} stock-card__meta-icon`} aria-hidden />
+                    {m.text}
+                  </span>
+                </Fragment>
+              ))}
+            </p>
+          );
+        })()}
       </header>
 
       {/* Company description panel – React state–driven so Bootstrap accordion cannot close it when another panel opens */}

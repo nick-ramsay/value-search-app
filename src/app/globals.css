@@ -551,6 +551,12 @@ button.accordion-button.ai-accordion-button:focus-visible {
   margin-top: 0.1rem;
 }
 
+.stock-card__meta-icon {
+  font-size: 0.7rem;
+  opacity: 0.65;
+  margin-right: 0.3rem;
+}
+
 .stock-card__head-row .stock-card__title-text {
   overflow: hidden;
   text-overflow: ellipsis;

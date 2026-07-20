@@ -231,6 +231,85 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
   };
 });
 
+/**
+ * Industry/sector/country live in stock-quotes, not the assessment doc, and
+ * most assessment docs never got their own `industry` field backfilled (it's
+ * null). Filtering "exclude ETFs" against the assessment doc's own field
+ * therefore misses most ETFs. Resolve the actual set of ETF symbols from
+ * stock-quotes (the source of truth) so the exclusion works regardless of
+ * whether the assessment doc's industry field was populated.
+ */
+const getEtfSymbols = cache(async (): Promise<string[]> => {
+  const client = await clientPromise;
+  const dbName = process.env.MONGODB_DB;
+  if (!dbName) {
+    throw new Error("Missing MONGODB_URI in environment.");
+  }
+  const db = client.db(dbName);
+  const docs = await db
+    .collection(process.env.MONGODB_STOCK_QUOTES_COLLECTION ?? "stock-quotes")
+    .find({ industry: EXCLUDED_ETF_INDUSTRY }, { projection: { symbol: 1 } })
+    .toArray();
+  return docs
+    .map((doc) => (typeof doc.symbol === "string" ? doc.symbol.toUpperCase() : undefined))
+    .filter((s): s is string => Boolean(s));
+});
+
+/** Build the $and conditions shared by getValues and getValuesCount. */
+async function buildValueFilterConditions({
+  symbolFilter,
+  industry,
+  sector,
+  country,
+  excludeEtfs,
+  maSupport,
+}: {
+  symbolFilter?: string;
+  industry?: string;
+  sector?: string;
+  country?: string;
+  excludeEtfs?: boolean;
+  maSupport?: boolean;
+}): Promise<Record<string, unknown>[]> {
+  const conditions: Record<string, unknown>[] = [];
+
+  if (symbolFilter && symbolFilter.trim().length > 0) {
+    conditions.push({
+      symbol: {
+        $regex: `^${escapeRegExp(symbolFilter.trim())}$`,
+        $options: "i",
+      },
+    });
+  }
+
+  if (industry && industry.trim().length > 0) {
+    conditions.push({ industry });
+  } else if (excludeEtfs) {
+    // Belt-and-suspenders: exclude on the assessment doc's own field when
+    // present, and on the real stock-quotes-derived ETF symbol list, since
+    // the assessment doc's industry field is frequently unpopulated.
+    conditions.push({ industry: { $ne: EXCLUDED_ETF_INDUSTRY } });
+    const etfSymbols = await getEtfSymbols();
+    if (etfSymbols.length > 0) {
+      conditions.push({ symbol: { $nin: etfSymbols } });
+    }
+  }
+
+  if (sector && sector.trim().length > 0) {
+    conditions.push({ sector });
+  }
+
+  if (country && country.trim().length > 0) {
+    conditions.push({ country });
+  }
+
+  if (maSupport) {
+    conditions.push({ "valueSearchScore.movingAverageSupport": { $gte: 1 } });
+  }
+
+  return conditions;
+}
+
 async function getValues(
   page: number,
   {
@@ -267,32 +346,15 @@ async function getValues(
 
   const db = client.db(dbName);
   const skip = (page - 1) * PAGE_SIZE;
-  const filter: Record<string, unknown> = {};
-
-  if (symbolFilter && symbolFilter.trim().length > 0) {
-    filter.symbol = {
-      $regex: `^${escapeRegExp(symbolFilter.trim())}$`,
-      $options: "i",
-    };
-  }
-
-  if (industry && industry.trim().length > 0) {
-    filter.industry = industry;
-  } else if (excludeEtfs) {
-    filter.industry = { $ne: EXCLUDED_ETF_INDUSTRY };
-  }
-
-  if (sector && sector.trim().length > 0) {
-    filter.sector = sector;
-  }
-
-  if (country && country.trim().length > 0) {
-    filter.country = country;
-  }
-
-  if (maSupport) {
-    filter["valueSearchScore.movingAverageSupport"] = { $gte: 1 };
-  }
+  const conditions = await buildValueFilterConditions({
+    symbolFilter,
+    industry,
+    sector,
+    country,
+    excludeEtfs,
+    maSupport,
+  });
+  const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
   // Fetch a page of assessments sorted by aiRatingScore, name, symbol (no lookup yet)
   const docs = await db
@@ -370,32 +432,15 @@ async function getValuesCount({
   }
 
   const db = client.db(dbName);
-  const filter: Record<string, unknown> = {};
-
-  if (symbolFilter && symbolFilter.trim().length > 0) {
-    filter.symbol = {
-      $regex: `^${escapeRegExp(symbolFilter.trim())}$`,
-      $options: "i",
-    };
-  }
-
-  if (industry && industry.trim().length > 0) {
-    filter.industry = industry;
-  } else if (excludeEtfs) {
-    filter.industry = { $ne: EXCLUDED_ETF_INDUSTRY };
-  }
-
-  if (sector && sector.trim().length > 0) {
-    filter.sector = sector;
-  }
-
-  if (country && country.trim().length > 0) {
-    filter.country = country;
-  }
-
-  if (maSupport) {
-    filter["valueSearchScore.movingAverageSupport"] = { $gte: 1 };
-  }
+  const conditions = await buildValueFilterConditions({
+    symbolFilter,
+    industry,
+    sector,
+    country,
+    excludeEtfs,
+    maSupport,
+  });
+  const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
   const totalCount = await db.collection(aiAssessmentsCollection).countDocuments(filter);
   return totalCount;
