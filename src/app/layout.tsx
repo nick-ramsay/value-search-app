@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "./bootstrap-client";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
+import { DatadogAppRouter } from "@datadog/browser-rum-nextjs";
 import ThemeInitScript from "./components/ThemeInitScript";
 import SessionProvider from "./components/SessionProvider";
 import LoginModal from "./components/LoginModal";
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={plexMono.variable}>
+        <DatadogAppRouter />
         <ThemeInitScript />
         <SessionProvider>
           <ScrollToTop />
