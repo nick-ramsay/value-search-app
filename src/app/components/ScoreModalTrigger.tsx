@@ -69,20 +69,36 @@ export default function ScoreModalTrigger({
             />
           </div>
           <div className="modal-body">
-            <p className="mb-3 small score-breakdown-summary">
-              {valueSearchScore.totalCalculatedPoints ?? 0} / {valueSearchScore.totalPossiblePoints} points (
-              {(valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%)
-            </p>
-            <ul className="list-group list-group-flush score-breakdown-list">
+            <div className="score-breakdown-summary">
+              <span className="score-breakdown-summary__pct">
+                {(valueSearchScore.calculatedScorePercentage * 100).toFixed(0)}%
+              </span>
+              <span className="score-breakdown-summary__detail">
+                {valueSearchScore.totalCalculatedPoints ?? 0} of {valueSearchScore.totalPossiblePoints} points
+              </span>
+            </div>
+            <ul className="score-breakdown-list">
               {VALUE_SCORE_BREAKDOWN.map(({ key, label }) => {
                 const attempted = valueSearchScore[`${key}Attempted`];
                 const value = valueSearchScore[key];
                 const points = typeof value === "number" ? value : 0;
                 if (!attempted) return null;
+                const passed = points > 0;
                 return (
-                  <li key={key} className="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{label}</span>
-                    <span>{points > 0 ? "✅" : "❌"} {points} pt{points !== 1 ? "s" : ""}</span>
+                  <li
+                    key={key}
+                    className={`score-breakdown-item${passed ? " score-breakdown-item--pass" : " score-breakdown-item--fail"}`}
+                  >
+                    <span className="score-breakdown-item__label">
+                      <i
+                        className={`bi ${passed ? "bi-check-circle-fill" : "bi-circle"} score-breakdown-item__icon`}
+                        aria-hidden
+                      />
+                      {label}
+                    </span>
+                    <span className="score-breakdown-item__points">
+                      {points} pt{points !== 1 ? "s" : ""}
+                    </span>
                   </li>
                 );
               })}

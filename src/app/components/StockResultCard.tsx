@@ -623,15 +623,17 @@ export default function StockResultCard({
               <i className="bi bi-chevron-up" aria-hidden />
             </button>
           </div>
-          {item.assessment ? (
+          {item.assessment || item.aiAssessmentLastUpdated ? (
             <div className="stock-card__assessment-text stock-card__assessment-markdown">
-              <ReactMarkdown>{item.assessment}</ReactMarkdown>
+              {item.assessment ? (
+                <ReactMarkdown>{item.assessment}</ReactMarkdown>
+              ) : null}
+              {item.aiAssessmentLastUpdated ? (
+                <p className="stock-card__assessment-updated">
+                  <i className="bi bi-clock-history" aria-hidden /> Updated <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
+                </p>
+              ) : null}
             </div>
-          ) : null}
-          {item.aiAssessmentLastUpdated ? (
-            <p className="stock-card__assessment-updated">
-              Updated <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
-            </p>
           ) : null}
 
           {/* Data used for AI assessment – logged in only; header matches View trends / AI Assessment / Edit */}

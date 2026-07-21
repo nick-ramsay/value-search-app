@@ -27,6 +27,13 @@
   --accent-glass: rgba(30, 138, 114, 0.13);
   --accent-soft: rgba(30, 138, 114, 0.13);
 
+  /* Unified text-input focus highlight — soft verdigris ring + gentle accent-tinted lift.
+     Shared by every text input so active fields feel identical app-wide. */
+  --input-focus-border: var(--accent);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 12px -6px rgba(30, 138, 114, 0.45);
+  --input-focus-border-danger: var(--danger-clear);
+  --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 12px -6px rgba(196, 32, 44, 0.4);
+
   /* Signature gradient – electric teal → violet, used sparingly for the one bold moment */
   --gradient-start: #00A87C;
   --gradient-end: #6C4CE0;
@@ -83,6 +90,11 @@
     --accent-glass: rgba(40, 191, 164, 0.22);
     --accent-soft: rgba(40, 191, 164, 0.22);
 
+    --input-focus-border: var(--accent);
+    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+    --input-focus-border-danger: var(--danger-clear);
+    --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
+
     --gradient-start: #00D9A3;
     --gradient-end: #9C87FF;
     --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
@@ -127,6 +139,11 @@
   --accent-hover: #33CEAE;
   --accent-glass: rgba(40, 191, 164, 0.22);
   --accent-soft: rgba(40, 191, 164, 0.22);
+
+  --input-focus-border: var(--accent);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+  --input-focus-border-danger: var(--danger-clear);
+  --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
   --gradient-start: #00D9A3;
   --gradient-end: #9C87FF;
@@ -326,6 +343,10 @@ button.accordion-button.ai-accordion-button:focus-visible {
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
   color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow-lg);
+  overflow: hidden;
 }
 
 /* Modal backdrop – taskboard-style */
@@ -335,12 +356,18 @@ button.accordion-button.ai-accordion-button:focus-visible {
   background-color: rgba(0, 0, 0, 0.35);
 }
 
-/* Modal headers – strong frosted blur, no divider */
+/* Modal header – transparent over the glass content, hairline divider */
 .score-breakdown-modal .modal-header {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background: transparent;
+  border-bottom: 1px solid var(--glass-border-subtle);
+  padding: 1.15rem 1.4rem;
   color: var(--text-primary);
+}
+
+.score-breakdown-modal .modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Close button: dark X in light theme, light X in dark theme */
@@ -366,17 +393,86 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .score-breakdown-modal .modal-body {
   color: var(--text-primary);
-  background: var(--glass-bg-strong);
-}
-
-.score-breakdown-modal .score-breakdown-summary {
-  color: var(--text-secondary) !important;
-}
-
-.score-breakdown-modal .score-breakdown-list .list-group-item {
   background: transparent;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+
+/* Score summary – prominent accent percentage + muted caption */
+.score-breakdown-modal .score-breakdown-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 1.1rem;
+}
+
+.score-breakdown-modal .score-breakdown-summary__pct {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.score-breakdown-modal .score-breakdown-summary__detail {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Criteria checklist */
+.score-breakdown-modal .score-breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.score-breakdown-modal .score-breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.15rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.score-breakdown-modal .score-breakdown-item:last-child {
+  border-bottom: none;
+}
+
+.score-breakdown-modal .score-breakdown-item__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   color: var(--text-primary);
-  border-color: var(--glass-border-subtle);
+}
+
+.score-breakdown-modal .score-breakdown-item__icon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.score-breakdown-modal .score-breakdown-item--pass .score-breakdown-item__icon {
+  color: var(--accent);
+}
+
+.score-breakdown-modal .score-breakdown-item--fail .score-breakdown-item__icon {
+  color: var(--text-tertiary);
+}
+
+.score-breakdown-modal .score-breakdown-item--fail .score-breakdown-item__label {
+  color: var(--text-secondary);
+}
+
+.score-breakdown-modal .score-breakdown-item__points {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+}
+
+.score-breakdown-modal .score-breakdown-item--pass .score-breakdown-item__points {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Keep accordion arrow the same color when collapsed vs expanded.
@@ -1613,9 +1709,18 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .stock-card__assessment-text {
   margin: 0;
+  padding: 0.85rem 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 14px;
+}
+
+[data-theme="light"] .stock-card__assessment-text {
+  background: rgba(0, 0, 0, 0.025);
+  border-color: rgba(60, 60, 67, 0.14);
 }
 
 /* Markdown output inside the AI assessment panel */
@@ -1675,8 +1780,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   margin: 0.5em 0;
 }
 
-.stock-card__assessment-updated {
-  margin: 0.4rem 0 0;
+.stock-card__assessment-markdown .stock-card__assessment-updated {
+  margin: 1.15rem 0 0;
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--text-tertiary);
@@ -2247,8 +2352,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 .stock-card__target-input-wrap:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-glass);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
   outline: none;
 }
 
@@ -2553,8 +2658,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .stock-card__note-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-glass);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
 }
 
 .stock-card__note-form-footer {
@@ -2595,6 +2700,19 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: var(--text-secondary);
 }
 
+/* ============================================================
+   Unified text-input focus highlight
+   One source of truth (--input-focus-* tokens) for every text
+   field: search, targets, notes, auth forms, editable cells.
+   Soft verdigris ring + a gentle accent-tinted lift off the glass.
+   ============================================================ */
+.form-control:focus,
+textarea.form-control:focus {
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
+  outline: none;
+}
+
 /* Search input – taskboard-style glass */
 .search-input-glass {
   background: var(--glass-bg) !important;
@@ -2621,8 +2739,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .search-input-glass:focus {
   background: var(--glass-bg) !important;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-glass);
+  border-color: var(--input-focus-border) !important;
+  box-shadow: var(--input-focus-ring);
   outline: none;
 }
 
@@ -2635,8 +2753,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 [data-theme="light"] .search-input-glass:focus {
   background: #ffffff !important;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(30, 138, 114, 0.14);
+  border-color: var(--input-focus-border) !important;
+  box-shadow: var(--input-focus-ring);
 }
 
 /* Suggestions dropdown – taskboard-style glass */
@@ -3105,7 +3223,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 /* About page card – consistent prose inside glass-card */
 .about-page-card-body {
   font-size: 0.9rem;
-  line-height: 1.55;
+  line-height: 1.6;
+  padding: 0.5rem 1.5rem 1.25rem;
 }
 
 .about-page-card-body p {
@@ -3119,24 +3238,45 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .about-page-lead {
   color: var(--text-secondary);
-  margin-bottom: 1.25rem !important;
+  font-size: 0.95rem;
+  margin-bottom: 0 !important;
 }
 
+/* Sections separated by hairline dividers */
 .about-page-section {
-  margin-bottom: 1.25rem;
+  margin: 0;
+  padding: 1.4rem 0;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.about-page-section:first-of-type {
+  padding-top: 0.5rem;
 }
 
 .about-page-section:last-of-type {
-  margin-bottom: 0;
+  border-bottom: none;
+}
+
+[data-theme="light"] .about-page-section {
+  border-bottom-color: rgba(60, 60, 67, 0.12);
 }
 
 .about-page-section-title {
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.98rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  margin: 0 0 0.6rem 0;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 0.7rem 0;
+}
+
+.about-page-section-icon {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .about-page-section p:last-of-type:not(.about-page-note) {
@@ -3144,17 +3284,30 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 .about-page-list {
-  margin: 0 0 0.75rem 0;
-  padding-left: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
   color: var(--text-primary);
 }
 
 .about-page-list li {
-  margin-bottom: 0.5rem;
+  position: relative;
+  margin: 0;
+  padding-left: 1.4rem;
 }
 
-.about-page-list li:last-child {
-  margin-bottom: 0;
+.about-page-list li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .about-page-list strong {
@@ -3335,11 +3488,17 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 }
 
 [data-theme="light"] .label-toggle-btn--active {
-  background: rgba(34, 140, 132, 0.18);
-  border-color: rgba(34, 140, 132, 0.65);
-  color: #0e6b65;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(34, 140, 132, 0.22);
+  box-shadow: 0 1px 3px rgba(30, 138, 114, 0.28);
+}
+
+[data-theme="light"] .label-toggle-btn--active:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
 }
 
 /* Light theme: stronger outlining for accordion inputs */
@@ -3958,8 +4117,8 @@ a:hover {
 
 .glass-panel .form-control:focus {
   background: var(--glass-bg) !important;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-glass) !important;
+  border-color: var(--input-focus-border) !important;
+  box-shadow: var(--input-focus-ring) !important;
   outline: none;
 }
 
@@ -3970,7 +4129,7 @@ a:hover {
 
 [data-theme="light"] .glass-panel .form-control:focus {
   background: #ffffff !important;
-  border-color: var(--accent) !important;
+  border-color: var(--input-focus-border) !important;
 }
 
 /* Login page: back link to home */
@@ -4056,10 +4215,24 @@ a:hover {
 }
 
 /* About page: disclaimer icon */
+/* Important disclaimer – distinct warning card */
+.about-page-section.about-page-section--disclaimer {
+  margin-top: 0.4rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--danger-soft);
+  border-radius: 16px;
+  background: var(--danger-glass);
+}
+
+.about-page-section-title--disclaimer {
+  color: var(--danger-clear);
+}
+
 .about-page-disclaimer-icon {
-  margin-right: 0.35em;
-  color: var(--text-secondary);
-  vertical-align: -0.05em;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--danger-clear);
+  flex-shrink: 0;
 }
 
 /* Auth modal – same as score modal glass */
@@ -4088,8 +4261,8 @@ a:hover {
 }
 
 .login-modal .form-control:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glass);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
   outline: none;
 }
 
@@ -4109,8 +4282,8 @@ a:hover {
 }
 
 [data-theme="light"] .login-modal .form-control:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(30, 138, 114, 0.14);
+  border-color: var(--input-focus-border) !important;
+  box-shadow: var(--input-focus-ring);
   background: #ffffff !important;
 }
 
@@ -5146,8 +5319,8 @@ a:hover {
 }
 
 .monthly-balances-cell-input:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px var(--accent-glass) !important;
+  border-color: var(--input-focus-border) !important;
+  box-shadow: var(--input-focus-ring) !important;
   outline: none !important;
 }
 
@@ -5683,8 +5856,8 @@ a:hover {
 
 .note-delete-dialog__input:focus {
   outline: none;
-  border-color: var(--danger-clear);
-  box-shadow: 0 0 0 2px var(--danger-glass);
+  border-color: var(--input-focus-border-danger);
+  box-shadow: var(--input-focus-ring-danger);
 }
 
 .note-delete-dialog__footer {

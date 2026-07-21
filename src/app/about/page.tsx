@@ -11,69 +11,8 @@ export default function AboutPage() {
             <AboutHeader />
             <section className="card glass-card about-page-card mb-4 pt-3">
               <div className="card-body about-page-card-body">
-              <section className="about-page-section">
-              <h2 className="about-page-section-title">What is valuesearch.app?</h2>
-                <p className="about-page-lead mb-4">
-                  valuesearch.app is an application for exploring potential investment opportunities. 
-                  Powered by AI, it allows you to search for stocks by name or ticker symbol to get a 
-                  quick assessment of the stock's potential. 
-                </p>
-                </section>
-
-                <section className="about-page-section">
-                  <h2 className="about-page-section-title">How it works</h2>
-                  <p>
-                    Data from a variety of sources is fed into the{" "}
-                    <code className="about-page-code">Qwen3:30B</code> model, which
-                    analyses the data and offers its opinion about the investment
-                    opportunity.
-                  </p>
-                  <p>
-                    The model uses current quote data (for example, the latest stock
-                    price) together with a set of fundamentals data—including metrics
-                    such as Price-to-Earnings, Moving Averages, Price-to-Sales,
-                    Price-to-Book, and others—to conduct its analysis.
-                  </p>
-                </section>
-
-                <section className="about-page-section">
-                  <h2 className="about-page-section-title">Data refresh schedule</h2>
-                  <ul className="about-page-list">
-                    <li>
-                      Quote data is updated daily at{" "}
-                      <strong>5:00 PM US Eastern Time</strong>, Monday through Friday.
-                    </li>
-                    <li>
-                      Fundamentals data is updated once per week at{" "}
-                      <strong>5:00 PM US Eastern Time</strong> on Mondays.
-                    </li>
-                    <li>
-                      AI assessments are refreshed over the weekend, beginning at{" "}
-                      <strong>12:00 AM US Eastern Time</strong> on Saturdays.
-                    </li>
-                  </ul>
-                </section>
-
-                <section className="about-page-section">
-                  <h2 className="about-page-section-title">Accounts and portfolios</h2>
-                  <p>
-                    Users can create accounts to organise portfolios into{" "}
-                    <strong>Avoid</strong>, <strong>Watch</strong>, <strong>Own</strong>,
-                    and <strong>Hold</strong> categories while taking notes, setting
-                    price targets, and adding labels.
-                  </p>
-                  <p>
-                    Approved accounts also gain access to the raw quote and fundamentals
-                    data that the model uses when forming its assessments.
-                  </p>
-                  <p className="about-page-note mb-0">
-                    Account access is subject to approval before full functionality is
-                    enabled.
-                  </p>
-                </section>
-
-                <section className="about-page-section">
-                  <h2 className="about-page-section-title">
+                <section className="about-page-section about-page-section--disclaimer">
+                  <h2 className="about-page-section-title about-page-section-title--disclaimer">
                     <i className="bi bi-exclamation-triangle-fill about-page-disclaimer-icon" aria-hidden />
                     Important Disclaimer
                   </h2>
@@ -93,6 +32,121 @@ export default function AboutPage() {
                     to buy, sell, or hold any security. Always do your own research and
                     consider consulting a qualified financial advisor before making
                     investment decisions.
+                  </p>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-search about-page-section-icon" aria-hidden />
+                    What is valuesearch.app?
+                  </h2>
+                  <p className="about-page-lead mb-0">
+                    valuesearch.app is an application for exploring potential investment
+                    opportunities. Powered by AI, it lets you search for stocks by name
+                    or ticker symbol to get a quick assessment of a stock&apos;s potential.
+                  </p>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-cpu about-page-section-icon" aria-hidden />
+                    How it works
+                  </h2>
+                  <p>
+                    Data from a variety of sources is fed into the{" "}
+                    <code className="about-page-code">gemma3:12b</code> model, which
+                    analyses the data and offers its opinion about the investment
+                    opportunity.
+                  </p>
+                  <p>
+                    The model uses current quote data (for example, the latest stock
+                    price) together with a set of fundamentals data—including metrics
+                    such as Price-to-Earnings, Moving Averages, Price-to-Sales,
+                    Price-to-Book, and others—to conduct its analysis. Where available,
+                    it also weighs a broader assessment of the stock&apos;s sector and
+                    industry to frame the wider market context.
+                  </p>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-arrow-repeat about-page-section-icon" aria-hidden />
+                    Data refresh schedule
+                  </h2>
+                  <ul className="about-page-list">
+                    <li>
+                      Quote data is updated each weekday at{" "}
+                      <strong>6:00 PM US Eastern Time</strong>, Monday through Friday.
+                    </li>
+                    <li>
+                      Fundamentals data is updated once per week at{" "}
+                      <strong>6:00 PM US Eastern Time</strong> on Fridays.
+                    </li>
+                    <li>
+                      AI assessments are refreshed twice weekly at{" "}
+                      <strong>6:00 PM US Eastern Time</strong> on Wednesdays and Saturdays.
+                    </li>
+                  </ul>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-collection about-page-section-icon" aria-hidden />
+                    Accounts and portfolios
+                  </h2>
+                  <p>
+                    Users can create accounts to organise portfolios into{" "}
+                    <strong>Avoid</strong>, <strong>Watch</strong>, <strong>Queued</strong>,{" "}
+                    <strong>Own</strong>, and <strong>Hold</strong> categories while taking
+                    notes, setting price targets, and adding labels.
+                  </p>
+                  <p>
+                    Approved accounts also gain access to the raw quote and fundamentals
+                    data that the model uses when forming its assessments.
+                  </p>
+                  <p className="about-page-note mb-0">
+                    Account access is subject to approval before full functionality is
+                    enabled.
+                  </p>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-bar-chart-steps about-page-section-icon" aria-hidden />
+                    Sectors and industries
+                  </h2>
+                  <p>
+                    The <strong>Sectors and industries</strong> page presents
+                    AI-generated outlooks for market sectors and their sub-industries.
+                    Each write-up summarises the current investment climate for that
+                    area, and you can filter the list to focus on a single sector.
+                  </p>
+                  <p className="mb-0">
+                    These sector and industry assessments also feed back into individual
+                    stock analyses, giving the model broader market context when it
+                    evaluates a company.
+                  </p>
+                </section>
+
+                <section className="about-page-section">
+                  <h2 className="about-page-section-title">
+                    <i className="bi bi-table about-page-section-icon" aria-hidden />
+                    Monthly balances
+                  </h2>
+                  <p>
+                    The <strong>Monthly balances</strong> page is a personal net-worth
+                    tracker. You can record the balance of each of your accounts month by
+                    month and watch your overall position change over time.
+                  </p>
+                  <p>
+                    Accounts can be marked as assets or debts and held in different
+                    currencies; balances are automatically converted into a single{" "}
+                    <strong>Net (USD)</strong> figure using current exchange rates. You
+                    can import balances from a spreadsheet, export your data, archive old
+                    accounts, and exclude specific accounts from the net total.
+                  </p>
+                  <p className="about-page-note mb-0">
+                    This page requires a signed-in, approved account.
                   </p>
                 </section>
               </div>

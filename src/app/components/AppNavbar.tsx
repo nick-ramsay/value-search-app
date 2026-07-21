@@ -47,6 +47,13 @@ export default function AppNavbar({
 
   const authDropdownItems = (
     <>
+      {pathname !== "/" && (
+        <li>
+          <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-house" aria-hidden /> Home
+          </Link>
+        </li>
+      )}
       {pathname !== "/portfolio" && (
         <li>
           <Link href="/portfolio" className="dropdown-item d-flex align-items-center gap-2 py-2">
@@ -65,13 +72,6 @@ export default function AppNavbar({
         <li>
           <Link href="/sector-assessments" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-bar-chart-steps" aria-hidden /> Sector assessments
-          </Link>
-        </li>
-      )}
-      {pathname !== "/" && (
-        <li>
-          <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
-            <i className="bi bi-house" aria-hidden /> Home
           </Link>
         </li>
       )}
