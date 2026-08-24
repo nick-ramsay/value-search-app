@@ -24,8 +24,11 @@ export default function AppNavbar({
   const isPortfolio = pathname === "/portfolio";
   const isMonthlyBalances = pathname === "/monthly-balances";
   const isSectorAssessments = pathname === "/sector-assessments";
+  const isEconomyAssessment = pathname === "/economy-assessment";
   const hideNavbarSearch =
-    pathname?.startsWith("/monthly-balances") === true || isSectorAssessments;
+    pathname?.startsWith("/monthly-balances") === true ||
+    isSectorAssessments ||
+    isEconomyAssessment;
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -47,13 +50,6 @@ export default function AppNavbar({
 
   const authDropdownItems = (
     <>
-      {pathname !== "/" && (
-        <li>
-          <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
-            <i className="bi bi-house" aria-hidden /> Home
-          </Link>
-        </li>
-      )}
       {pathname !== "/portfolio" && (
         <li>
           <Link href="/portfolio" className="dropdown-item d-flex align-items-center gap-2 py-2">
@@ -75,11 +71,23 @@ export default function AppNavbar({
           </Link>
         </li>
       )}
+      {!isEconomyAssessment && (
+        <li>
+          <Link href="/economy-assessment" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-globe-americas" aria-hidden /> Economy assessment
+          </Link>
+        </li>
+      )}
       <li className="px-2 py-1">
         <span className="dropdown-item-text small fw-semibold text-muted">Theme</span>
       </li>
       <ThemeSwitcher inline />
       <li><hr className="dropdown-divider my-2" /></li>
+      <li>
+        <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
+          <i className="bi bi-house" aria-hidden /> Home
+        </Link>
+      </li>
       {pathname !== "/about" && (
         <li>
           <Link href="/about" className="dropdown-item d-flex align-items-center gap-2 py-2">
@@ -106,10 +114,22 @@ export default function AppNavbar({
       </li>
       <ThemeSwitcher inline />
       <li><hr className="dropdown-divider my-2" /></li>
+      <li>
+        <Link href="/" className="dropdown-item d-flex align-items-center gap-2 py-2">
+          <i className="bi bi-house" aria-hidden /> Home
+        </Link>
+      </li>
       {!isSectorAssessments && (
         <li>
           <Link href="/sector-assessments" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-bar-chart-steps" aria-hidden /> Sectors
+          </Link>
+        </li>
+      )}
+      {!isEconomyAssessment && (
+        <li>
+          <Link href="/economy-assessment" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-globe-americas" aria-hidden /> Economy
           </Link>
         </li>
       )}
@@ -193,6 +213,14 @@ export default function AppNavbar({
             ) : status === "unauthenticated" ? (
               <div className="d-none d-sm-flex align-items-center gap-2">
                 <ThemeSwitcher />
+                <Link
+                  href="/"
+                  className="btn btn-sm theme-switcher-btn"
+                  aria-label="Home"
+                  title="Home"
+                >
+                  <i className="bi bi-house" aria-hidden />
+                </Link>
                 {!isSectorAssessments && (
                   <Link
                     href="/sector-assessments"
@@ -202,6 +230,17 @@ export default function AppNavbar({
                   >
                     <i className="bi bi-bar-chart-steps" aria-hidden />
                     <span className="navbar-btn-label">Sectors</span>
+                  </Link>
+                )}
+                {!isEconomyAssessment && (
+                  <Link
+                    href="/economy-assessment"
+                    className="btn btn-sm theme-switcher-btn navbar-text-btn"
+                    aria-label="Economy assessment"
+                    title="Economy assessment"
+                  >
+                    <i className="bi bi-globe-americas" aria-hidden />
+                    <span className="navbar-btn-label">Economy</span>
                   </Link>
                 )}
                 {pathname !== "/about" && (

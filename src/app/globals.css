@@ -4353,11 +4353,7 @@ a:hover {
   font-weight: 700;
   letter-spacing: -0.03em;
   font-family: var(--font-plex-mono), ui-monospace, monospace;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
   display: inline-block;
 }
 
@@ -4578,6 +4574,107 @@ a:hover {
 }
 
 [data-theme="light"] .sector-assessments-loading {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Economy assessment page */
+.economy-assessment-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.economy-assessment-heading.monthly-balances-page-heading .monthly-balances-page-heading-body {
+  padding-bottom: 0.65rem;
+}
+
+.economy-assessment-lead {
+  margin-top: 0.45rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 30rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.economy-assessment-meta {
+  padding: 0.4rem 0 1rem;
+  text-align: center;
+}
+
+.economy-assessment-meta p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.economy-assessment-results .economy-assessment-results-body {
+  padding: 1.15rem 1.1rem 1.3rem;
+}
+
+.economy-assessment-empty {
+  padding: 1.75rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.economy-assessment-section-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.economy-assessment-section .economy-assessment-section-body {
+  padding: 1.15rem 1.1rem 1.3rem;
+}
+
+@media (min-width: 576px) {
+  .economy-assessment-section .economy-assessment-section-body {
+    padding: 1.25rem 1.35rem 1.45rem;
+  }
+}
+
+.economy-assessment-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 0.85rem;
+}
+
+.economy-assessment-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.economy-assessment-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.economy-assessment-loading {
+  border-radius: 16px;
+  border: 1px dashed var(--glass-border-subtle);
+  background: color-mix(in srgb, var(--glass-bg-subtle) 65%, transparent);
+}
+
+.economy-assessment-loading-body {
+  min-height: 12rem;
+  padding: 2.5rem 1.15rem;
+}
+
+[data-theme="light"] .economy-assessment-loading {
   background: rgba(255, 255, 255, 0.45);
   border-color: rgba(255, 255, 255, 0.4);
 }
