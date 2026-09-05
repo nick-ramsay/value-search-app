@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Suggestion = {
   symbol?: string;
@@ -28,14 +29,14 @@ export default function SearchBar({
   initialQuery = "",
   formAction = "/",
 }: SearchBarProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSelectedMatch, setIsSelectedMatch] = useState(false);
-  const formRef = useRef<HTMLFormElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const selectedRef = useRef<HTMLInputElement | null>(null);
 
   const trimmedQuery = query.trim();
   const hasQuery = trimmedQuery.length > 0;
@@ -44,16 +45,6 @@ export default function SearchBar({
     () => suggestions.filter((item) => formatSuggestionLabel(item).length > 0),
     [suggestions],
   );
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const shouldClear = window.sessionStorage.getItem("clearSearchInput") === "1";
-      if (shouldClear) {
-        setQuery("");
-        window.sessionStorage.removeItem("clearSearchInput");
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (!hasQuery || isSelectedMatch) {
@@ -95,6 +86,32 @@ export default function SearchBar({
     };
   }, [hasQuery, trimmedQuery, isSelectedMatch]);
 
+  /**
+   * Homepage (and other non-portfolio forms): add the selected symbol to the
+   * set of already-selected symbols in the URL (rather than replacing it),
+   * so multiple individual stocks can be selected at once. Every other
+   * current param (filters, page) is preserved as-is.
+   */
+  const addSymbolAndNavigate = (value: string) => {
+    const upper = value.trim().toUpperCase();
+    if (!upper) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    const existing = params.getAll("symbol").map((s) => s.toUpperCase());
+    if (!existing.includes(upper)) {
+      params.append("symbol", upper);
+    }
+    const qs = params.toString();
+    router.push(qs ? `${formAction}?${qs}` : formAction);
+
+    setQuery("");
+    setIsSelectedMatch(false);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
   const handleSelect = (suggestion: Suggestion) => {
     const value = pickSearchValue(suggestion);
     if (!value) {
@@ -124,31 +141,18 @@ export default function SearchBar({
       return;
     }
 
-    // Homepage and other non-portfolio forms:
-    // submit with the *selected* symbol as the exact match.
-    setQuery(value);
-    setIsSelectedMatch(true);
-    if (selectedRef.current) {
-      selectedRef.current.value = "1";
-    }
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("clearSearchInput", "1");
-    }
-    formRef.current?.requestSubmit();
+    addSymbolAndNavigate(value);
   };
 
   return (
     <form
-      ref={formRef}
       className="d-flex gap-2 position-relative w-100"
       role="search"
-      action={formAction}
-      method="GET"
       autoComplete="off"
       onSubmit={(event) => {
+        event.preventDefault();
         const value = trimmedQuery;
         if (!value) {
-          event.preventDefault();
           return;
         }
 
@@ -162,7 +166,6 @@ export default function SearchBar({
         }
 
         if (formAction === "/portfolio") {
-          event.preventDefault();
           if (typeof window !== "undefined") {
             window.dispatchEvent(
               new CustomEvent("portfolioSymbolSelected", {
@@ -179,12 +182,7 @@ export default function SearchBar({
           return;
         }
 
-        // Homepage (and other non-portfolio forms):
-        // Submit normally so the typed value is used for the query,
-        // then clear the input on the next load.
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem("clearSearchInput", "1");
-        }
+        addSymbolAndNavigate(value);
       }}
     >
       <input
@@ -198,9 +196,6 @@ export default function SearchBar({
         onChange={(event) => setQuery(event.target.value)}
         onInput={() => {
           setIsSelectedMatch(false);
-          if (selectedRef.current) {
-            selectedRef.current.value = "";
-          }
         }}
         onFocus={() => {
           if (filteredSuggestions.length > 0) {
@@ -211,7 +206,6 @@ export default function SearchBar({
           window.setTimeout(() => setIsOpen(false), 100);
         }}
       />
-      <input ref={selectedRef} type="hidden" name="selected" value={isSelectedMatch ? "1" : ""} />
       {isOpen || isLoading ? (
         <div
           className="position-absolute top-100 start-0 mt-2 w-100 suggestions-glass list-group list-group-flush"

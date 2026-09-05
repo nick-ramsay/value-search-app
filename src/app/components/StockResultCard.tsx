@@ -587,7 +587,7 @@ export default function StockResultCard({
           compact={compact}
         />
         <AssessmentPillButton collapseId={collapseId} ariaLabel="Toggle AI assessment" />
-        <div id={notesSlotId} />
+        <div id={notesSlotId} className="stock-card__notes-slot" />
         <div
           className="stock-card__actions-slot"
           id={`stock-card-actions-slot-${cardDomId}`}

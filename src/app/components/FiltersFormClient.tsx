@@ -1,8 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useHomeNavigation } from "./HomeNavigationContext";
 
 type Props = {
   industries: string[];
@@ -13,8 +12,7 @@ type Props = {
   selectedCountry: string;
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
-  query: string;
-  isSelected: boolean;
+  symbols: string[];
 };
 
 export default function FiltersFormClient({
@@ -26,11 +24,10 @@ export default function FiltersFormClient({
   selectedCountry,
   excludeEtfsEnabled,
   maSupportEnabled,
-  query,
-  isSelected,
+  symbols,
 }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition } = useHomeNavigation();
 
   const buildHref = (overrides: {
     industry?: string;
@@ -40,8 +37,7 @@ export default function FiltersFormClient({
     maSupport?: boolean;
   }) => {
     const p = new URLSearchParams();
-    if (query) p.set("q", query);
-    if (isSelected) p.set("selected", "1");
+    for (const symbol of symbols) p.append("symbol", symbol);
     const ind = "industry" in overrides ? overrides.industry : selectedIndustry;
     const sec = "sector" in overrides ? overrides.sector : selectedSector;
     const cou = "country" in overrides ? overrides.country : selectedCountry;
@@ -151,9 +147,14 @@ export default function FiltersFormClient({
           </div>
           {hasActiveFilters && (
             <div className="filter-toggles-actions">
-              <Link href="/" className="btn btn-sm filter-clear-button">
+              <button
+                type="button"
+                className="btn btn-sm filter-clear-button"
+                onClick={() => navigate("/")}
+                disabled={isPending}
+              >
                 Clear filters
-              </Link>
+              </button>
             </div>
           )}
         </div>

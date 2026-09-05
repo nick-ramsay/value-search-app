@@ -17,6 +17,8 @@
   --glass-blur-strong: 28px;
   --glass-blur-stronger: 80px;
   --glass-highlight: rgba(255, 255, 255, 0.8);
+  --skeleton-base: rgba(18, 22, 30, 0.08);
+  --skeleton-sheen: rgba(255, 255, 255, 0.9);
 
   /* Typography */
   --font-sans: system-ui, ui-sans-serif, "Segoe UI", sans-serif;
@@ -84,6 +86,8 @@
     --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
     --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
     --glass-highlight: rgba(255, 255, 255, 0.05);
+    --skeleton-base: rgba(255, 255, 255, 0.09);
+    --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
     --accent: #28BFA4;
     --accent-hover: #33CEAE;
@@ -118,7 +122,7 @@
     --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
     --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
 
-    --dropdown-bg: rgba(28, 30, 40, 0.95);
+    --dropdown-bg: rgba(28, 30, 40, 0.98);
     --dropdown-border: rgba(255, 255, 255, 0.09);
   }
 }
@@ -134,6 +138,8 @@
   --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
   --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
   --glass-highlight: rgba(255, 255, 255, 0.05);
+  --skeleton-base: rgba(255, 255, 255, 0.09);
+  --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
   --accent: #28BFA4;
   --accent-hover: #33CEAE;
@@ -168,7 +174,7 @@
   --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
   --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
 
-  --dropdown-bg: rgba(28, 30, 40, 0.95);
+  --dropdown-bg: rgba(28, 30, 40, 0.98);
   --dropdown-border: rgba(255, 255, 255, 0.09);
 }
 
@@ -1176,9 +1182,18 @@ button.accordion-button.ai-accordion-button:focus-visible {
     min-height: 2rem;
   }
 
-  /* Guarantee enough room for the longest status label ("Queued") */
+  /* Guarantee enough room for the longest status label ("Queued"), and give
+     the edit/status pill a bit more share of the row than its neighbors. */
   .stock-card__actions .stock-card__user-actions-row {
     min-width: 4.2rem;
+    flex-grow: 1.15;
+  }
+
+  /* Notes packs a label + count badge + chevron into the same equal share as
+     the other buttons' label + chevron — give it a bigger slice of the row
+     so its content isn't more cramped than its neighbors'. */
+  .stock-card__actions .stock-card__action--notes {
+    flex-grow: 1.15;
   }
 
   .stock-card__actions .stock-card__action {
@@ -1273,7 +1288,8 @@ button.accordion-button.ai-accordion-button:focus-visible {
   }
 }
 
-.stock-card__actions-slot {
+.stock-card__actions-slot,
+.stock-card__notes-slot {
   display: contents;
 }
 
@@ -1703,7 +1719,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .stock-card__trends-view-toggle.btn-group .btn-primary:focus,
 .stock-card__trends-view-toggle.btn-group .btn-primary:active {
   background: var(--accent-gradient) !important;
-  border-color: transparent !important;
+  border: none !important;
   color: #fff !important;
 }
 
@@ -2733,6 +2749,11 @@ textarea.form-control:focus {
   min-height: 2rem;
 }
 
+.search-input-glass--skeleton {
+  width: 100%;
+  animation: navbarSkeletonPulse 1.4s ease-in-out infinite;
+}
+
 .search-input-glass::placeholder {
   color: var(--text-tertiary);
 }
@@ -2932,19 +2953,49 @@ textarea.form-control:focus {
 
 .active-filter-chip--skeleton {
   color: transparent !important;
-  background: rgba(128, 128, 140, 0.2) !important;
   border-color: transparent !important;
   pointer-events: none;
-  animation: navbarSkeletonPulse 1.4s ease-in-out infinite;
+  background-color: var(--skeleton-base) !important;
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    var(--skeleton-sheen) 50%,
+    transparent 65%
+  ) !important;
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: skeletonSweep 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active-filter-chip--skeleton {
+    animation: navbarSkeletonPulse 1.6s ease-in-out infinite;
+    background-image: none !important;
+  }
 }
 
 .results-summary__count--skeleton {
   width: 110px;
   height: 0.85rem;
   border-radius: 4px;
-  background: rgba(128, 128, 140, 0.2);
   margin: 0;
-  animation: navbarSkeletonPulse 1.4s ease-in-out infinite 0.1s;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    var(--skeleton-sheen) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: skeletonSweep 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-summary__count--skeleton {
+    animation: navbarSkeletonPulse 1.6s ease-in-out infinite;
+    background-image: none;
+  }
 }
 
 /* Buttons */
@@ -2982,8 +3033,8 @@ textarea.form-control:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.45rem 1.2rem;
-  font-size: 0.9rem;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.78rem;
   font-weight: 500;
   border-radius: 999px;
   border: 1px solid rgba(215, 0, 21, 0.35) !important;
@@ -3115,16 +3166,11 @@ textarea.form-control:focus {
 }
 
 /* On narrow viewports the actions wrap onto their own line below the
-   toggles; give them breathing room and shrink the clear button. */
+   toggles; give them breathing room. */
 @media (max-width: 576px) {
   .filter-toggles-actions {
     margin-top: 0.65rem;
     width: 100%;
-  }
-
-  .filter-clear-button {
-    padding: 0.3rem 0.85rem;
-    font-size: 0.78rem;
   }
 }
 
@@ -3341,10 +3387,15 @@ textarea.form-control:focus {
 [data-theme="light"] .theme-switcher-btn,
 [data-theme="light"] .glass-btn-secondary,
 [data-theme="light"] .stock-card__action--secondary,
-[data-theme="light"] .stock-card__user-pill {
+[data-theme="light"] .stock-card__user-pill,
+[data-theme="light"] .theme-toggle-group {
   background: rgba(118, 118, 128, 0.12) !important;
   border-color: transparent !important;
   box-shadow: none;
+}
+
+[data-theme="light"] .theme-toggle-btn:hover:not(.active) {
+  background: rgba(118, 118, 128, 0.16) !important;
 }
 
 /* Card edit button – light theme */
@@ -3395,31 +3446,50 @@ textarea.form-control:focus {
   box-shadow: var(--glass-shadow-floating);
 }
 
-.theme-dropdown .dropdown-item {
-  color: var(--text-primary);
+/* Theme segmented toggle – Light / Dark / System in a single row */
+.theme-toggle-group {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 999px;
+  padding: 2px;
 }
 
-.theme-dropdown .dropdown-item.active {
+.theme-toggle-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-secondary);
   background: transparent;
+  border: none;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle-btn i {
+  font-size: 0.85em;
+}
+
+.theme-toggle-btn:hover:not(.active) {
+  background: var(--glass-bg);
   color: var(--text-primary);
 }
 
-.theme-dropdown .theme-dropdown-check {
-  font-size: 1rem;
-  color: inherit;
-}
-
-.theme-dropdown-check-placeholder {
-  display: inline-block;
-  width: 1rem;
-  height: 1em;
-  flex-shrink: 0;
-}
-
-.theme-dropdown .dropdown-item:hover,
-.theme-dropdown .dropdown-item:focus {
-  background: var(--glass-bg) !important;
-  color: var(--text-primary) !important;
+.theme-toggle-btn.active {
+  background: var(--accent-gradient) !important;
+  border: none !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px var(--accent-glass);
 }
 
 /* Form controls inside glass */
@@ -3562,6 +3632,11 @@ a:has(.page-change-icon):hover .page-change-icon {
   z-index: 10;
 }
 
+.pagination-loading-overlay .spinner-border {
+  color: var(--accent);
+  opacity: 0.85;
+}
+
 .page-change-icon-disabled {
   color: var(--text-tertiary);
   opacity: 0.7;
@@ -3581,24 +3656,68 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 .page-loading-main {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 5rem);
-  min-height: calc(100dvh - 5rem);
 }
 
 .page-loading-results-card {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 .page-loading-results-card-body {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  min-height: calc(100vh - 18rem);
-  min-height: calc(100dvh - 18rem);
 }
+
+/* ── Skeleton loading system ───────────────────────────────────────────────
+   Content-shaped placeholders instead of a bare spinner: each block previews
+   the geometry of the real card that's about to arrive, and a soft light
+   sweep (rather than a flat pulse) reads as active progress. */
+@keyframes skeletonSweep {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+.skel {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background-color: var(--skeleton-base);
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    var(--skeleton-sheen) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: skeletonSweep 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel {
+    animation: navbarSkeletonPulse 1.6s ease-in-out infinite;
+    background-image: none;
+  }
+}
+
+.skeleton-stock-card {
+  pointer-events: none;
+}
+
+.skeleton-stock-card__meta {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.skel--ticker { width: 4.5rem; height: 1.3rem; border-radius: 6px; }
+.skel--name { width: 65%; height: 0.85rem; margin-top: 0.2rem; margin-bottom: 0.3rem; }
+.skel--info-btn { width: 3.5rem; height: 1.75rem; border-radius: 999px; margin-left: auto; flex-shrink: 0; }
+.skel--meta { width: 4.25rem; height: 0.7rem; }
+.skel--price { width: 6rem; height: 1.1rem; margin: 0.55rem 0 0.2rem; }
+.skel--badge { width: 4.75rem; height: 1.5rem; border-radius: 999px; }
+.skel--badge-sm { width: 3rem; }
+.skel--action { flex: 1 1 0; height: 2rem; border-radius: 999px; }
 
 /* Results count */
 .text-muted {
@@ -4043,7 +4162,7 @@ a:hover {
 
 .glass-btn-primary {
   background: var(--accent-gradient) !important;
-  border-color: transparent !important;
+  border: none !important;
   color: #fff !important;
   box-shadow: 0 4px 16px var(--accent-glass);
   transition: transform var(--transition-fast), box-shadow var(--transition-smooth);
@@ -4051,7 +4170,7 @@ a:hover {
 
 .glass-btn-primary:hover:not(:disabled) {
   background: var(--accent-gradient) !important;
-  border-color: transparent !important;
+  border: none !important;
   color: #fff !important;
   transform: translateY(-1px);
   box-shadow: 0 6px 20px var(--accent-glass);
@@ -4181,16 +4300,6 @@ a:hover {
   50%       { opacity: 1; }
 }
 
-.navbar-auth-skeleton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border-subtle);
-  background: var(--glass-bg-subtle);
-}
-
 .navbar-auth-skeleton__avatar {
   width: 28px;
   height: 28px;
@@ -4208,10 +4317,17 @@ a:hover {
   animation: navbarSkeletonPulse 1.4s ease-in-out infinite 0.15s;
 }
 
-.navbar-auth-skeleton__caret {
-  font-size: 0.6rem;
+/* Guest (logged-out) nav trigger avatar – neutral stand-in for the accent user avatar */
+.navbar-guest-avatar {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-subtle);
   color: var(--text-secondary);
-  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .navbar-guest-avatar {
+  background: rgba(118, 118, 128, 0.14) !important;
+  border-color: transparent !important;
 }
 
 /* About page: disclaimer icon */
@@ -4311,6 +4427,19 @@ a:hover {
 .user-dropdown-menu .dropdown-item:focus {
   background: var(--glass-bg) !important;
   color: var(--text-primary) !important;
+}
+
+.dropdown-item-danger,
+.user-dropdown-menu .dropdown-item-danger {
+  color: var(--danger) !important;
+}
+
+.dropdown-item-danger:hover,
+.dropdown-item-danger:focus,
+.user-dropdown-menu .dropdown-item-danger:hover,
+.user-dropdown-menu .dropdown-item-danger:focus {
+  background: var(--danger-glass) !important;
+  color: var(--danger) !important;
 }
 
 /* Prevent mobile browser zoom on input focus: font-size >= 16px stops iOS/Safari from auto-zooming */

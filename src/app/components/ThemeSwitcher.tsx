@@ -48,52 +48,36 @@ export default function ThemeSwitcher({ inline = false }: ThemeSwitcherProps) {
     applyTheme(initial);
   }, []);
 
-  const optionClass = "dropdown-item d-flex align-items-center gap-2";
+  const themeChoices: { value: Theme; label: string; icon: string }[] = [
+    { value: "light", label: "Light", icon: "bi-sun-fill" },
+    { value: "dark", label: "Dark", icon: "bi-moon-stars-fill" },
+    { value: "system", label: "System", icon: "bi-circle-half" },
+  ];
+
   const options = (
-    <>
-      <li>
-        <button
-          type="button"
-          className={optionClass}
-          onClick={() => setTheme("light")}
-        >
-          {theme === "light" ? (
-            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-          ) : (
-            <span className="theme-dropdown-check-placeholder" aria-hidden />
-          )}
-          Light
-        </button>
-      </li>
-      <li>
-        <button
-          type="button"
-          className={optionClass}
-          onClick={() => setTheme("dark")}
-        >
-          {theme === "dark" ? (
-            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-          ) : (
-            <span className="theme-dropdown-check-placeholder" aria-hidden />
-          )}
-          Dark
-        </button>
-      </li>
-      <li>
-        <button
-          type="button"
-          className={optionClass}
-          onClick={() => setTheme("system")}
-        >
-          {theme === "system" ? (
-            <i className="bi bi-check-lg theme-dropdown-check" aria-hidden />
-          ) : (
-            <span className="theme-dropdown-check-placeholder" aria-hidden />
-          )}
-          System
-        </button>
-      </li>
-    </>
+    <li className="px-2 py-1">
+      <div className="theme-toggle-group" role="group" aria-label="Theme">
+        {themeChoices.map(({ value, label, icon }) => (
+          <button
+            key={value}
+            type="button"
+            className={`theme-toggle-btn${theme === value ? " active" : ""}`}
+            aria-pressed={theme === value}
+            onClick={(event) => {
+              // Bootstrap's dropdown auto-close listener is bound to document at the
+              // same node React delegates events to, so plain stopPropagation() doesn't
+              // stop it from also seeing this click — stopImmediatePropagation() does.
+              event.nativeEvent.stopImmediatePropagation();
+              event.stopPropagation();
+              setTheme(value);
+            }}
+          >
+            <i className={`bi ${icon}`} aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+    </li>
   );
 
   if (inline) {

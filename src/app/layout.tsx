@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BootstrapClient from "./bootstrap-client";
@@ -21,6 +21,15 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "valuesearch.app",
   description: "AI-powered value investing research. Search stocks by name or ticker to get AI assessments, value scores, and sector outlooks.",
+};
+
+// Without this, mobile browsers assume a ~980px desktop layout viewport and
+// zoom the whole page out to fit the screen — every `@media (max-width: ...)`
+// mobile rule below then never actually applies, and everything (e.g. the
+// card action buttons) renders as tiny, cramped desktop-sized content instead.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

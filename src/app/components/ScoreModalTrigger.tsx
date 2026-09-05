@@ -5,21 +5,28 @@ import { createPortal } from "react-dom";
 
 export const VALUE_SCORE_MA_SUPPORT_KEY = "movingAverageSupport";
 
+// Keys and labels mirror value-search-pyworker/stock_score.py's rule set
+// exactly — a mismatched key here silently drops that criterion from the
+// breakdown list while its points still count toward the header total.
 const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
-  { key: "healthyPE", label: "Healthy P/E (0–15)" },
+  { key: "healthyPE", label: "Healthy P/E" },
   { key: "healthyFuturePE", label: "Healthy Forward P/E (0–15)" },
   { key: "profitMarginPositive", label: "Positive profit margin" },
-  { key: "forwardPEGreater", label: "Forward P/E ≥ current P/E" },
+  { key: "forwardPELower", label: "Forward P/E < current P/E" },
   { key: "healthyDebtEquity", label: "Healthy debt/equity (0–2)" },
-  { key: "healthyPriceBook", label: "Healthy P/B (0.95–1.1)" },
+  { key: "healthyPriceBook", label: "Healthy P/B (0–3.0)" },
   { key: "healthyPriceSales", label: "Healthy P/S (0–2)" },
-  { key: "movingAveragesGreaterThanPrice", label: "MAs > price & 200d > 50d" },
+  { key: "priceInUptrend", label: "Price above 200-day average" },
   { key: VALUE_SCORE_MA_SUPPORT_KEY, label: "Moving average support" },
-  { key: "returnOnEquity", label: "Return on equity" },
-  { key: "returnOnInvestment", label: "Return on investment" },
-  { key: "priceToEarningsGrowth", label: "Price/earnings growth" },
-  { key: "relativeStengthIndex", label: "Relative strength index (30–70)" },
+  { key: "returnOnEquity", label: "Return on equity (≥15%)" },
+  { key: "returnOnInvestment", label: "Return on investment (≥10.5%)" },
+  { key: "priceToEarningsGrowth", label: "Healthy PEG (0–1)" },
+  { key: "relativeStrengthIndex", label: "Relative strength index (30–70)" },
   { key: "earningsPerShareGrowingNextYear", label: "EPS growing next year" },
+  { key: "grossMarginHealthy", label: "Healthy gross margin" },
+  { key: "currentRatioHealthy", label: "Healthy current ratio" },
+  { key: "revenueGrowthPositive", label: "Positive revenue growth" },
+  { key: "expenseRatioEfficient", label: "Low expense ratio" },
 ];
 
 type ValueSearchScoreDisplay = {

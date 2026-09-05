@@ -1,14 +1,16 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useHomeNavigation } from "./HomeNavigationContext";
+import SkeletonStockCard from "./SkeletonStockCard";
+
+const PENDING_SKELETON_COUNT = 4;
 
 type PaginationWithLoaderProps = {
   currentPage: number;
   hasMore: boolean;
   isFiltered: boolean;
-  query: string;
-  isSelected: boolean;
+  symbols: string[];
   selectedIndustry: string;
   selectedSector: string;
   selectedCountry: string;
@@ -20,8 +22,7 @@ type PaginationWithLoaderProps = {
 function buildPageHref(
   page: number,
   params: {
-    query: string;
-    isSelected: boolean;
+    symbols: string[];
     selectedIndustry: string;
     selectedSector: string;
     selectedCountry: string;
@@ -31,8 +32,7 @@ function buildPageHref(
 ): string {
   const searchParams = new URLSearchParams();
   searchParams.set("page", page.toString());
-  if (params.query) searchParams.set("q", params.query);
-  if (params.isSelected) searchParams.set("selected", "1");
+  for (const symbol of params.symbols) searchParams.append("symbol", symbol);
   if (params.selectedIndustry) searchParams.set("industry", params.selectedIndustry);
   if (params.selectedSector) searchParams.set("sector", params.selectedSector);
   if (params.selectedCountry) searchParams.set("country", params.selectedCountry);
@@ -46,8 +46,7 @@ export default function PaginationWithLoader({
   currentPage,
   hasMore,
   isFiltered,
-  query,
-  isSelected,
+  symbols,
   selectedIndustry,
   selectedSector,
   selectedCountry,
@@ -56,11 +55,10 @@ export default function PaginationWithLoader({
   children,
 }: PaginationWithLoaderProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition } = useHomeNavigation();
 
   const params = {
-    query,
-    isSelected,
+    symbols,
     selectedIndustry,
     selectedSector,
     selectedCountry,
@@ -113,16 +111,6 @@ export default function PaginationWithLoader({
 
   return (
     <div className="position-relative">
-      {isPending && (
-        <div
-          className="pagination-loading-overlay position-absolute top-0 start-0 end-0 bottom-0 d-flex flex-column align-items-center justify-content-center rounded"
-          role="status"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <span className="spinner-border" aria-hidden />
-        </div>
-      )}
       {!isFiltered ? (
         <nav
           aria-label="Results pages"
@@ -132,7 +120,16 @@ export default function PaginationWithLoader({
           {navContent}
         </nav>
       ) : null}
-      {children}
+      {isPending ? (
+        <div className="d-flex flex-column gap-2" role="status" aria-live="polite" aria-busy="true">
+          <span className="visually-hidden">Loading results…</span>
+          {Array.from({ length: PENDING_SKELETON_COUNT }, (_, i) => (
+            <SkeletonStockCard key={i} />
+          ))}
+        </div>
+      ) : (
+        children
+      )}
       {!isFiltered && hasMore ? (
         <nav
           aria-label="Results pages"

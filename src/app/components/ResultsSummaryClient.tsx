@@ -1,7 +1,8 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
+import { useHomeNavigation } from "./HomeNavigationContext";
 
 export type SummaryChip = {
   id: string;
@@ -18,7 +19,7 @@ type Props = {
 
 export default function ResultsSummaryClient({ totalCount, chips }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, startTransition } = useHomeNavigation();
   const [optimisticChips, removeChipOptimistically] = useOptimistic(
     chips,
     (current, idToRemove: string) => current.filter((c) => c.id !== idToRemove),
