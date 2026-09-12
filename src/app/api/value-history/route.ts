@@ -203,7 +203,8 @@ export async function GET(request: Request) {
         value: normalisedValue,
       } satisfies HistoryPoint;
     })
-    .filter((point): point is HistoryPoint => point !== null);
+    .filter((point): point is HistoryPoint => point !== null)
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 
   // Fetch AI rating history
   const rawRatingDocs = (await db
@@ -230,7 +231,10 @@ export async function GET(request: Request) {
         label,
       } satisfies HistoryPoint;
     })
-    .filter((point) => point !== null) as HistoryPoint[];
+    .filter((point) => point !== null)
+    .sort(
+      (a, b) => Date.parse(a!.date) - Date.parse(b!.date),
+    ) as HistoryPoint[];
 
   const response: HistoryResponse = {
     scoreHistory,
