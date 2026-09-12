@@ -37,6 +37,13 @@ export type ValueRecordMetrics = {
   analystTargetPrice?: number;
 };
 
+/** One cleanly-separated section of an AI assessment (e.g. "Financial Health"). */
+export type ValueRecordAssessmentSection = {
+  key: string;
+  label: string;
+  text: string;
+};
+
 export type ValueRecord = {
   _id: string;
   symbol?: string;
@@ -45,7 +52,14 @@ export type ValueRecord = {
   aiRatingScore?: number;
   /** When the AI assessment was last generated/updated (ISO string). */
   aiAssessmentLastUpdated?: string;
+  /**
+   * Legacy single-blob assessment text (all sections concatenated). Still
+   * written by the worker alongside `assessmentSections` and used as the
+   * display fallback for older documents that predate the split.
+   */
   assessment?: string;
+  /** Assessment broken into its distinct sections (e.g. Financial Health, Valuation & Sector Fit, Investment Recommendation). Preferred display source when present. */
+  assessmentSections?: ValueRecordAssessmentSection[];
   industry?: string;
   sector?: string;
   country?: string;
@@ -152,6 +166,25 @@ function readAssessmentLastUpdatedFromAny(
   return undefined;
 }
 
+/**
+ * Parse the `assessmentSections` field written by the worker into typed
+ * sections. Returns undefined for anything that isn't a non-empty array of
+ * well-formed entries, so malformed/legacy documents fall back cleanly to
+ * the single `assessment` blob.
+ */
+function readAssessmentSections(v: unknown): ValueRecordAssessmentSection[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const sections: ValueRecordAssessmentSection[] = [];
+  for (const entry of v) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { key, label, text } = entry as Record<string, unknown>;
+    if (typeof key === "string" && typeof label === "string" && typeof text === "string" && text.trim()) {
+      sections.push({ key, label, text });
+    }
+  }
+  return sections.length > 0 ? sections : undefined;
+}
+
 /** Read a number from doc, valueSearchScore, or nested doc.metrics / doc.quote using the first matching key. */
 function readNumber(
   doc: Record<string, unknown>,
@@ -180,6 +213,7 @@ export type DocInput = {
   aiRating?: unknown;
   aiRatingScore?: unknown;
   assessment?: unknown;
+  assessmentSections?: unknown;
   industry?: unknown;
   sector?: unknown;
   country?: unknown;
@@ -218,6 +252,7 @@ export function docToValueRecord(doc: DocInput): ValueRecord {
       typeof doc.aiRatingScore === "number" ? doc.aiRatingScore : undefined,
     assessment:
       typeof doc.assessment === "string" ? doc.assessment : undefined,
+    assessmentSections: readAssessmentSections(doc.assessmentSections),
     name: typeof doc.name === "string" ? doc.name : undefined,
     industry: typeof doc.industry === "string" ? doc.industry : undefined,
     sector: typeof doc.sector === "string" ? doc.sector : undefined,

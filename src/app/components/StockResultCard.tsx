@@ -623,7 +623,25 @@ export default function StockResultCard({
               <i className="bi bi-chevron-up" aria-hidden />
             </button>
           </div>
-          {item.assessment || item.aiAssessmentLastUpdated ? (
+          {item.assessmentSections?.length ? (
+            <div className="stock-card__assessment-sections">
+              {item.assessmentSections.map((section) => (
+                <section key={section.key} className="stock-card__assessment-section">
+                  <h4 className="stock-card__assessment-section-title">{section.label}</h4>
+                  <div className="stock-card__assessment-markdown">
+                    <ReactMarkdown>{section.text}</ReactMarkdown>
+                  </div>
+                </section>
+              ))}
+              {item.aiAssessmentLastUpdated ? (
+                <p className="stock-card__assessment-updated">
+                  <i className="bi bi-clock-history" aria-hidden /> Updated <span>{formatLastUpdated(item.aiAssessmentLastUpdated)}</span>
+                </p>
+              ) : null}
+            </div>
+          ) : item.assessment || item.aiAssessmentLastUpdated ? (
+            // Fallback for documents generated before AI assessments were split into
+            // sections — still render the legacy single text blob.
             <div className="stock-card__assessment-text stock-card__assessment-markdown">
               {item.assessment ? (
                 <ReactMarkdown>{item.assessment}</ReactMarkdown>

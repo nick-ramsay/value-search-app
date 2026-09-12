@@ -1739,6 +1739,43 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   border-color: rgba(60, 60, 67, 0.14);
 }
 
+/* Sectioned AI assessment (Financial Health / Valuation & Sector Fit / Investment
+   Recommendation, or the ETF equivalents) — each dimension gets its own card so
+   they read as distinct blocks instead of one undifferentiated wall of text. */
+.stock-card__assessment-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.stock-card__assessment-section {
+  padding: 0.85rem 1rem;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 14px;
+}
+
+[data-theme="light"] .stock-card__assessment-section {
+  background: rgba(0, 0, 0, 0.025);
+  border-color: rgba(60, 60, 67, 0.14);
+}
+
+.stock-card__assessment-section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.stock-card__assessment-sections .stock-card__assessment-updated {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
 /* Markdown output inside the AI assessment panel */
 .stock-card__assessment-markdown > * + * {
   margin-top: 0.65em;
