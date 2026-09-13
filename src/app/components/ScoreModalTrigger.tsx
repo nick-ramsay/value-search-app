@@ -16,8 +16,13 @@ const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyDebtEquity", label: "Healthy debt/equity (0–2)" },
   { key: "healthyPriceBook", label: "Healthy P/B (0–3.0)" },
   { key: "healthyPriceSales", label: "Healthy P/S (0–2)" },
-  { key: "priceInUptrend", label: "Price above 200-day average" },
-  { key: VALUE_SCORE_MA_SUPPORT_KEY, label: "Moving average support" },
+  // priceInUptrend and movingAverageSupport are still populated on the
+  // backend (VALUE_SCORE_MA_SUPPORT_KEY reads movingAverageSupport directly
+  // for the card badge/filter), but their points no longer count toward the
+  // header total individually — movingAverageTrend below carries that budget
+  // now, so it's the one listed here to keep this list's points summing to
+  // the header total.
+  { key: "movingAverageTrend", label: "Moving average trend (0–2)" },
   { key: "returnOnEquity", label: "Return on equity (≥15%)" },
   { key: "returnOnInvestment", label: "Return on investment (≥10.5%)" },
   { key: "priceToEarningsGrowth", label: "Healthy PEG (0–1)" },
