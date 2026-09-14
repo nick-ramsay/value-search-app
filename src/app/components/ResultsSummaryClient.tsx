@@ -121,21 +121,19 @@ export default function ResultsSummaryClient({
             </button>
           </span>
         ))}
-      </div>
-      {isFiltered ? (
-        <div className="results-summary__clear-row">
+        {isFiltered ? (
           <button
             type="button"
-            className="btn btn-sm clear-symbols-trigger-btn"
+            className="clear-symbols-trigger-btn"
             data-bs-toggle="modal"
             data-bs-target={`#${CLEAR_SYMBOLS_MODAL_ID}`}
             disabled={isPending}
           >
             <i className="bi bi-trash" aria-hidden />
-            Clear selected stocks
+            Clear all
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       {isPending ? (
         <p className="results-summary__count--skeleton" />
       ) : (
