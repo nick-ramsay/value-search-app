@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useHomeNavigation } from "./HomeNavigationContext";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import InfoTooltip from "./InfoTooltip";
-import { availableIndustriesForSectors, pruneIndustriesForSectors, toggleValue } from "@/lib/sectorIndustryFilter";
+import { availableIndustriesForSectors, pruneIndustriesForSectors } from "@/lib/sectorIndustryFilter";
 
 type Props = {
   industries: string[];
@@ -69,18 +69,20 @@ export default function FiltersFormClient({
   // valid industry as one being added can).
   const availableIndustries = availableIndustriesForSectors(industries, selectedSectors, sectorIndustryMap);
 
-  const handleToggleSector = (sector: string) => {
-    const nextSectors = toggleValue(selectedSectors, sector);
+  // Each of these fires once when the dropdown closes (see
+  // MultiSelectDropdown's onCommit), not per checkbox click — so checking
+  // several options in a row only triggers one navigation.
+  const handleCommitSectors = (nextSectors: string[]) => {
     const nextIndustries = pruneIndustriesForSectors(selectedIndustries, nextSectors, sectorIndustryMap);
     navigate(buildHref({ sectors: nextSectors, industries: nextIndustries }));
   };
 
-  const handleToggleIndustry = (industry: string) => {
-    navigate(buildHref({ industries: toggleValue(selectedIndustries, industry) }));
+  const handleCommitIndustries = (nextIndustries: string[]) => {
+    navigate(buildHref({ industries: nextIndustries }));
   };
 
-  const handleToggleCountry = (country: string) => {
-    navigate(buildHref({ countries: toggleValue(selectedCountries, country) }));
+  const handleCommitCountries = (nextCountries: string[]) => {
+    navigate(buildHref({ countries: nextCountries }));
   };
 
   const hasActiveFilters =
@@ -93,17 +95,20 @@ export default function FiltersFormClient({
   return (
     <div className={`row g-3${isPending ? " filters-form--pending" : ""}`}>
       <div className="col-md-4">
-        <label htmlFor="sector" className="form-label filter-form-label">
-          Sector
-        </label>
+        <div className="filter-form-label-row">
+          <label htmlFor="sector" className="form-label filter-form-label mb-0">
+            Sector
+          </label>
+        </div>
         <MultiSelectDropdown
           id="sector"
           label="Sector"
           placeholderAll="All sectors"
           options={sectors}
           selected={selectedSectors}
-          onToggle={handleToggleSector}
+          onCommit={handleCommitSectors}
           disabled={isPending}
+          searchPlaceholder="Search sectors…"
         />
       </div>
       <div className="col-md-4">
@@ -119,23 +124,27 @@ export default function FiltersFormClient({
           placeholderAll="All industries"
           options={availableIndustries}
           selected={selectedIndustries}
-          onToggle={handleToggleIndustry}
+          onCommit={handleCommitIndustries}
           disabled={isPending}
           emptyMessage="No industries in the selected sector(s)"
+          searchPlaceholder="Search industries…"
         />
       </div>
       <div className="col-md-4">
-        <label htmlFor="country" className="form-label filter-form-label">
-          Country
-        </label>
+        <div className="filter-form-label-row">
+          <label htmlFor="country" className="form-label filter-form-label mb-0">
+            Country
+          </label>
+        </div>
         <MultiSelectDropdown
           id="country"
           label="Country"
           placeholderAll="All countries"
           options={countries}
           selected={selectedCountries}
-          onToggle={handleToggleCountry}
+          onCommit={handleCommitCountries}
           disabled={isPending}
+          searchPlaceholder="Search countries…"
         />
       </div>
       <div className="col-12">

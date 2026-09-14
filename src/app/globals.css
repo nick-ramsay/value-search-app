@@ -3307,6 +3307,11 @@ textarea.form-control:focus {
   align-items: center;
   gap: 0.3rem;
   margin-bottom: 0.3rem;
+  /* Fixed so Sector/Country (label only) and Industry (label + info icon)
+     render at an identical height — otherwise the icon's taller line-box
+     makes Industry's row taller than the other two, pushing its dropdown
+     trigger out of vertical alignment with them. */
+  min-height: 1rem;
 }
 
 /* Info icon + hover/tap tooltip bubble */
@@ -3722,9 +3727,53 @@ textarea.form-control:focus {
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
   padding: 0.5rem;
-  max-height: 280px;
-  overflow-y: auto;
   min-width: 100%;
+  /* The search box stays put; only .multi-select-dropdown__options scrolls
+     below it, so filtering a long list doesn't also scroll the search box
+     out of view. */
+  display: flex;
+  flex-direction: column;
+}
+
+.multi-select-dropdown__search {
+  position: relative;
+  flex-shrink: 0;
+  margin-bottom: 0.4rem;
+}
+
+.multi-select-dropdown__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.65rem;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.multi-select-dropdown__search-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem 0.4rem 2rem;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 10px;
+}
+
+.multi-select-dropdown__search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glass);
+}
+
+.multi-select-dropdown__search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.multi-select-dropdown__options {
+  overflow-y: auto;
+  max-height: 260px;
 }
 
 .multi-select-dropdown__option {
@@ -4144,7 +4193,12 @@ a:hover {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
-  overflow: hidden;
+  /* Was overflow: hidden for corner-clipping, but that also clipped the
+     Sector/Industry/Country dropdown menus and the info tooltip bubble,
+     both of which are meant to float outside the accordion's bounds.
+     border-radius alone still renders the item's own corners rounded;
+     nothing inside it has a background that needs clipping to that shape. */
+  overflow: visible;
   box-shadow: var(--glass-shadow);
 }
 
