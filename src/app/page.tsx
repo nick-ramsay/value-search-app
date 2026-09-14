@@ -2,6 +2,7 @@ import { cache, Suspense } from "react";
 
 import clientPromise from "@/lib/mongodb";
 import { docToValueRecord, getPricesBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
+import { pruneIndustriesForSectors } from "@/lib/sectorIndustryFilter";
 import AppNavbar from "../app/components/AppNavbar";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
 import StockResultCard from "../app/components/StockResultCard";
@@ -19,26 +20,28 @@ type FilterOptions = {
   industries: string[];
   sectors: string[];
   countries: string[];
+  /** sector -> industries belonging to it, from stock-sector-industries. */
+  sectorIndustryMap: Record<string, string[]>;
 };
 
 function FiltersSection({
   filterOptions,
   symbols,
-  selectedIndustry,
-  selectedSector,
-  selectedCountry,
+  selectedIndustries,
+  selectedSectors,
+  selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
 }: {
   filterOptions: FilterOptions;
   symbols: string[];
-  selectedIndustry: string;
-  selectedSector: string;
-  selectedCountry: string;
+  selectedIndustries: string[];
+  selectedSectors: string[];
+  selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
 }) {
-  const { industries, sectors, countries } = filterOptions;
+  const { industries, sectors, countries, sectorIndustryMap } = filterOptions;
   return (
     <section className="mt-3">
       <div className="accordion pb-3 filters-accordion-glass" id="filtersAccordion">
@@ -66,9 +69,10 @@ function FiltersSection({
                 industries={industries}
                 sectors={sectors}
                 countries={countries}
-                selectedIndustry={selectedIndustry}
-                selectedSector={selectedSector}
-                selectedCountry={selectedCountry}
+                sectorIndustryMap={sectorIndustryMap}
+                selectedIndustries={selectedIndustries}
+                selectedSectors={selectedSectors}
+                selectedCountries={selectedCountries}
                 excludeEtfsEnabled={excludeEtfsEnabled}
                 maSupportEnabled={maSupportEnabled}
                 symbols={symbols}
@@ -127,17 +131,21 @@ function FiltersLoadingFallback() {
   );
 }
 
+/** searchParams shape shared by every function below that reads them. */
+type HomeSearchParams = {
+  page?: string;
+  symbol?: string | string[];
+  industry?: string | string[];
+  sector?: string | string[];
+  country?: string | string[];
+  excludeEtfs?: string | string[];
+  maSupport?: string | string[];
+};
+
 async function FiltersAsyncWrapper({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    symbol?: string | string[];
-    industry?: string;
-    sector?: string;
-    country?: string;
-    excludeEtfs?: string | string[];
-    maSupport?: string | string[];
-  }>;
+  searchParams?: Promise<HomeSearchParams>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
     searchParams,
@@ -150,9 +158,9 @@ async function FiltersAsyncWrapper({
     // than show controls that no longer affect the results.
     return null;
   }
-  const selectedIndustry = resolvedSearchParams?.industry ?? "";
-  const selectedSector = resolvedSearchParams?.sector ?? "";
-  const selectedCountry = resolvedSearchParams?.country ?? "";
+  const selectedIndustries = getSelectedValues(resolvedSearchParams?.industry);
+  const selectedSectors = getSelectedValues(resolvedSearchParams?.sector);
+  const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
   const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
@@ -161,9 +169,9 @@ async function FiltersAsyncWrapper({
     <FiltersSection
       filterOptions={filterOptions}
       symbols={symbols}
-      selectedIndustry={selectedIndustry}
-      selectedSector={selectedSector}
-      selectedCountry={selectedCountry}
+      selectedIndustries={selectedIndustries}
+      selectedSectors={selectedSectors}
+      selectedCountries={selectedCountries}
       excludeEtfsEnabled={excludeEtfsEnabled}
       maSupportEnabled={maSupportEnabled}
     />
@@ -181,19 +189,25 @@ function getSearchParamValue(value?: string | string[]) {
   return value;
 }
 
-/** Normalize the repeated `symbol` search param into a deduped, uppercased list. */
-function getSelectedSymbols(value?: string | string[]): string[] {
+/** Normalize a repeated search param into a deduped, trimmed list, preserving case. */
+function getSelectedValues(value?: string | string[]): string[] {
   const raw = Array.isArray(value) ? value : value ? [value] : [];
   const seen = new Set<string>();
-  const symbols: string[] = [];
+  const values: string[] = [];
   for (const item of raw) {
-    const trimmed = item.trim().toUpperCase();
-    if (trimmed && !seen.has(trimmed)) {
-      seen.add(trimmed);
-      symbols.push(trimmed);
+    const trimmed = item.trim();
+    const key = trimmed.toLowerCase();
+    if (trimmed && !seen.has(key)) {
+      seen.add(key);
+      values.push(trimmed);
     }
   }
-  return symbols;
+  return values;
+}
+
+/** Same as getSelectedValues, but uppercased — symbols are always compared/stored upper. */
+function getSelectedSymbols(value?: string | string[]): string[] {
+  return getSelectedValues(value).map((v) => v.toUpperCase());
 }
 
 const getFilterOptions = cache(async (): Promise<FilterOptions> => {
@@ -224,6 +238,13 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
     .sort({ value: 1 })
     .toArray()) as { value?: string }[];
 
+  // Every distinct sector+industry pairing — used to narrow the Industry
+  // picker to only what belongs to the currently selected sector(s).
+  const sectorIndustryDocs = (await db
+    .collection(process.env.MONGODB_SECTOR_INDUSTRIES_COLLECTION ?? "stock-sector-industries")
+    .find({})
+    .toArray()) as { sector?: string; industry?: string }[];
+
   const industries = industriesDocs
     .map((doc) => doc.value)
     .filter((value): value is string => typeof value === "string");
@@ -236,10 +257,18 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
     .map((doc) => doc.value)
     .filter((value): value is string => typeof value === "string");
 
+  const sectorIndustryMap: Record<string, string[]> = {};
+  for (const doc of sectorIndustryDocs) {
+    if (typeof doc.sector === "string" && typeof doc.industry === "string") {
+      (sectorIndustryMap[doc.sector] ??= []).push(doc.industry);
+    }
+  }
+
   return {
     industries,
     sectors,
     countries,
+    sectorIndustryMap,
   };
 });
 
@@ -270,16 +299,16 @@ const getEtfSymbols = cache(async (): Promise<string[]> => {
 /** Build the $and conditions shared by getValues and getValuesCount. */
 async function buildValueFilterConditions({
   symbols,
-  industry,
-  sector,
-  country,
+  industries,
+  sectors,
+  countries,
   excludeEtfs,
   maSupport,
 }: {
   symbols?: string[];
-  industry?: string;
-  sector?: string;
-  country?: string;
+  industries?: string[];
+  sectors?: string[];
+  countries?: string[];
   excludeEtfs?: boolean;
   maSupport?: boolean;
 }): Promise<Record<string, unknown>[]> {
@@ -296,8 +325,8 @@ async function buildValueFilterConditions({
     return conditions;
   }
 
-  if (industry && industry.trim().length > 0) {
-    conditions.push({ industry });
+  if (industries && industries.length > 0) {
+    conditions.push({ industry: { $in: industries } });
   } else if (excludeEtfs) {
     // Belt-and-suspenders: exclude on the assessment doc's own field when
     // present, and on the real stock-quotes-derived ETF symbol list, since
@@ -309,12 +338,12 @@ async function buildValueFilterConditions({
     }
   }
 
-  if (sector && sector.trim().length > 0) {
-    conditions.push({ sector });
+  if (sectors && sectors.length > 0) {
+    conditions.push({ sector: { $in: sectors } });
   }
 
-  if (country && country.trim().length > 0) {
-    conditions.push({ country });
+  if (countries && countries.length > 0) {
+    conditions.push({ country: { $in: countries } });
   }
 
   if (maSupport) {
@@ -328,22 +357,25 @@ async function getValues(
   page: number,
   {
     symbols,
-    industry,
-    sector,
-    country,
+    industries,
+    sectors,
+    countries,
     excludeEtfs,
     maSupport,
   }: {
     symbols?: string[];
-    industry?: string;
-    sector?: string;
-    country?: string;
+    industries?: string[];
+    sectors?: string[];
+    countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
-  if (!hasSymbols && excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
+  // Selecting the ETF-industry bucket while also asking to exclude ETFs is
+  // a contradiction (that bucket IS "the ETFs") — short-circuit to empty
+  // rather than silently ignoring one side of it.
+  if (!hasSymbols && excludeEtfs && industries?.includes(EXCLUDED_ETF_INDUSTRY)) {
     return { values: [], hasMore: false };
   }
 
@@ -363,9 +395,9 @@ async function getValues(
   const skip = (page - 1) * PAGE_SIZE;
   const conditions = await buildValueFilterConditions({
     symbols,
-    industry,
-    sector,
-    country,
+    industries,
+    sectors,
+    countries,
     excludeEtfs,
     maSupport,
   });
@@ -417,21 +449,21 @@ async function getValues(
 
 async function getValuesCount({
   symbols,
-  industry,
-  sector,
-  country,
+  industries,
+  sectors,
+  countries,
   excludeEtfs,
   maSupport,
 }: {
   symbols?: string[];
-  industry?: string;
-  sector?: string;
-  country?: string;
+  industries?: string[];
+  sectors?: string[];
+  countries?: string[];
   excludeEtfs?: boolean;
   maSupport?: boolean;
 }): Promise<number> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
-  if (!hasSymbols && excludeEtfs && industry === EXCLUDED_ETF_INDUSTRY) {
+  if (!hasSymbols && excludeEtfs && industries?.includes(EXCLUDED_ETF_INDUSTRY)) {
     return 0;
   }
 
@@ -450,9 +482,9 @@ async function getValuesCount({
   const db = client.db(dbName);
   const conditions = await buildValueFilterConditions({
     symbols,
-    industry,
-    sector,
-    country,
+    industries,
+    sectors,
+    countries,
     excludeEtfs,
     maSupport,
   });
@@ -465,15 +497,7 @@ async function getValuesCount({
 async function ResultsCard({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    page?: string;
-    symbol?: string | string[];
-    industry?: string;
-    sector?: string;
-    country?: string;
-    excludeEtfs?: string | string[];
-    maSupport?: string | string[];
-  }>;
+  searchParams?: Promise<HomeSearchParams>;
 }) {
   const [resolvedSearchParams, filterOptions] = await Promise.all([
     searchParams,
@@ -482,22 +506,22 @@ async function ResultsCard({
   const requestedPage = Number.parseInt(resolvedSearchParams?.page ?? "1", 10);
   const currentPage = Number.isNaN(requestedPage) ? 1 : Math.max(1, requestedPage);
   const symbols = getSelectedSymbols(resolvedSearchParams?.symbol);
-  const selectedIndustry = resolvedSearchParams?.industry ?? "";
-  const selectedSector = resolvedSearchParams?.sector ?? "";
-  const selectedCountry = resolvedSearchParams?.country ?? "";
+  const selectedIndustries = getSelectedValues(resolvedSearchParams?.industry);
+  const selectedSectors = getSelectedValues(resolvedSearchParams?.sector);
+  const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
   const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
   const maSupportEnabled = maSupportParam === "1";
   const isFiltered = symbols.length > 0;
 
-  const { industries, sectors, countries } = filterOptions;
+  const { sectorIndustryMap } = filterOptions;
 
   const filterParams = {
     symbols: isFiltered ? symbols : undefined,
-    industry: selectedIndustry || undefined,
-    sector: selectedSector || undefined,
-    country: selectedCountry || undefined,
+    industries: selectedIndustries,
+    sectors: selectedSectors,
+    countries: selectedCountries,
     excludeEtfs: excludeEtfsEnabled,
     maSupport: maSupportEnabled,
   };
@@ -507,80 +531,52 @@ async function ResultsCard({
     getValuesCount(filterParams),
   ]);
 
-  const buildPageHref = (page: number) => {
-    const params = new URLSearchParams();
-    params.set("page", page.toString());
-    for (const symbol of symbols) params.append("symbol", symbol);
-    if (selectedIndustry) params.set("industry", selectedIndustry);
-    if (selectedSector) params.set("sector", selectedSector);
-    if (selectedCountry) params.set("country", selectedCountry);
-    if (!excludeEtfsEnabled) params.set("excludeEtfs", "0");
-    if (maSupportEnabled) params.set("maSupport", "1");
-    const search = params.toString();
-    return search.length > 0 ? `/?${search}` : "/";
-  };
-
-  // Build the URL for removing one selected symbol: keeps every other selected
-  // symbol plus the standard filters (industry/sector/country/excludeEtfs/maSupport),
-  // which is how a prior filter selection is "remembered" while browsing by symbol —
-  // it's never actually removed from the URL, only ignored while any symbol is selected.
-  const buildSymbolRemoveHref = (symbolToRemove: string) => {
-    const p = new URLSearchParams();
-    for (const symbol of symbols) {
-      if (symbol !== symbolToRemove) p.append("symbol", symbol);
-    }
-    if (selectedIndustry) p.set("industry", selectedIndustry);
-    if (selectedSector) p.set("sector", selectedSector);
-    if (selectedCountry) p.set("country", selectedCountry);
-    if (!excludeEtfsEnabled) p.set("excludeEtfs", "0");
-    if (maSupportEnabled) p.set("maSupport", "1");
-    const s = p.toString();
-    return s ? `/?${s}` : "/";
-  };
-
-  // Build the URL for clearing every selected symbol at once — same
-  // "remember the other filters, drop only the symbols" behaviour as
-  // buildSymbolRemoveHref above, just with an empty symbol set.
-  const buildClearAllSymbolsHref = () => {
-    const p = new URLSearchParams();
-    if (selectedIndustry) p.set("industry", selectedIndustry);
-    if (selectedSector) p.set("sector", selectedSector);
-    if (selectedCountry) p.set("country", selectedCountry);
-    if (!excludeEtfsEnabled) p.set("excludeEtfs", "0");
-    if (maSupportEnabled) p.set("maSupport", "1");
-    const s = p.toString();
-    return s ? `/?${s}` : "/";
-  };
-
-  // Build a URL that preserves all current params except the ones explicitly overridden
-  const buildChipHref = (overrides: {
-    industry?: string;
-    sector?: string;
-    country?: string;
+  // Single href builder for every navigation this card triggers (pagination,
+  // removing one symbol/industry/sector/country, clearing all symbols,
+  // toggling excludeEtfs/maSupport) — each just overrides the one field that
+  // changed and leaves everything else at its current selected value.
+  const buildHref = (overrides: {
+    page?: number;
+    symbols?: string[];
+    industries?: string[];
+    sectors?: string[];
+    countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
   }) => {
     const p = new URLSearchParams();
-    for (const symbol of symbols) p.append("symbol", symbol);
-    const ind = "industry" in overrides ? overrides.industry : selectedIndustry;
-    const sec = "sector" in overrides ? overrides.sector : selectedSector;
-    const cou = "country" in overrides ? overrides.country : selectedCountry;
-    const exc = "excludeEtfs" in overrides ? overrides.excludeEtfs : excludeEtfsEnabled;
-    const mas = "maSupport" in overrides ? overrides.maSupport : maSupportEnabled;
-    if (ind) p.set("industry", ind);
-    if (sec) p.set("sector", sec);
-    if (cou) p.set("country", cou);
+    const syms = overrides.symbols ?? symbols;
+    const inds = overrides.industries ?? selectedIndustries;
+    const secs = overrides.sectors ?? selectedSectors;
+    const cous = overrides.countries ?? selectedCountries;
+    const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
+    const mas = overrides.maSupport ?? maSupportEnabled;
+    if (overrides.page) p.set("page", overrides.page.toString());
+    for (const symbol of syms) p.append("symbol", symbol);
+    for (const industry of inds) p.append("industry", industry);
+    for (const sector of secs) p.append("sector", sector);
+    for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
     if (mas) p.set("maSupport", "1");
     const s = p.toString();
     return s ? `/?${s}` : "/";
   };
 
+  // Removing a sector chip can invalidate a currently-selected industry that
+  // only belonged to that sector — re-validate the industry selection
+  // against the sector set the removal leaves behind, same as the live
+  // sector checkbox toggle does in FiltersFormClient.
+  const buildSectorRemoveHref = (sectorToRemove: string) => {
+    const nextSectors = selectedSectors.filter((s) => s !== sectorToRemove);
+    const nextIndustries = pruneIndustriesForSectors(selectedIndustries, nextSectors, sectorIndustryMap);
+    return buildHref({ sectors: nextSectors, industries: nextIndustries });
+  };
+
   const chips = [
     ...symbols.map((symbol) => ({
       id: `symbol:${symbol}`,
       label: symbol,
-      removeHref: buildSymbolRemoveHref(symbol),
+      removeHref: buildHref({ symbols: symbols.filter((s) => s !== symbol) }),
       ariaLabel: `Remove ${symbol} filter`,
     })),
     // The other filters are disregarded (and their pills hidden) while any
@@ -589,31 +585,31 @@ async function ResultsCard({
       id: "excludeEtfs",
       label: "ETFs excluded",
       icon: "bi-slash-circle",
-      removeHref: buildChipHref({ excludeEtfs: false }),
+      removeHref: buildHref({ excludeEtfs: false }),
       ariaLabel: "Remove ETFs excluded filter",
     }] : []),
-    ...(!isFiltered && selectedIndustry ? [{
-      id: "industry",
-      label: selectedIndustry,
-      removeHref: buildChipHref({ industry: "" }),
-      ariaLabel: "Remove industry filter",
-    }] : []),
-    ...(!isFiltered && selectedSector ? [{
-      id: "sector",
-      label: selectedSector,
-      removeHref: buildChipHref({ sector: "" }),
-      ariaLabel: "Remove sector filter",
-    }] : []),
-    ...(!isFiltered && selectedCountry ? [{
-      id: "country",
-      label: selectedCountry,
-      removeHref: buildChipHref({ country: "" }),
-      ariaLabel: "Remove country filter",
-    }] : []),
+    ...(!isFiltered ? selectedSectors.map((sector) => ({
+      id: `sector:${sector}`,
+      label: sector,
+      removeHref: buildSectorRemoveHref(sector),
+      ariaLabel: `Remove ${sector} filter`,
+    })) : []),
+    ...(!isFiltered ? selectedIndustries.map((industry) => ({
+      id: `industry:${industry}`,
+      label: industry,
+      removeHref: buildHref({ industries: selectedIndustries.filter((i) => i !== industry) }),
+      ariaLabel: `Remove ${industry} filter`,
+    })) : []),
+    ...(!isFiltered ? selectedCountries.map((country) => ({
+      id: `country:${country}`,
+      label: country,
+      removeHref: buildHref({ countries: selectedCountries.filter((c) => c !== country) }),
+      ariaLabel: `Remove ${country} filter`,
+    })) : []),
     ...(!isFiltered && maSupportEnabled ? [{
       id: "maSupport",
       label: "MA support",
-      removeHref: buildChipHref({ maSupport: false }),
+      removeHref: buildHref({ maSupport: false }),
       ariaLabel: "Remove moving average support filter",
     }] : []),
   ];
@@ -625,7 +621,7 @@ async function ResultsCard({
           totalCount={totalCount}
           chips={chips}
           isFiltered={isFiltered}
-          clearAllSymbolsHref={buildClearAllSymbolsHref()}
+          clearAllSymbolsHref={buildHref({ symbols: [] })}
         />
       </section>
       <section className="card glass-card mb-4 pt-3">
@@ -636,9 +632,9 @@ async function ResultsCard({
             hasMore={hasMore}
             isFiltered={isFiltered}
             symbols={symbols}
-            selectedIndustry={selectedIndustry}
-            selectedSector={selectedSector}
-            selectedCountry={selectedCountry}
+            selectedIndustries={selectedIndustries}
+            selectedSectors={selectedSectors}
+            selectedCountries={selectedCountries}
             excludeEtfsEnabled={excludeEtfsEnabled}
             maSupportEnabled={maSupportEnabled}
           >
@@ -663,17 +659,17 @@ async function ResultsCard({
 function ResultsLoadingFallback({
   isFiltered = false,
   symbols = [],
-  selectedIndustry = "",
-  selectedSector = "",
-  selectedCountry = "",
+  selectedIndustries = [],
+  selectedSectors = [],
+  selectedCountries = [],
   excludeEtfsEnabled = true,
   maSupportEnabled = false,
 }: {
   isFiltered?: boolean;
   symbols?: string[];
-  selectedIndustry?: string;
-  selectedSector?: string;
-  selectedCountry?: string;
+  selectedIndustries?: string[];
+  selectedSectors?: string[];
+  selectedCountries?: string[];
   excludeEtfsEnabled?: boolean;
   maSupportEnabled?: boolean;
 }) {
@@ -700,24 +696,24 @@ function ResultsLoadingFallback({
                     <i className="bi bi-x" />
                   </span>
                 )}
-                {selectedIndustry && (
-                  <span className="active-filter-chip active-filter-chip--skeleton">
-                    {selectedIndustry}
+                {selectedSectors.map((sector) => (
+                  <span key={`sector:${sector}`} className="active-filter-chip active-filter-chip--skeleton">
+                    {sector}
                     <i className="bi bi-x" />
                   </span>
-                )}
-                {selectedSector && (
-                  <span className="active-filter-chip active-filter-chip--skeleton">
-                    {selectedSector}
+                ))}
+                {selectedIndustries.map((industry) => (
+                  <span key={`industry:${industry}`} className="active-filter-chip active-filter-chip--skeleton">
+                    {industry}
                     <i className="bi bi-x" />
                   </span>
-                )}
-                {selectedCountry && (
-                  <span className="active-filter-chip active-filter-chip--skeleton">
-                    {selectedCountry}
+                ))}
+                {selectedCountries.map((country) => (
+                  <span key={`country:${country}`} className="active-filter-chip active-filter-chip--skeleton">
+                    {country}
                     <i className="bi bi-x" />
                   </span>
-                )}
+                ))}
                 {maSupportEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     MA support
@@ -769,21 +765,13 @@ function ResultsLoadingFallback({
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Promise<{
-    page?: string;
-    symbol?: string | string[];
-    industry?: string;
-    sector?: string;
-    country?: string;
-    excludeEtfs?: string | string[];
-    maSupport?: string | string[];
-  }>;
+  searchParams?: Promise<HomeSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
   const symbols = getSelectedSymbols(resolvedSearchParams?.symbol);
-  const selectedIndustry = resolvedSearchParams?.industry ?? "";
-  const selectedSector = resolvedSearchParams?.sector ?? "";
-  const selectedCountry = resolvedSearchParams?.country ?? "";
+  const selectedIndustries = getSelectedValues(resolvedSearchParams?.industry);
+  const selectedSectors = getSelectedValues(resolvedSearchParams?.sector);
+  const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsEnabled = getSearchParamValue(resolvedSearchParams?.excludeEtfs) !== "0";
   const maSupportEnabled = getSearchParamValue(resolvedSearchParams?.maSupport) === "1";
 
@@ -825,9 +813,9 @@ export default async function Home({
                 <ResultsLoadingFallback
                   isFiltered={isFiltered}
                   symbols={symbols}
-                  selectedIndustry={selectedIndustry}
-                  selectedSector={selectedSector}
-                  selectedCountry={selectedCountry}
+                  selectedIndustries={selectedIndustries}
+                  selectedSectors={selectedSectors}
+                  selectedCountries={selectedCountries}
                   excludeEtfsEnabled={excludeEtfsEnabled}
                   maSupportEnabled={maSupportEnabled}
                 />

@@ -2,14 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useHomeNavigation } from "./HomeNavigationContext";
+import MultiSelectDropdown from "./MultiSelectDropdown";
+import InfoTooltip from "./InfoTooltip";
+import { availableIndustriesForSectors, pruneIndustriesForSectors, toggleValue } from "@/lib/sectorIndustryFilter";
 
 type Props = {
   industries: string[];
   sectors: string[];
   countries: string[];
-  selectedIndustry: string;
-  selectedSector: string;
-  selectedCountry: string;
+  sectorIndustryMap: Record<string, string[]>;
+  selectedIndustries: string[];
+  selectedSectors: string[];
+  selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
   symbols: string[];
@@ -19,9 +23,10 @@ export default function FiltersFormClient({
   industries,
   sectors,
   countries,
-  selectedIndustry,
-  selectedSector,
-  selectedCountry,
+  sectorIndustryMap,
+  selectedIndustries,
+  selectedSectors,
+  selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
   symbols,
@@ -30,22 +35,22 @@ export default function FiltersFormClient({
   const { isPending, startTransition } = useHomeNavigation();
 
   const buildHref = (overrides: {
-    industry?: string;
-    sector?: string;
-    country?: string;
+    industries?: string[];
+    sectors?: string[];
+    countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
   }) => {
     const p = new URLSearchParams();
+    const inds = overrides.industries ?? selectedIndustries;
+    const secs = overrides.sectors ?? selectedSectors;
+    const cous = overrides.countries ?? selectedCountries;
+    const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
+    const mas = overrides.maSupport ?? maSupportEnabled;
     for (const symbol of symbols) p.append("symbol", symbol);
-    const ind = "industry" in overrides ? overrides.industry : selectedIndustry;
-    const sec = "sector" in overrides ? overrides.sector : selectedSector;
-    const cou = "country" in overrides ? overrides.country : selectedCountry;
-    const exc = "excludeEtfs" in overrides ? overrides.excludeEtfs : excludeEtfsEnabled;
-    const mas = "maSupport" in overrides ? overrides.maSupport : maSupportEnabled;
-    if (ind) p.set("industry", ind);
-    if (sec) p.set("sector", sec);
-    if (cou) p.set("country", cou);
+    for (const industry of inds) p.append("industry", industry);
+    for (const sector of secs) p.append("sector", sector);
+    for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
     if (mas) p.set("maSupport", "1");
     const s = p.toString();
@@ -56,64 +61,82 @@ export default function FiltersFormClient({
     startTransition(() => router.push(href));
   };
 
+  // Industries are a subcategory of sector — once one or more sectors are
+  // selected, only industries belonging to at least one of them are
+  // pickable. Selecting/deselecting a sector re-validates the current
+  // industry selection against the new sector set in the same navigation
+  // (a sector being removed can just as easily invalidate a previously
+  // valid industry as one being added can).
+  const availableIndustries = availableIndustriesForSectors(industries, selectedSectors, sectorIndustryMap);
+
+  const handleToggleSector = (sector: string) => {
+    const nextSectors = toggleValue(selectedSectors, sector);
+    const nextIndustries = pruneIndustriesForSectors(selectedIndustries, nextSectors, sectorIndustryMap);
+    navigate(buildHref({ sectors: nextSectors, industries: nextIndustries }));
+  };
+
+  const handleToggleIndustry = (industry: string) => {
+    navigate(buildHref({ industries: toggleValue(selectedIndustries, industry) }));
+  };
+
+  const handleToggleCountry = (country: string) => {
+    navigate(buildHref({ countries: toggleValue(selectedCountries, country) }));
+  };
+
   const hasActiveFilters =
-    selectedIndustry || selectedSector || selectedCountry || !excludeEtfsEnabled || maSupportEnabled;
+    selectedIndustries.length > 0 ||
+    selectedSectors.length > 0 ||
+    selectedCountries.length > 0 ||
+    !excludeEtfsEnabled ||
+    maSupportEnabled;
 
   return (
     <div className={`row g-3${isPending ? " filters-form--pending" : ""}`}>
       <div className="col-md-4">
-        <label htmlFor="industry" className="form-label filter-form-label">
-          Industry
-        </label>
-        <select
-          id="industry"
-          name="industry"
-          className="form-select glass-select"
-          value={selectedIndustry}
-          onChange={(e) => navigate(buildHref({ industry: e.target.value }))}
-          disabled={isPending}
-        >
-          <option value="">All industries</option>
-          {industries.map((industry) => (
-            <option key={industry} value={industry}>{industry}</option>
-          ))}
-        </select>
-      </div>
-      <div className="col-md-4">
         <label htmlFor="sector" className="form-label filter-form-label">
           Sector
         </label>
-        <select
+        <MultiSelectDropdown
           id="sector"
-          name="sector"
-          className="form-select glass-select"
-          value={selectedSector}
-          onChange={(e) => navigate(buildHref({ sector: e.target.value }))}
+          label="Sector"
+          placeholderAll="All sectors"
+          options={sectors}
+          selected={selectedSectors}
+          onToggle={handleToggleSector}
           disabled={isPending}
-        >
-          <option value="">All sectors</option>
-          {sectors.map((sector) => (
-            <option key={sector} value={sector}>{sector}</option>
-          ))}
-        </select>
+        />
+      </div>
+      <div className="col-md-4">
+        <div className="filter-form-label-row">
+          <label htmlFor="industry" className="form-label filter-form-label mb-0">
+            Industry
+          </label>
+          <InfoTooltip text="Only industries belonging to the selected sector(s) are available to pick — choose a sector first to narrow this list." />
+        </div>
+        <MultiSelectDropdown
+          id="industry"
+          label="Industry"
+          placeholderAll="All industries"
+          options={availableIndustries}
+          selected={selectedIndustries}
+          onToggle={handleToggleIndustry}
+          disabled={isPending}
+          emptyMessage="No industries in the selected sector(s)"
+        />
       </div>
       <div className="col-md-4">
         <label htmlFor="country" className="form-label filter-form-label">
           Country
         </label>
-        <select
+        <MultiSelectDropdown
           id="country"
-          name="country"
-          className="form-select glass-select"
-          value={selectedCountry}
-          onChange={(e) => navigate(buildHref({ country: e.target.value }))}
+          label="Country"
+          placeholderAll="All countries"
+          options={countries}
+          selected={selectedCountries}
+          onToggle={handleToggleCountry}
           disabled={isPending}
-        >
-          <option value="">All countries</option>
-          {countries.map((country) => (
-            <option key={country} value={country}>{country}</option>
-          ))}
-        </select>
+        />
       </div>
       <div className="col-12">
         <div className="filter-toggles-row">

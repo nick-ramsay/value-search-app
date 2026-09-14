@@ -3302,6 +3302,58 @@ textarea.form-control:focus {
   margin-bottom: 0.3rem;
 }
 
+.filter-form-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+/* Info icon + hover/tap tooltip bubble */
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.info-tooltip__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.info-tooltip__trigger:hover,
+.info-tooltip__trigger:focus-visible {
+  color: var(--accent);
+}
+
+.info-tooltip__bubble {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-primary);
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: 10px;
+  box-shadow: var(--glass-shadow-floating);
+}
+
 /* Theme switcher */
 .theme-switcher-btn {
   background: var(--glass-bg-subtle) !important;
@@ -3632,6 +3684,80 @@ textarea.form-control:focus {
   background: rgba(118, 118, 128, 0.1) !important;
   border-color: rgba(60, 60, 67, 0.14);
   box-shadow: none;
+}
+
+/* Multi-select checkbox dropdown (Sector/Industry/Country filters) — trigger
+   reuses .glass-select for a look identical to the single-select it
+   replaced; only the parts a <button> needs that a <select> gets for free
+   (full-width, left-aligned text, truncation) are added here. */
+.multi-select-dropdown {
+  width: 100%;
+}
+
+.multi-select-dropdown__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.multi-select-dropdown__trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multi-select-dropdown__trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.multi-select-dropdown__menu {
+  background: var(--dropdown-bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--dropdown-border) !important;
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow-floating);
+  padding: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+  min-width: 100%;
+}
+
+.multi-select-dropdown__option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 0.1rem;
+}
+
+.multi-select-dropdown__option:last-child {
+  margin-bottom: 0;
+}
+
+.multi-select-dropdown__option:hover,
+.multi-select-dropdown__option:focus-within {
+  background: var(--glass-bg) !important;
+}
+
+.multi-select-dropdown__checkbox {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.multi-select-dropdown__option-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multi-select-dropdown__empty {
+  white-space: normal;
 }
 
 /* Light theme: open-accordion trigger — !important needed to override the base light-theme rule at line 3077 */

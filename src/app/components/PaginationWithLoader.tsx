@@ -11,9 +11,9 @@ type PaginationWithLoaderProps = {
   hasMore: boolean;
   isFiltered: boolean;
   symbols: string[];
-  selectedIndustry: string;
-  selectedSector: string;
-  selectedCountry: string;
+  selectedIndustries: string[];
+  selectedSectors: string[];
+  selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
   children: React.ReactNode;
@@ -23,9 +23,9 @@ function buildPageHref(
   page: number,
   params: {
     symbols: string[];
-    selectedIndustry: string;
-    selectedSector: string;
-    selectedCountry: string;
+    selectedIndustries: string[];
+    selectedSectors: string[];
+    selectedCountries: string[];
     excludeEtfsEnabled: boolean;
     maSupportEnabled: boolean;
   }
@@ -33,9 +33,9 @@ function buildPageHref(
   const searchParams = new URLSearchParams();
   searchParams.set("page", page.toString());
   for (const symbol of params.symbols) searchParams.append("symbol", symbol);
-  if (params.selectedIndustry) searchParams.set("industry", params.selectedIndustry);
-  if (params.selectedSector) searchParams.set("sector", params.selectedSector);
-  if (params.selectedCountry) searchParams.set("country", params.selectedCountry);
+  for (const industry of params.selectedIndustries) searchParams.append("industry", industry);
+  for (const sector of params.selectedSectors) searchParams.append("sector", sector);
+  for (const country of params.selectedCountries) searchParams.append("country", country);
   if (!params.excludeEtfsEnabled) searchParams.set("excludeEtfs", "0");
   if (params.maSupportEnabled) searchParams.set("maSupport", "1");
   const search = searchParams.toString();
@@ -47,9 +47,9 @@ export default function PaginationWithLoader({
   hasMore,
   isFiltered,
   symbols,
-  selectedIndustry,
-  selectedSector,
-  selectedCountry,
+  selectedIndustries,
+  selectedSectors,
+  selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
   children,
@@ -59,9 +59,9 @@ export default function PaginationWithLoader({
 
   const params = {
     symbols,
-    selectedIndustry,
-    selectedSector,
-    selectedCountry,
+    selectedIndustries,
+    selectedSectors,
+    selectedCountries,
     excludeEtfsEnabled,
     maSupportEnabled,
   };
