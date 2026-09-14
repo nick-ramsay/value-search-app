@@ -38,6 +38,9 @@ export default function SearchBar({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSelectedMatch, setIsSelectedMatch] = useState(false);
+  // -1 = nothing highlighted (arrow-key/hover position within the open
+  // suggestions dropdown; Enter selects this item when one is highlighted).
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const trimmedQuery = query.trim();
@@ -47,6 +50,12 @@ export default function SearchBar({
     () => suggestions.filter((item) => formatSuggestionLabel(item).length > 0),
     [suggestions],
   );
+
+  // Keep the highlight in range (and cleared once the dropdown has nothing
+  // to highlight) whenever the suggestion list itself changes.
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [filteredSuggestions]);
 
   useEffect(() => {
     if (!hasQuery || isSelectedMatch) {
@@ -157,6 +166,62 @@ export default function SearchBar({
     addSymbolAndNavigate(value);
   };
 
+  /**
+   * Resolves what Enter (or any other submit trigger) should do, in order:
+   * the arrow-key/hover-highlighted suggestion, else the top suggestion in
+   * an open dropdown (so typing an exact match and hitting Enter without
+   * arrowing down still picks the right thing instead of submitting the
+   * raw text as a literal symbol — which silently fails to find anything
+   * whenever the query was a company name rather than its ticker), else
+   * fall back to the raw typed text (e.g. the query matched nothing at all).
+   */
+  const submitCurrentSelection = () => {
+    const value = trimmedQuery;
+    if (!value) {
+      return;
+    }
+
+    const resolved =
+      highlightedIndex >= 0 && highlightedIndex < filteredSuggestions.length
+        ? filteredSuggestions[highlightedIndex]
+        : filteredSuggestions.length > 0
+          ? filteredSuggestions[0]
+          : null;
+
+    if (resolved) {
+      handleSelect(resolved);
+      return;
+    }
+
+    // Common UX for both homepage and portfolio:
+    // close dropdown and dismiss keyboard.
+    setSuggestions([]);
+    setIsOpen(false);
+    setIsSelectedMatch(true);
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+
+    if (formAction === "/portfolio") {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("portfolioSymbolSelected", {
+            detail: { symbol: value },
+          }),
+        );
+        // Clear the input after hitting Enter in the portfolio view
+        setQuery("");
+        if (inputRef.current) {
+          inputRef.current.value = "";
+        }
+        setIsSelectedMatch(false);
+      }
+      return;
+    }
+
+    addSymbolAndNavigate(value);
+  };
+
   return (
     <form
       className="d-flex gap-2 position-relative w-100"
@@ -164,38 +229,7 @@ export default function SearchBar({
       autoComplete="off"
       onSubmit={(event) => {
         event.preventDefault();
-        const value = trimmedQuery;
-        if (!value) {
-          return;
-        }
-
-        // Common UX for both homepage and portfolio:
-        // close dropdown and dismiss keyboard.
-        setSuggestions([]);
-        setIsOpen(false);
-        setIsSelectedMatch(true);
-        if (inputRef.current) {
-          inputRef.current.blur();
-        }
-
-        if (formAction === "/portfolio") {
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(
-              new CustomEvent("portfolioSymbolSelected", {
-                detail: { symbol: value },
-              }),
-            );
-            // Clear the input after hitting Enter in the portfolio view
-            setQuery("");
-            if (inputRef.current) {
-              inputRef.current.value = "";
-            }
-            setIsSelectedMatch(false);
-          }
-          return;
-        }
-
-        addSymbolAndNavigate(value);
+        submitCurrentSelection();
       }}
     >
       <input
@@ -206,6 +240,13 @@ export default function SearchBar({
         placeholder="Search symbol or name"
         aria-label="Search symbol or name"
         value={query}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-autocomplete="list"
+        aria-controls="search-suggestions-listbox"
+        aria-activedescendant={
+          isOpen && highlightedIndex >= 0 ? `search-suggestion-${highlightedIndex}` : undefined
+        }
         onChange={(event) => setQuery(event.target.value)}
         onInput={() => {
           setIsSelectedMatch(false);
@@ -218,9 +259,40 @@ export default function SearchBar({
         onBlur={() => {
           window.setTimeout(() => setIsOpen(false), 100);
         }}
+        onKeyDown={(event) => {
+          if (!isOpen || filteredSuggestions.length === 0) {
+            if (event.key === "Escape") {
+              setIsOpen(false);
+            }
+            return;
+          }
+
+          switch (event.key) {
+            case "ArrowDown":
+              event.preventDefault();
+              setHighlightedIndex((current) => (current + 1) % filteredSuggestions.length);
+              break;
+            case "ArrowUp":
+              event.preventDefault();
+              setHighlightedIndex((current) =>
+                current <= 0 ? filteredSuggestions.length - 1 : current - 1,
+              );
+              break;
+            case "Escape":
+              setIsOpen(false);
+              setHighlightedIndex(-1);
+              break;
+            // Enter is handled by the form's onSubmit (submitCurrentSelection
+            // already reads highlightedIndex), so no case needed here — just
+            // don't fall through to anything else.
+            default:
+              break;
+          }
+        }}
       />
       {isOpen || isLoading ? (
         <div
+          id="search-suggestions-listbox"
           className="position-absolute top-100 start-0 mt-2 w-100 suggestions-glass list-group list-group-flush"
           role="listbox"
         >
@@ -230,7 +302,7 @@ export default function SearchBar({
               <span>Loading suggestions</span>
             </div>
           ) : null}
-          {filteredSuggestions.map((suggestion) => {
+          {filteredSuggestions.map((suggestion, index) => {
             const label = formatSuggestionLabel(suggestion);
             const value = pickSearchValue(suggestion);
             const key = `${value}-${label}`;
@@ -238,9 +310,15 @@ export default function SearchBar({
             return (
               <button
                 key={key}
+                id={`search-suggestion-${index}`}
                 type="button"
-                className="list-group-item list-group-item-action suggestion-item-glass py-3"
+                role="option"
+                aria-selected={index === highlightedIndex}
+                className={`list-group-item list-group-item-action suggestion-item-glass py-3${
+                  index === highlightedIndex ? " suggestion-item-glass--active" : ""
+                }`}
                 onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setHighlightedIndex(index)}
                 onClick={() => handleSelect(suggestion)}
               >
                 {label}

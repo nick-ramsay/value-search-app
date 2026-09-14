@@ -2855,7 +2855,8 @@ textarea.form-control:focus {
 }
 
 .suggestion-item-glass:hover,
-.suggestion-item-glass:focus {
+.suggestion-item-glass:focus,
+.suggestion-item-glass--active {
   background: var(--accent-glass) !important;
   color: var(--text-primary) !important;
 }
