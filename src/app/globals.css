@@ -3728,9 +3728,16 @@ textarea.form-control:focus {
   box-shadow: var(--glass-shadow-floating);
   padding: 0.5rem;
   min-width: 100%;
-  /* The search box stays put; only .multi-select-dropdown__options scrolls
-     below it, so filtering a long list doesn't also scroll the search box
-     out of view. */
+}
+
+/* Bootstrap's own .dropdown-menu rule is `display: none`, only switched to
+   `display: block` via its .show class when actually open. The layout rule
+   below (search box pinned above the scrollable options list) MUST stay
+   scoped to .show too — an unscoped `display: flex` here has equal
+   selector specificity to Bootstrap's `display: none` and loads after it,
+   so it would win the cascade and force the menu permanently visible
+   regardless of open/closed state. */
+.multi-select-dropdown__menu.show {
   display: flex;
   flex-direction: column;
 }
@@ -4200,6 +4207,18 @@ a:hover {
      nothing inside it has a background that needs clipping to that shape. */
   overflow: visible;
   box-shadow: var(--glass-shadow);
+  /* backdrop-filter creates a new stacking context on this element, which
+     traps the dropdown-menu's z-index inside it — the menu's z-index only
+     competes for paint order against its own siblings within THIS
+     context, not page-level. Without an explicit z-index here, this whole
+     accordion-item (dropdown included) sits at the default stacking
+     level, and the results section below it — also backdrop-filtered,
+     also z-index:auto — paints on top of it simply for coming later in
+     the DOM, hiding the open dropdown behind the stock cards. Explicit
+     position+z-index here lifts the whole thing above that, comfortably
+     below modals/navbar (z-index 1030+ elsewhere in this file). */
+  position: relative;
+  z-index: 50;
 }
 
 [data-theme="light"] .filters-accordion-glass .accordion-item {
