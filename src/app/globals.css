@@ -3051,6 +3051,30 @@ textarea.form-control:focus {
   white-space: nowrap;
 }
 
+/* Matches .active-filter-chip--skeleton exactly, so the row reads as one
+   consistent loading state during a pending navigation. */
+.clear-symbols-trigger-btn--skeleton {
+  color: transparent !important;
+  border-color: transparent !important;
+  background-color: var(--skeleton-base) !important;
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    var(--skeleton-sheen) 50%,
+    transparent 65%
+  ) !important;
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: skeletonSweep 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clear-symbols-trigger-btn--skeleton {
+    animation: navbarSkeletonPulse 1.6s ease-in-out infinite;
+    background-image: none !important;
+  }
+}
+
 .clear-symbols-trigger-btn:hover:not(:disabled) {
   background: var(--danger-glass);
 }

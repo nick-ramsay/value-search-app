@@ -106,7 +106,11 @@ export default function ResultsSummaryClient({
     <div className="results-summary">
       <div className="active-filter-chips" role="list" aria-label="Active filters">
         {optimisticChips.map((chip) => (
-          <span key={chip.id} className="active-filter-chip" role="listitem">
+          <span
+            key={chip.id}
+            className={`active-filter-chip${isPending ? " active-filter-chip--skeleton" : ""}`}
+            role="listitem"
+          >
             {chip.icon && (
               <i className={`bi ${chip.icon} active-filter-chip__icon`} aria-hidden />
             )}
@@ -121,10 +125,13 @@ export default function ResultsSummaryClient({
             </button>
           </span>
         ))}
-        {isFiltered ? (
+        {/* Clear-all only earns its place once there's more than one symbol
+            to clear — with exactly one selected, its own chip's remove
+            button already does the same thing. */}
+        {isFiltered && optimisticChips.length > 1 ? (
           <button
             type="button"
-            className="clear-symbols-trigger-btn"
+            className={`clear-symbols-trigger-btn${isPending ? " clear-symbols-trigger-btn--skeleton" : ""}`}
             data-bs-toggle="modal"
             data-bs-target={`#${CLEAR_SYMBOLS_MODAL_ID}`}
             disabled={isPending}
