@@ -231,7 +231,7 @@ export default function AppNavbar({
                     </>
                   ) : (
                     <span
-                      className="d-inline-flex align-items-center justify-content-center rounded-circle navbar-guest-avatar"
+                      className="d-inline-flex align-items-center justify-content-center navbar-guest-avatar"
                       style={{ width: 28, height: 28, fontSize: "0.95rem" }}
                     >
                       <i className="bi bi-list" aria-hidden />

@@ -32,3 +32,14 @@ export function useHomeNavigation(): HomeNavigationContextValue {
   }
   return ctx;
 }
+
+/**
+ * Same shared pending/transition state as useHomeNavigation, but returns
+ * null instead of throwing when no HomeNavigationProvider is present. For
+ * components (like SearchBar) that render on pages other than the home page,
+ * where no provider wraps them — those callers fall back to a plain
+ * navigation with no shared pending state to report to.
+ */
+export function useOptionalHomeNavigation(): HomeNavigationContextValue | null {
+  return useContext(HomeNavigationContext);
+}

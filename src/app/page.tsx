@@ -144,6 +144,12 @@ async function FiltersAsyncWrapper({
     getFilterOptions(),
   ]);
   const symbols = getSelectedSymbols(resolvedSearchParams?.symbol);
+  if (symbols.length > 0) {
+    // Filter criteria are disregarded entirely once any individual stock is
+    // selected (see buildValueFilterConditions) — hide the dropdown rather
+    // than show controls that no longer affect the results.
+    return null;
+  }
   const selectedIndustry = resolvedSearchParams?.industry ?? "";
   const selectedSector = resolvedSearchParams?.sector ?? "";
   const selectedCountry = resolvedSearchParams?.country ?? "";
@@ -532,6 +538,20 @@ async function ResultsCard({
     return s ? `/?${s}` : "/";
   };
 
+  // Build the URL for clearing every selected symbol at once — same
+  // "remember the other filters, drop only the symbols" behaviour as
+  // buildSymbolRemoveHref above, just with an empty symbol set.
+  const buildClearAllSymbolsHref = () => {
+    const p = new URLSearchParams();
+    if (selectedIndustry) p.set("industry", selectedIndustry);
+    if (selectedSector) p.set("sector", selectedSector);
+    if (selectedCountry) p.set("country", selectedCountry);
+    if (!excludeEtfsEnabled) p.set("excludeEtfs", "0");
+    if (maSupportEnabled) p.set("maSupport", "1");
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  };
+
   // Build a URL that preserves all current params except the ones explicitly overridden
   const buildChipHref = (overrides: {
     industry?: string;
@@ -601,7 +621,12 @@ async function ResultsCard({
   return (
     <div>
       <section className="card-body pb-2">
-        <ResultsSummaryClient totalCount={totalCount} chips={chips} />
+        <ResultsSummaryClient
+          totalCount={totalCount}
+          chips={chips}
+          isFiltered={isFiltered}
+          clearAllSymbolsHref={buildClearAllSymbolsHref()}
+        />
       </section>
       <section className="card glass-card mb-4 pt-3">
         <div className="card-body pt-0">
@@ -762,36 +787,43 @@ export default async function Home({
   const excludeEtfsEnabled = getSearchParamValue(resolvedSearchParams?.excludeEtfs) !== "0";
   const maSupportEnabled = getSearchParamValue(resolvedSearchParams?.maSupport) === "1";
 
+  const isFiltered = symbols.length > 0;
+
   return (
     <div className="min-vh-100">
-      <AppNavbar
-        searchInitialQuery=""
-        searchSelected={symbols.length > 0}
-      />
-      <main className="container pt-5 mt-4 home-page">
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
-            <section
-              className="card glass-card monthly-balances-page-heading home-page__assessments-title"
-              aria-label="Current Assessments"
-            >
-              <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
-                <h2 className="h5 mb-0">Current Assessments</h2>
-                <p className="home-page__tagline mb-0">
-                  AI-powered value investing research — search by ticker or name — not investing advice.
-                </p>
+      <HomeNavigationProvider>
+        <AppNavbar
+          searchInitialQuery=""
+          searchSelected={symbols.length > 0}
+        />
+        <main className="container pt-5 mt-4 home-page">
+          <div className="row justify-content-center">
+            <div className="col-lg-8">
+              <section
+                className="card glass-card monthly-balances-page-heading home-page__assessments-title"
+                aria-label="Current Assessments"
+              >
+                <div className="card-body monthly-balances-page-heading-body px-3 px-sm-4">
+                  <h2 className="h5 mb-0">Current Assessments</h2>
+                  <p className="home-page__tagline mb-0">
+                    AI-powered value investing research — search by ticker or name — not investing advice.
+                  </p>
+                </div>
+              </section>
+              <div className="text-center mb-2 mt-1">
+                <DisclosureModal />
               </div>
-            </section>
-            <div className="text-center mb-2 mt-1">
-              <DisclosureModal />
-            </div>
-            <HomeNavigationProvider>
-              <Suspense fallback={<FiltersLoadingFallback />}>
+              {/* Filters dropdown is hidden entirely (both while loading and
+                  once loaded) while any individual stock is selected — its
+                  criteria are disregarded in that mode anyway (see
+                  buildValueFilterConditions), so showing it would be
+                  misleading. */}
+              <Suspense fallback={isFiltered ? null : <FiltersLoadingFallback />}>
                 <FiltersAsyncWrapper searchParams={searchParams} />
               </Suspense>
               <Suspense fallback={
                 <ResultsLoadingFallback
-                  isFiltered={symbols.length > 0}
+                  isFiltered={isFiltered}
                   symbols={symbols}
                   selectedIndustry={selectedIndustry}
                   selectedSector={selectedSector}
@@ -802,10 +834,10 @@ export default async function Home({
               }>
                 <ResultsCard searchParams={searchParams} />
               </Suspense>
-            </HomeNavigationProvider>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </HomeNavigationProvider>
     </div>
   )
 };

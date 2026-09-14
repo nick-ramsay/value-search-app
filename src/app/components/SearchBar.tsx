@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useOptionalHomeNavigation } from "./HomeNavigationContext";
 
 type Suggestion = {
   symbol?: string;
@@ -31,6 +32,7 @@ export default function SearchBar({
 }: SearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const homeNav = useOptionalHomeNavigation();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -103,7 +105,18 @@ export default function SearchBar({
       params.append("symbol", upper);
     }
     const qs = params.toString();
-    router.push(qs ? `${formAction}?${qs}` : formAction);
+    const href = qs ? `${formAction}?${qs}` : formAction;
+    // Wrapped in the shared transition (when available — the home page's
+    // HomeNavigationProvider) so picking a stock shows the same in-place
+    // loading overlay as pagination/filters/chip-removal, rather than either
+    // no loading indication or a jarring full-page Suspense fallback flash.
+    if (homeNav) {
+      homeNav.startTransition(() => {
+        router.push(href);
+      });
+    } else {
+      router.push(href);
+    }
 
     setQuery("");
     setIsSelectedMatch(false);

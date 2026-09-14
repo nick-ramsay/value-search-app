@@ -3035,6 +3035,66 @@ textarea.form-control:focus {
   }
 }
 
+/* Clear-selected-stocks row — shown below the active-filter chips only while
+   individual stocks are selected. */
+.results-summary__clear-row {
+  display: flex;
+  justify-content: center;
+}
+
+.clear-symbols-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--danger-clear);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-glass);
+  border-radius: 999px;
+}
+
+.clear-symbols-trigger-btn:hover:not(:disabled) {
+  background: var(--danger-glass);
+}
+
+.clear-symbols-trigger-btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.clear-symbols-cancel-btn {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 999px;
+}
+
+.clear-symbols-cancel-btn:hover {
+  background: var(--glass-bg);
+}
+
+.clear-symbols-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--danger-clear);
+  border: 1px solid var(--danger-clear);
+  border-radius: 999px;
+}
+
+.clear-symbols-confirm-btn:hover {
+  filter: brightness(0.92);
+}
+
 /* Buttons */
 .filters-form--pending {
   opacity: 0.6;
@@ -4354,17 +4414,9 @@ a:hover {
   animation: navbarSkeletonPulse 1.4s ease-in-out infinite 0.15s;
 }
 
-/* Guest (logged-out) nav trigger avatar – neutral stand-in for the accent user avatar */
+/* Guest (logged-out) nav trigger icon color — no background/border, just the glyph */
 .navbar-guest-avatar {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border-subtle);
   color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-[data-theme="light"] .navbar-guest-avatar {
-  background: rgba(118, 118, 128, 0.14) !important;
-  border-color: transparent !important;
 }
 
 /* About page: disclaimer icon */
