@@ -5192,6 +5192,80 @@ a:hover {
   overflow-wrap: anywhere;
 }
 
+/* Screening signals shown per pick — sector, size, market tier, and any
+   size/liquidity or value-trap warnings that survived selection. */
+.undervalued-pick__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.9rem;
+}
+
+.undervalued-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.undervalued-chip--plain {
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border-color: var(--glass-border-subtle);
+}
+
+.undervalued-chip--good {
+  color: #1a7f4b;
+  background: color-mix(in srgb, #1a7f4b 12%, transparent);
+  border-color: color-mix(in srgb, #1a7f4b 26%, transparent);
+}
+
+.undervalued-chip--warn {
+  color: #b45309;
+  background: color-mix(in srgb, #b45309 12%, transparent);
+  border-color: color-mix(in srgb, #b45309 26%, transparent);
+}
+
+.undervalued-chip--danger {
+  color: #b91c1c;
+  background: color-mix(in srgb, #b91c1c 12%, transparent);
+  border-color: color-mix(in srgb, #b91c1c 26%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .undervalued-chip--good { color: #4ade80; }
+  :root:not([data-theme="light"]) .undervalued-chip--warn { color: #fbbf24; }
+  :root:not([data-theme="light"]) .undervalued-chip--danger { color: #f87171; }
+}
+
+:root[data-theme="dark"] .undervalued-chip--good { color: #4ade80; }
+:root[data-theme="dark"] .undervalued-chip--warn { color: #fbbf24; }
+:root[data-theme="dark"] .undervalued-chip--danger { color: #f87171; }
+
+/* Criteria summary under the meta line — makes the screen visible even on a
+   week where every pick comes through clean and carries no warning chips. */
+.undervalued-criteria {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem 0.9rem;
+  margin: 0.4rem 0 0;
+}
+
+.undervalued-criteria__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
 .undervalued-pick__fields {
   display: flex;
   flex-direction: column;

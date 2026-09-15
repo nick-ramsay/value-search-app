@@ -20,7 +20,54 @@ type UndervaluedPick = {
   thesis: string;
   catalyst: string;
   bearCase: string;
+  // Screening signals that drove selection — written by
+  // generate_undervalued_report.py alongside the narrative.
+  country?: string | null;
+  marketTier?: string | null;
+  sizeFlag?: string | null;
+  trapFlags?: string | null;
+  sector?: string | null;
+  industry?: string | null;
+  price?: number | null;
+  marketCap?: number | null;
 };
+
+const MARKET_TIER_LABELS: Record<string, string> = {
+  DEV: "Developed market",
+  EM: "Emerging market",
+  OFFSH: "Offshore domicile",
+  UNK: "Unknown market",
+};
+
+// Only the warning states get a label — a clean pick shows no badge for that
+// dimension rather than a row of reassuring "OK" chips on every card.
+const SIZE_FLAG_LABELS: Record<string, string> = {
+  SMALLCAP: "Small cap",
+  THIN: "Thin volume",
+};
+
+const TRAP_FLAG_LABELS: Record<string, string> = {
+  PEAK: "Cyclical peak earnings",
+  FWD_WORSE: "Earnings expected to fall",
+  EPS_DECL: "Negative EPS growth",
+  SALES_DECL: "Shrinking revenue",
+  LEVERED: "High leverage",
+  PAYOUT: "Dividend not covered",
+  FALLING: "Down sharply this year",
+};
+
+function splitFlags(value: string | null | undefined): string[] {
+  if (!value || value === "NONE" || value === "OK") return [];
+  return value.split("+").filter(Boolean);
+}
+
+function formatMarketCap(value: number | null | undefined): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+  return `$${value.toLocaleString()}`;
+}
 
 type UndervaluedReportDoc = {
   _id: string;
@@ -157,6 +204,17 @@ export default async function UndervaluedPicksPage() {
                     )}
                     Last updated {formatDate(report.lastUpdated)}
                   </p>
+                  <p className="undervalued-criteria">
+                    <span className="undervalued-criteria__item">
+                      <i className="bi bi-globe2" aria-hidden /> Developed markets preferred
+                    </span>
+                    <span className="undervalued-criteria__item">
+                      <i className="bi bi-graph-up" aria-hidden /> Penny &amp; micro-caps screened out
+                    </span>
+                    <span className="undervalued-criteria__item">
+                      <i className="bi bi-shield-check" aria-hidden /> Value traps screened out
+                    </span>
+                  </p>
                 </section>
 
                 <div className="economy-assessment-section-list">
@@ -185,6 +243,55 @@ export default async function UndervaluedPicksPage() {
                                 )}
                               </span>
                             </h3>
+
+                            <div className="undervalued-pick__meta">
+                              {pick.sector && (
+                                <span className="undervalued-chip undervalued-chip--plain">
+                                  {pick.industry || pick.sector}
+                                </span>
+                              )}
+                              {formatMarketCap(pick.marketCap) && (
+                                <span className="undervalued-chip undervalued-chip--plain">
+                                  {formatMarketCap(pick.marketCap)}
+                                </span>
+                              )}
+                              {pick.country && (
+                                <span
+                                  className={`undervalued-chip ${
+                                    pick.marketTier === "DEV"
+                                      ? "undervalued-chip--good"
+                                      : pick.marketTier === "EM"
+                                        ? "undervalued-chip--warn"
+                                        : "undervalued-chip--plain"
+                                  }`}
+                                  title={
+                                    pick.marketTier
+                                      ? MARKET_TIER_LABELS[pick.marketTier] ?? undefined
+                                      : undefined
+                                  }
+                                >
+                                  <i className="bi bi-geo-alt" aria-hidden /> {pick.country}
+                                </span>
+                              )}
+                              {/* Warnings only — a clean pick stays uncluttered. */}
+                              {splitFlags(pick.sizeFlag).map((f) => (
+                                <span key={f} className="undervalued-chip undervalued-chip--warn">
+                                  <i className="bi bi-exclamation-triangle" aria-hidden />{" "}
+                                  {SIZE_FLAG_LABELS[f] ?? f}
+                                </span>
+                              ))}
+                              {splitFlags(pick.trapFlags).map((f) => (
+                                <span key={f} className="undervalued-chip undervalued-chip--danger">
+                                  <i className="bi bi-exclamation-octagon" aria-hidden />{" "}
+                                  {TRAP_FLAG_LABELS[f] ?? f}
+                                </span>
+                              ))}
+                              {splitFlags(pick.trapFlags).length === 0 && pick.trapFlags && (
+                                <span className="undervalued-chip undervalued-chip--good">
+                                  <i className="bi bi-shield-check" aria-hidden /> No trap flags
+                                </span>
+                              )}
+                            </div>
 
                             <dl className="undervalued-pick__fields mb-0">
                               {pick.thesis && (
