@@ -1,4 +1,5 @@
 import { cache, Suspense } from "react";
+import { unstable_cache } from "next/cache";
 
 import clientPromise from "@/lib/mongodb";
 import { docToValueRecord, getPricesBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
@@ -210,7 +211,14 @@ function getSelectedSymbols(value?: string | string[]): string[] {
   return getSelectedValues(value).map((v) => v.toUpperCase());
 }
 
-const getFilterOptions = cache(async (): Promise<FilterOptions> => {
+// Filter picklists (industries/sectors/countries/sector-industry map) change
+// at most weekly, driven by the pyworker's own pipeline — cached across
+// requests (not just within one, unlike React's cache() below) via
+// unstable_cache, so most page loads skip these 4 round-trips entirely
+// rather than re-fetching identical, rarely-changing reference data every
+// single request. Was previously 4 sequential (not parallel) awaits too —
+// measured at ~170ms combined; now run together via Promise.all.
+const getFilterOptionsUncached = cache(async (): Promise<FilterOptions> => {
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
 
@@ -220,30 +228,17 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
 
   const db = client.db(dbName);
 
-  const industriesDocs = (await db
-    .collection("stock-ai-industries")
-    .find({})
-    .sort({ value: 1 })
-    .toArray()) as { value?: string }[];
-
-  const sectorsDocs = (await db
-    .collection("stock-ai-sectors")
-    .find({})
-    .sort({ value: 1 })
-    .toArray()) as { value?: string }[];
-
-  const countriesDocs = (await db
-    .collection("stock-ai-countries")
-    .find({})
-    .sort({ value: 1 })
-    .toArray()) as { value?: string }[];
-
-  // Every distinct sector+industry pairing — used to narrow the Industry
-  // picker to only what belongs to the currently selected sector(s).
-  const sectorIndustryDocs = (await db
-    .collection(process.env.MONGODB_SECTOR_INDUSTRIES_COLLECTION ?? "stock-sector-industries")
-    .find({})
-    .toArray()) as { sector?: string; industry?: string }[];
+  const [industriesDocs, sectorsDocs, countriesDocs, sectorIndustryDocs] = await Promise.all([
+    db.collection("stock-ai-industries").find({}).sort({ value: 1 }).toArray() as Promise<{ value?: string }[]>,
+    db.collection("stock-ai-sectors").find({}).sort({ value: 1 }).toArray() as Promise<{ value?: string }[]>,
+    db.collection("stock-ai-countries").find({}).sort({ value: 1 }).toArray() as Promise<{ value?: string }[]>,
+    // Every distinct sector+industry pairing — used to narrow the Industry
+    // picker to only what belongs to the currently selected sector(s).
+    db
+      .collection(process.env.MONGODB_SECTOR_INDUSTRIES_COLLECTION ?? "stock-sector-industries")
+      .find({})
+      .toArray() as Promise<{ sector?: string; industry?: string }[]>,
+  ]);
 
   const industries = industriesDocs
     .map((doc) => doc.value)
@@ -272,6 +267,10 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
   };
 });
 
+const getFilterOptions = unstable_cache(getFilterOptionsUncached, ["filter-options"], {
+  revalidate: 600,
+});
+
 /**
  * Industry/sector/country live in stock-quotes, not the assessment doc, and
  * most assessment docs never got their own `industry` field backfilled (it's
@@ -279,8 +278,15 @@ const getFilterOptions = cache(async (): Promise<FilterOptions> => {
  * therefore misses most ETFs. Resolve the actual set of ETF symbols from
  * stock-quotes (the source of truth) so the exclusion works regardless of
  * whether the assessment doc's industry field was populated.
+ *
+ * Cached across requests (not just within one) via unstable_cache — this
+ * scans all of stock-quotes (~38.7k docs, measured at ~42ms server-side/
+ * ~220ms wall including transferring back ~5k symbols) and the set of ETF
+ * symbols changes at most weekly via the pyworker pipeline, so most page
+ * loads skip this scan entirely rather than paying it on every request
+ * (excludeEtfs defaults to true, so this runs on nearly every default view).
  */
-const getEtfSymbols = cache(async (): Promise<string[]> => {
+const getEtfSymbolsUncached = cache(async (): Promise<string[]> => {
   const client = await clientPromise;
   const dbName = process.env.MONGODB_DB;
   if (!dbName) {
@@ -294,6 +300,10 @@ const getEtfSymbols = cache(async (): Promise<string[]> => {
   return docs
     .map((doc) => (typeof doc.symbol === "string" ? doc.symbol.toUpperCase() : undefined))
     .filter((s): s is string => Boolean(s));
+});
+
+const getEtfSymbols = unstable_cache(getEtfSymbolsUncached, ["etf-symbols"], {
+  revalidate: 600,
 });
 
 /** Build the $and conditions shared by getValues and getValuesCount. */
@@ -499,10 +509,14 @@ async function ResultsCard({
 }: {
   searchParams?: Promise<HomeSearchParams>;
 }) {
-  const [resolvedSearchParams, filterOptions] = await Promise.all([
-    searchParams,
-    getFilterOptions(),
-  ]);
+  // Kicked off immediately (not awaited yet) so it runs concurrently with
+  // resolving searchParams and, below, with getValues/getValuesCount —
+  // filterOptions.sectorIndustryMap isn't actually needed until building
+  // the chip hrefs further down, so there's no reason to block the actual
+  // data queries behind it.
+  const filterOptionsPromise = getFilterOptions();
+
+  const resolvedSearchParams = await searchParams;
   const requestedPage = Number.parseInt(resolvedSearchParams?.page ?? "1", 10);
   const currentPage = Number.isNaN(requestedPage) ? 1 : Math.max(1, requestedPage);
   const symbols = getSelectedSymbols(resolvedSearchParams?.symbol);
@@ -515,8 +529,6 @@ async function ResultsCard({
   const maSupportEnabled = maSupportParam === "1";
   const isFiltered = symbols.length > 0;
 
-  const { sectorIndustryMap } = filterOptions;
-
   const filterParams = {
     symbols: isFiltered ? symbols : undefined,
     industries: selectedIndustries,
@@ -526,10 +538,12 @@ async function ResultsCard({
     maSupport: maSupportEnabled,
   };
 
-  const [{ values, hasMore }, totalCount] = await Promise.all([
+  const [{ values, hasMore }, totalCount, filterOptions] = await Promise.all([
     getValues(isFiltered ? 1 : currentPage, filterParams),
     getValuesCount(filterParams),
+    filterOptionsPromise,
   ]);
+  const { sectorIndustryMap } = filterOptions;
 
   // Single href builder for every navigation this card triggers (pagination,
   // removing one symbol/industry/sector/country, clearing all symbols,

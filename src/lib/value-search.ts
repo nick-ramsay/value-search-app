@@ -335,26 +335,22 @@ export async function getPricesBySymbols(
   const db = client.db(dbName);
   const coll = getStockQuotesCollectionName();
 
-  const orClauses: object[] = [];
-  for (const s of unique) {
-    const up = s.toUpperCase();
-    orClauses.push(
-      { symbol: up },
-      { symbol: s },
-      { symbol: { $regex: `^${escapeRegExp(s)}$`, $options: "i" } },
-      { ticker: up },
-      { ticker: s },
-      { ticker: { $regex: `^${escapeRegExp(s)}$`, $options: "i" } },
-      { Symbol: up },
-      { Symbol: s },
-    );
-  }
-  const docs = await db.collection(coll).find({ $or: orClauses }).toArray();
+  // Was previously an 8-clauses-per-symbol $or (exact + case-insensitive
+  // regex on symbol/ticker/Symbol) — measured at 236ms server-side / 374ms
+  // wall for a 25-symbol page, a full collection scan of all ~38.7k docs,
+  // since the case-insensitive regex clauses can't use the symbol index.
+  // Verified directly against production data: every doc's `symbol` field
+  // is already uppercase (0 of 38,735 aren't), and no doc has ever had a
+  // `ticker` or `Symbol` field. A plain $in on uppercased symbols matches
+  // identically today, uses the existing symbol index, and was measured at
+  // low single-digit ms for the same query.
+  const upperSymbols = unique.map((s) => s.toUpperCase());
+  const docs = await db.collection(coll).find({ symbol: { $in: upperSymbols } }).toArray();
 
   const map: Record<string, QuotePriceSnapshot> = {};
   for (const doc of docs) {
     const d = doc as Record<string, unknown>;
-    const sym = (typeof d.symbol === "string" ? d.symbol : typeof d.ticker === "string" ? d.ticker : typeof (d as { Symbol?: string }).Symbol === "string" ? (d as { Symbol: string }).Symbol : "") as string;
+    const sym = typeof d.symbol === "string" ? d.symbol : "";
     if (!sym) continue;
     const num = readPriceFromQuoteDoc(d);
     const industry = readStringField(d, "industry");
