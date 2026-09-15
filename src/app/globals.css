@@ -3332,7 +3332,12 @@ textarea.form-control:focus {
 }
 
 .min-price-input.form-control.glass-select {
-  padding-left: 1.5rem;
+  /* Base .glass-select padding reserves 2rem on the right for the dropdown
+     triggers' caret (Sector/Industry/Country) — this isn't a dropdown, so
+     that space would just be an odd gap; give it normal, symmetric padding
+     instead, with a bit of extra left room for the "$" prefix. */
+  padding-right: 0.65rem;
+  padding-left: 1.1rem;
   -moz-appearance: textfield;
 }
 
@@ -3696,7 +3701,8 @@ textarea.form-control:focus {
 }
 
 /* Form controls inside glass */
-.form-select.glass-select {
+.form-select.glass-select,
+.form-control.glass-select {
   background: var(--glass-bg-subtle) !important;
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border-subtle);
@@ -3707,13 +3713,15 @@ textarea.form-control:focus {
   min-height: 0;
 }
 
-.form-select.glass-select:focus {
+.form-select.glass-select:focus,
+.form-control.glass-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glass);
   outline: none;
 }
 
-[data-theme="light"] .form-select.glass-select {
+[data-theme="light"] .form-select.glass-select,
+[data-theme="light"] .form-control.glass-select {
   background: rgba(118, 118, 128, 0.1) !important;
   border-color: rgba(60, 60, 67, 0.14);
   box-shadow: none;
