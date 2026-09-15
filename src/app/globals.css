@@ -5153,6 +5153,125 @@ a:hover {
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+/* ── Undervalued picks ──────────────────────────────────────────────────────
+   Reuses the economy-assessment card/section shell; these rules only add the
+   per-pick header (ticker + company name) and the Thesis/Catalyst/Bear case
+   definition list, which the economy report has no equivalent of. */
+
+.undervalued-pick__title {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.undervalued-pick__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.undervalued-pick__symbol {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.undervalued-pick__symbol:hover,
+.undervalued-pick__symbol:focus-visible {
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+.undervalued-pick__name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  /* Long names must wrap rather than stretch the card on narrow screens. */
+  overflow-wrap: anywhere;
+}
+
+.undervalued-pick__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.undervalued-pick__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.undervalued-pick__label {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+/* Colour-coded so the bull case and the bear case stay distinguishable at a
+   glance when scanning a long list of picks. */
+.undervalued-pick__label--thesis {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.undervalued-pick__label--catalyst {
+  color: #1a7f4b;
+  background: color-mix(in srgb, #1a7f4b 12%, transparent);
+  border-color: color-mix(in srgb, #1a7f4b 28%, transparent);
+}
+
+.undervalued-pick__label--bear {
+  color: #c2410c;
+  background: color-mix(in srgb, #c2410c 12%, transparent);
+  border-color: color-mix(in srgb, #c2410c 28%, transparent);
+}
+
+/* Both labels need lighter text on a dark ground to stay legible. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .undervalued-pick__label--catalyst {
+    color: #4ade80;
+  }
+  :root:not([data-theme="light"]) .undervalued-pick__label--bear {
+    color: #fb923c;
+  }
+}
+
+:root[data-theme="dark"] .undervalued-pick__label--catalyst {
+  color: #4ade80;
+}
+
+:root[data-theme="dark"] .undervalued-pick__label--bear {
+  color: #fb923c;
+}
+
+.undervalued-pick__value {
+  color: var(--text-primary);
+}
+
+.undervalued-notes__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
 /* Toolbar above chart/table — glass rail, grouped controls */
 .monthly-balances-toolbar {
   border-radius: 16px;

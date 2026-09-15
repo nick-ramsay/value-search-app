@@ -25,10 +25,12 @@ export default function AppNavbar({
   const isMonthlyBalances = pathname === "/monthly-balances";
   const isSectorAssessments = pathname === "/sector-assessments";
   const isEconomyAssessment = pathname === "/economy-assessment";
+  const isUndervaluedPicks = pathname === "/undervalued-picks";
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true ||
     isSectorAssessments ||
-    isEconomyAssessment;
+    isEconomyAssessment ||
+    isUndervaluedPicks;
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -100,6 +102,13 @@ export default function AppNavbar({
           </Link>
         </li>
       )}
+      {!isUndervaluedPicks && (
+        <li>
+          <Link href="/undervalued-picks" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-gem" aria-hidden /> Undervalued Picks
+          </Link>
+        </li>
+      )}
       {pathname !== "/about" && (
         <li>
           <Link href="/about" className="dropdown-item d-flex align-items-center gap-2 py-2">
@@ -140,6 +149,13 @@ export default function AppNavbar({
         <li>
           <Link href="/economy-assessment" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-globe-americas" aria-hidden /> Economy Assessments
+          </Link>
+        </li>
+      )}
+      {!isUndervaluedPicks && (
+        <li>
+          <Link href="/undervalued-picks" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-gem" aria-hidden /> Undervalued Picks
           </Link>
         </li>
       )}
