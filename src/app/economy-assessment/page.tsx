@@ -6,6 +6,12 @@ import AppNavbar from "../components/AppNavbar";
 
 const COLLECTION = "stock-economy-assessment";
 
+// No dynamic APIs are used on this page (no searchParams, cookies, etc.), so
+// without this Next.js treats it as fully static — rendered once at build
+// time and never refreshed again, regardless of what generate_economy_
+// assessment_claude.py later writes to Mongo. ISR re-checks it hourly instead.
+export const revalidate = 3600;
+
 type EconomySection = {
   number: string;
   heading: string;
