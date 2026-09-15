@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useHomeNavigation } from "./HomeNavigationContext";
 import MultiSelectDropdown from "./MultiSelectDropdown";
@@ -16,6 +17,7 @@ type Props = {
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
+  minPrice?: number;
   symbols: string[];
 };
 
@@ -29,6 +31,7 @@ export default function FiltersFormClient({
   selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
+  minPrice,
   symbols,
 }: Props) {
   const router = useRouter();
@@ -40,6 +43,7 @@ export default function FiltersFormClient({
     countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
+    minPrice?: number;
   }) => {
     const p = new URLSearchParams();
     const inds = overrides.industries ?? selectedIndustries;
@@ -47,12 +51,16 @@ export default function FiltersFormClient({
     const cous = overrides.countries ?? selectedCountries;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
     const mas = overrides.maSupport ?? maSupportEnabled;
+    // Presence check (not ??) so an explicit {minPrice: undefined} clears it
+    // — see the identical pattern (and why) in page.tsx's buildHref.
+    const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
     for (const symbol of symbols) p.append("symbol", symbol);
     for (const industry of inds) p.append("industry", industry);
     for (const sector of secs) p.append("sector", sector);
     for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
     if (mas) p.set("maSupport", "1");
+    if (mp !== undefined) p.set("minPrice", mp.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
   };
@@ -85,16 +93,43 @@ export default function FiltersFormClient({
     navigate(buildHref({ countries: nextCountries }));
   };
 
+  // Min price: local draft so typing doesn't navigate per keystroke — commits
+  // (navigates) only on blur or Enter, same "don't apply until you're done"
+  // principle as the dropdowns' commit-on-close. Resynced from the minPrice
+  // prop when it changes externally (a chip removal, browser back/forward)
+  // via the same render-time "previous prop" pattern MultiSelectDropdown
+  // uses, for the same reason: refs can't be touched during render.
+  const [minPriceDraft, setMinPriceDraft] = useState(minPrice !== undefined ? String(minPrice) : "");
+  const [lastMinPriceProp, setLastMinPriceProp] = useState(minPrice);
+  if (minPrice !== lastMinPriceProp) {
+    setLastMinPriceProp(minPrice);
+    setMinPriceDraft(minPrice !== undefined ? String(minPrice) : "");
+  }
+
+  const commitMinPrice = () => {
+    const trimmed = minPriceDraft.trim();
+    const parsed = trimmed === "" ? NaN : Number(trimmed);
+    const next = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    if (next !== minPrice) {
+      navigate(buildHref({ minPrice: next }));
+    }
+    // Normalize what's displayed to what was actually committed (e.g. clears
+    // a non-numeric or non-positive typo back to blank rather than leaving
+    // invalid-looking text in the box).
+    setMinPriceDraft(next !== undefined ? String(next) : "");
+  };
+
   const hasActiveFilters =
     selectedIndustries.length > 0 ||
     selectedSectors.length > 0 ||
     selectedCountries.length > 0 ||
     !excludeEtfsEnabled ||
-    maSupportEnabled;
+    maSupportEnabled ||
+    minPrice !== undefined;
 
   return (
     <div className={`row g-3${isPending ? " filters-form--pending" : ""}`}>
-      <div className="col-md-4">
+      <div className="col-md-3">
         <div className="filter-form-label-row">
           <label htmlFor="sector" className="form-label filter-form-label mb-0">
             Sector
@@ -111,7 +146,7 @@ export default function FiltersFormClient({
           searchPlaceholder="Search sectors…"
         />
       </div>
-      <div className="col-md-4">
+      <div className="col-md-3">
         <div className="filter-form-label-row">
           <label htmlFor="industry" className="form-label filter-form-label mb-0">
             Industry
@@ -130,7 +165,7 @@ export default function FiltersFormClient({
           searchPlaceholder="Search industries…"
         />
       </div>
-      <div className="col-md-4">
+      <div className="col-md-3">
         <div className="filter-form-label-row">
           <label htmlFor="country" className="form-label filter-form-label mb-0">
             Country
@@ -146,6 +181,37 @@ export default function FiltersFormClient({
           disabled={isPending}
           searchPlaceholder="Search countries…"
         />
+      </div>
+      <div className="col-md-3">
+        <div className="filter-form-label-row">
+          <label htmlFor="minPrice" className="form-label filter-form-label mb-0">
+            Min Price
+          </label>
+        </div>
+        <div className="min-price-input-wrap">
+          <span className="min-price-input__prefix" aria-hidden>$</span>
+          <input
+            type="number"
+            id="minPrice"
+            className="form-control glass-select min-price-input"
+            placeholder="e.g. 5"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={minPriceDraft}
+            onChange={(e) => setMinPriceDraft(e.target.value)}
+            onBlur={commitMinPrice}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitMinPrice();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            disabled={isPending}
+            aria-label="Minimum price"
+          />
+        </div>
       </div>
       <div className="col-12">
         <div className="filter-toggles-row">

@@ -16,6 +16,7 @@ type PaginationWithLoaderProps = {
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
+  minPrice?: number;
   children: React.ReactNode;
 };
 
@@ -28,6 +29,7 @@ function buildPageHref(
     selectedCountries: string[];
     excludeEtfsEnabled: boolean;
     maSupportEnabled: boolean;
+    minPrice?: number;
   }
 ): string {
   const searchParams = new URLSearchParams();
@@ -38,6 +40,7 @@ function buildPageHref(
   for (const country of params.selectedCountries) searchParams.append("country", country);
   if (!params.excludeEtfsEnabled) searchParams.set("excludeEtfs", "0");
   if (params.maSupportEnabled) searchParams.set("maSupport", "1");
+  if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString());
   const search = searchParams.toString();
   return search.length > 0 ? `/?${search}` : "/";
 }
@@ -52,6 +55,7 @@ export default function PaginationWithLoader({
   selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
+  minPrice,
   children,
 }: PaginationWithLoaderProps) {
   const router = useRouter();
@@ -64,6 +68,7 @@ export default function PaginationWithLoader({
     selectedCountries,
     excludeEtfsEnabled,
     maSupportEnabled,
+    minPrice,
   };
 
   const prevHref = buildPageHref(currentPage - 1, params);

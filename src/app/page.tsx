@@ -33,6 +33,7 @@ function FiltersSection({
   selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
+  minPrice,
 }: {
   filterOptions: FilterOptions;
   symbols: string[];
@@ -41,6 +42,7 @@ function FiltersSection({
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
+  minPrice?: number;
 }) {
   const { industries, sectors, countries, sectorIndustryMap } = filterOptions;
   return (
@@ -76,6 +78,7 @@ function FiltersSection({
                 selectedCountries={selectedCountries}
                 excludeEtfsEnabled={excludeEtfsEnabled}
                 maSupportEnabled={maSupportEnabled}
+                minPrice={minPrice}
                 symbols={symbols}
               />
             </div>
@@ -141,6 +144,7 @@ type HomeSearchParams = {
   country?: string | string[];
   excludeEtfs?: string | string[];
   maSupport?: string | string[];
+  minPrice?: string | string[];
 };
 
 async function FiltersAsyncWrapper({
@@ -166,6 +170,7 @@ async function FiltersAsyncWrapper({
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
   const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
   const maSupportEnabled = maSupportParam === "1";
+  const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   return (
     <FiltersSection
       filterOptions={filterOptions}
@@ -175,6 +180,7 @@ async function FiltersAsyncWrapper({
       selectedCountries={selectedCountries}
       excludeEtfsEnabled={excludeEtfsEnabled}
       maSupportEnabled={maSupportEnabled}
+      minPrice={minPrice}
     />
   );
 }
@@ -188,6 +194,15 @@ function getSearchParamValue(value?: string | string[]) {
     return value[value.length - 1];
   }
   return value;
+}
+
+/** Parse the minPrice search param into a non-negative finite number, or undefined if absent/invalid. */
+function getMinPrice(value?: string | string[]): number | undefined {
+  const raw = getSearchParamValue(value);
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return n;
 }
 
 /** Normalize a repeated search param into a deduped, trimmed list, preserving case. */
@@ -314,6 +329,7 @@ async function buildValueFilterConditions({
   countries,
   excludeEtfs,
   maSupport,
+  minPrice,
 }: {
   symbols?: string[];
   industries?: string[];
@@ -321,6 +337,7 @@ async function buildValueFilterConditions({
   countries?: string[];
   excludeEtfs?: boolean;
   maSupport?: boolean;
+  minPrice?: number;
 }): Promise<Record<string, unknown>[]> {
   const conditions: Record<string, unknown>[] = [];
 
@@ -360,6 +377,14 @@ async function buildValueFilterConditions({
     conditions.push({ "valueSearchScore.movingAverageSupport": { $gte: 1 } });
   }
 
+  if (minPrice !== undefined) {
+    // price is denormalized onto the assessment doc by sync_assessment_prices.py
+    // (pyworker, daily) specifically so this can be a plain indexed field match
+    // rather than a live join against stock-quotes at query time — a $lookup-based
+    // join was measured at 1.5-1.6s for the common unfiltered case, not viable.
+    conditions.push({ price: { $gte: minPrice } });
+  }
+
   return conditions;
 }
 
@@ -372,6 +397,7 @@ async function getValues(
     countries,
     excludeEtfs,
     maSupport,
+    minPrice,
   }: {
     symbols?: string[];
     industries?: string[];
@@ -379,6 +405,7 @@ async function getValues(
     countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
+    minPrice?: number;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
@@ -410,6 +437,7 @@ async function getValues(
     countries,
     excludeEtfs,
     maSupport,
+    minPrice,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
@@ -464,6 +492,7 @@ async function getValuesCount({
   countries,
   excludeEtfs,
   maSupport,
+  minPrice,
 }: {
   symbols?: string[];
   industries?: string[];
@@ -471,6 +500,7 @@ async function getValuesCount({
   countries?: string[];
   excludeEtfs?: boolean;
   maSupport?: boolean;
+  minPrice?: number;
 }): Promise<number> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
   if (!hasSymbols && excludeEtfs && industries?.includes(EXCLUDED_ETF_INDUSTRY)) {
@@ -497,6 +527,7 @@ async function getValuesCount({
     countries,
     excludeEtfs,
     maSupport,
+    minPrice,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
@@ -527,6 +558,7 @@ async function ResultsCard({
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
   const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
   const maSupportEnabled = maSupportParam === "1";
+  const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   const isFiltered = symbols.length > 0;
 
   const filterParams = {
@@ -536,6 +568,7 @@ async function ResultsCard({
     countries: selectedCountries,
     excludeEtfs: excludeEtfsEnabled,
     maSupport: maSupportEnabled,
+    minPrice,
   };
 
   const [{ values, hasMore }, totalCount, filterOptions] = await Promise.all([
@@ -557,6 +590,7 @@ async function ResultsCard({
     countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
+    minPrice?: number;
   }) => {
     const p = new URLSearchParams();
     const syms = overrides.symbols ?? symbols;
@@ -565,6 +599,11 @@ async function ResultsCard({
     const cous = overrides.countries ?? selectedCountries;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
     const mas = overrides.maSupport ?? maSupportEnabled;
+    // Presence check (not ??) so an explicit {minPrice: undefined} clears it,
+    // distinct from omitting the key entirely (which keeps the current value)
+    // — minPrice can't use ?? like the booleans above, since undefined is
+    // both "not overriding" and "the cleared value" for a number|undefined field.
+    const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
     if (overrides.page) p.set("page", overrides.page.toString());
     for (const symbol of syms) p.append("symbol", symbol);
     for (const industry of inds) p.append("industry", industry);
@@ -572,6 +611,7 @@ async function ResultsCard({
     for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
     if (mas) p.set("maSupport", "1");
+    if (mp !== undefined) p.set("minPrice", mp.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
   };
@@ -626,6 +666,12 @@ async function ResultsCard({
       removeHref: buildHref({ maSupport: false }),
       ariaLabel: "Remove moving average support filter",
     }] : []),
+    ...(!isFiltered && minPrice !== undefined ? [{
+      id: "minPrice",
+      label: `Min price $${minPrice}`,
+      removeHref: buildHref({ minPrice: undefined }),
+      ariaLabel: "Remove minimum price filter",
+    }] : []),
   ];
 
   return (
@@ -651,6 +697,7 @@ async function ResultsCard({
             selectedCountries={selectedCountries}
             excludeEtfsEnabled={excludeEtfsEnabled}
             maSupportEnabled={maSupportEnabled}
+            minPrice={minPrice}
           >
             {values.length === 0 ? (
               <p className="text-muted text-center mb-0">
@@ -678,6 +725,7 @@ function ResultsLoadingFallback({
   selectedCountries = [],
   excludeEtfsEnabled = true,
   maSupportEnabled = false,
+  minPrice,
 }: {
   isFiltered?: boolean;
   symbols?: string[];
@@ -686,6 +734,7 @@ function ResultsLoadingFallback({
   selectedCountries?: string[];
   excludeEtfsEnabled?: boolean;
   maSupportEnabled?: boolean;
+  minPrice?: number;
 }) {
   return (
     <div className="d-flex flex-column flex-grow-1">
@@ -731,6 +780,12 @@ function ResultsLoadingFallback({
                 {maSupportEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     MA support
+                    <i className="bi bi-x" />
+                  </span>
+                )}
+                {minPrice !== undefined && (
+                  <span className="active-filter-chip active-filter-chip--skeleton">
+                    {`Min price $${minPrice}`}
                     <i className="bi bi-x" />
                   </span>
                 )}
@@ -788,6 +843,7 @@ export default async function Home({
   const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsEnabled = getSearchParamValue(resolvedSearchParams?.excludeEtfs) !== "0";
   const maSupportEnabled = getSearchParamValue(resolvedSearchParams?.maSupport) === "1";
+  const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
 
   const isFiltered = symbols.length > 0;
 
@@ -832,6 +888,7 @@ export default async function Home({
                   selectedCountries={selectedCountries}
                   excludeEtfsEnabled={excludeEtfsEnabled}
                   maSupportEnabled={maSupportEnabled}
+                  minPrice={minPrice}
                 />
               }>
                 <ResultsCard searchParams={searchParams} />

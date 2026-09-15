@@ -3314,6 +3314,34 @@ textarea.form-control:focus {
   min-height: 1rem;
 }
 
+/* Min price filter input — same visual treatment as .glass-select
+   (Sector/Industry/Country triggers) so all four columns look consistent,
+   plus a fixed "$" prefix. */
+.min-price-input-wrap {
+  position: relative;
+}
+
+.min-price-input__prefix {
+  position: absolute;
+  top: 50%;
+  left: 0.65rem;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.min-price-input.form-control.glass-select {
+  padding-left: 1.5rem;
+  -moz-appearance: textfield;
+}
+
+.min-price-input.form-control.glass-select::-webkit-outer-spin-button,
+.min-price-input.form-control.glass-select::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Info icon + hover/tap tooltip bubble */
 .info-tooltip {
   position: relative;
