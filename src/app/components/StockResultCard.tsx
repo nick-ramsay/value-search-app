@@ -577,6 +577,24 @@ export default function StockResultCard({
             </span>
           ) : null;
         })()}
+        {item.priceTrend?.bottoming?.isBottoming ? (
+          <span
+            className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--bottoming"
+            title="Fell over recent weeks but shows signs of finding a bottom"
+            aria-label="Fell over recent weeks but shows signs of finding a bottom"
+          >
+            <i className="bi bi-arrow-up-right-circle" aria-hidden />
+          </span>
+        ) : null}
+        {item.priceTrend?.toppingChop?.isToppingChop ? (
+          <span
+            className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--topping"
+            title="Rallied then stalled into a sideways range — possible top"
+            aria-label="Rallied then stalled into a sideways range — possible top"
+          >
+            <i className="bi bi-shuffle" aria-hidden />
+          </span>
+        ) : null}
       </div>
 
       {/* Primary actions: View trends, Assessment, Edit (when logged in) */}

@@ -7,9 +7,20 @@ import AppNavbar from "../components/AppNavbar";
 const COLLECTION = "stock-economy-assessment";
 
 // No dynamic APIs are used on this page (no searchParams, cookies, etc.), so
-// without this Next.js treats it as fully static — rendered once at build
-// time and never refreshed again, regardless of what generate_economy_
-// assessment_claude.py later writes to Mongo. ISR re-checks it hourly instead.
+// without this Next.js would treat it as fully static — rendered once at
+// build time and never refreshed again, regardless of what generate_economy_
+// assessment_claude.py later writes to Mongo.
+//
+// Passive ISR alone (revalidate on the next request after the window
+// elapses) only bounds staleness to an hour when traffic actually arrives —
+// a quiet page can go far longer than an hour with nobody there to trigger
+// the refresh, which is exactly what happened here (~2 weeks stale). The
+// hourly bound is instead guaranteed by an ACTIVE trigger: a Vercel Cron Job
+// (see /vercel.json) hits GET /api/revalidate/economy-assessment every hour
+// on the wall clock regardless of visitor traffic, which calls
+// revalidatePath("/economy-assessment") to force regeneration. revalidate
+// here is a passive backstop on top of that (e.g. covers the case where the
+// cron itself misfires) — the cron is what actually delivers the guarantee.
 export const revalidate = 3600;
 
 type EconomySection = {

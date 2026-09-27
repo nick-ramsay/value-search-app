@@ -30,6 +30,15 @@ type UndervaluedPick = {
   industry?: string | null;
   price?: number | null;
   marketCap?: number | null;
+  // Bottoming/topping-chop price-shape signal — display only, never part of
+  // the selection criteria (see generate_undervalued_report.py's
+  // _price_signal_summary). Absent on reports generated before this field
+  // was added.
+  priceTrend?: {
+    signal?: string | null;
+    bottomingMovePct?: number | null;
+    toppingMovePct?: number | null;
+  } | null;
 };
 
 const MARKET_TIER_LABELS: Record<string, string> = {
@@ -289,6 +298,22 @@ export default async function UndervaluedPicksPage() {
                               {splitFlags(pick.trapFlags).length === 0 && pick.trapFlags && (
                                 <span className="undervalued-chip undervalued-chip--good">
                                   <i className="bi bi-shield-check" aria-hidden /> No trap flags
+                                </span>
+                              )}
+                              {pick.priceTrend?.signal?.includes("BOTTOMING") && (
+                                <span className="undervalued-chip undervalued-chip--good">
+                                  <i className="bi bi-arrow-up-right-circle" aria-hidden /> Recently
+                                  bottomed
+                                  {typeof pick.priceTrend.bottomingMovePct === "number" &&
+                                    ` (${pick.priceTrend.bottomingMovePct.toFixed(0)}%)`}
+                                </span>
+                              )}
+                              {pick.priceTrend?.signal?.includes("TOPPING_CHOP") && (
+                                <span className="undervalued-chip undervalued-chip--warn">
+                                  <i className="bi bi-shuffle" aria-hidden /> Topping / choppy after a
+                                  run-up
+                                  {typeof pick.priceTrend.toppingMovePct === "number" &&
+                                    ` (+${pick.priceTrend.toppingMovePct.toFixed(0)}%)`}
                                 </span>
                               )}
                             </div>

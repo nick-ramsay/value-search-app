@@ -1037,6 +1037,32 @@ button.accordion-button.ai-accordion-button:focus-visible {
   line-height: 1;
 }
 
+/* Bottoming / topping-chop price-trend pills — same dimensions/transparency
+   as the MA support pill, tinted to distinguish the two patterns. */
+.stock-card__price-trend-pill {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  opacity: 0.9;
+}
+
+.stock-card__price-trend-pill .bi {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.stock-card__price-trend-pill--bottoming { color: #1a7f4b; }
+.stock-card__price-trend-pill--topping { color: #b45309; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #4ade80; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--topping { color: #fbbf24; }
+}
+
+:root[data-theme="dark"] .stock-card__price-trend-pill--bottoming { color: #4ade80; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--topping { color: #fbbf24; }
+
 /* ---- Value score progress bar (thin accent strip below signals) ---- */
 .stock-card__score-bar-wrap {
   height: 3px;

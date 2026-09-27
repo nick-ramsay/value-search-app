@@ -30,9 +30,34 @@ type HistoryPoint = {
   label?: string;
 };
 
+type PriceTrendPatternSummary = {
+  fired: boolean;
+  priorMovePct: number | null;
+};
+
+type PriceTrendSummary = {
+  bottoming: PriceTrendPatternSummary;
+  toppingChop: PriceTrendPatternSummary;
+} | null;
+
 type HistoryResponse = {
   scoreHistory: HistoryPoint[];
   ratingHistory: HistoryPoint[];
+  /** Daily close price from stock-price-history (fetch_price_history.py), oldest first. */
+  priceHistory: HistoryPoint[];
+  /** Bottoming/toppingChop signal (price_trend.py), for annotating the price chart. */
+  priceTrend: PriceTrendSummary;
+};
+
+type PriceHistoryDoc = {
+  prices?: { date?: unknown; close?: unknown }[];
+};
+
+type AssessmentPriceTrendDoc = {
+  priceTrend?: {
+    bottoming?: { isBottoming?: unknown; priorMovePct?: unknown };
+    toppingChop?: { isToppingChop?: unknown; priorMovePct?: unknown };
+  };
 };
 
 function escapeRegExp(value: string) {
@@ -146,6 +171,10 @@ export async function GET(request: Request) {
   const ratingHistoryCollection =
     process.env.MONGODB_AI_ASSESSMENTS_HISTORY_COLLECTION ??
     "stock-ai-assessment-history";
+  const priceHistoryCollection =
+    process.env.MONGODB_PRICE_HISTORY_COLLECTION ?? "stock-price-history";
+  const aiAssessmentsCollection =
+    process.env.MONGODB_AI_ASSESSMENTS_COLLECTION ?? "stock-ai-assessments";
 
   if (!dbName) {
     return NextResponse.json(
@@ -236,9 +265,48 @@ export async function GET(request: Request) {
       (a, b) => Date.parse(a!.date) - Date.parse(b!.date),
     ) as HistoryPoint[];
 
+  // Fetch daily price history — a single doc per symbol holding a `prices`
+  // array (see fetch_price_history.py), unlike the one-doc-per-snapshot shape
+  // of score/rating history above.
+  const priceHistoryDoc = (await db
+    .collection(priceHistoryCollection)
+    .findOne(symbolFilter)) as PriceHistoryDoc | null;
+
+  const priceHistory: HistoryPoint[] = (priceHistoryDoc?.prices ?? [])
+    .map((p) => {
+      const date = typeof p.date === "string" ? p.date : normaliseDate(p.date);
+      const value = toNumber(p.close);
+      if (!date || value == null) return null;
+      return { date, value } satisfies HistoryPoint;
+    })
+    .filter((point): point is HistoryPoint => point !== null)
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+
+  // Bottoming/toppingChop signal (price_trend.py), computed and stored on the
+  // assessment doc — read here only to annotate the price chart, not
+  // recomputed.
+  const assessmentDoc = (await db
+    .collection(aiAssessmentsCollection)
+    .findOne(symbolFilter, { projection: { priceTrend: 1 } })) as AssessmentPriceTrendDoc | null;
+
+  const priceTrend: PriceTrendSummary = assessmentDoc?.priceTrend
+    ? {
+        bottoming: {
+          fired: assessmentDoc.priceTrend.bottoming?.isBottoming === true,
+          priorMovePct: toNumber(assessmentDoc.priceTrend.bottoming?.priorMovePct),
+        },
+        toppingChop: {
+          fired: assessmentDoc.priceTrend.toppingChop?.isToppingChop === true,
+          priorMovePct: toNumber(assessmentDoc.priceTrend.toppingChop?.priorMovePct),
+        },
+      }
+    : null;
+
   const response: HistoryResponse = {
     scoreHistory,
     ratingHistory,
+    priceHistory,
+    priceTrend,
   };
 
   return NextResponse.json(response, { status: 200 });

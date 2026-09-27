@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/revalidate/economy-assessment",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

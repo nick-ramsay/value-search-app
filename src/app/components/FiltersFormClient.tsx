@@ -17,6 +17,8 @@ type Props = {
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
   maSupportEnabled: boolean;
+  bottomingEnabled: boolean;
+  toppingChopEnabled: boolean;
   minPrice?: number;
   symbols: string[];
 };
@@ -31,6 +33,8 @@ export default function FiltersFormClient({
   selectedCountries,
   excludeEtfsEnabled,
   maSupportEnabled,
+  bottomingEnabled,
+  toppingChopEnabled,
   minPrice,
   symbols,
 }: Props) {
@@ -43,6 +47,8 @@ export default function FiltersFormClient({
     countries?: string[];
     excludeEtfs?: boolean;
     maSupport?: boolean;
+    bottoming?: boolean;
+    toppingChop?: boolean;
     minPrice?: number;
   }) => {
     const p = new URLSearchParams();
@@ -51,6 +57,8 @@ export default function FiltersFormClient({
     const cous = overrides.countries ?? selectedCountries;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
     const mas = overrides.maSupport ?? maSupportEnabled;
+    const bot = overrides.bottoming ?? bottomingEnabled;
+    const top = overrides.toppingChop ?? toppingChopEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it
     // — see the identical pattern (and why) in page.tsx's buildHref.
     const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
@@ -60,6 +68,8 @@ export default function FiltersFormClient({
     for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
     if (mas) p.set("maSupport", "1");
+    if (bot) p.set("bottoming", "1");
+    if (top) p.set("toppingChop", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
@@ -125,6 +135,8 @@ export default function FiltersFormClient({
     selectedCountries.length > 0 ||
     !excludeEtfsEnabled ||
     maSupportEnabled ||
+    bottomingEnabled ||
+    toppingChopEnabled ||
     minPrice !== undefined;
 
   return (
@@ -241,6 +253,34 @@ export default function FiltersFormClient({
             <label htmlFor="maSupport" className="filter-toggle-label">
               <span className="filter-toggle-slider" aria-hidden />
               <span className="filter-toggle-label__text">Moving average support</span>
+            </label>
+          </div>
+          <div className="filter-toggle">
+            <input
+              type="checkbox"
+              id="bottoming"
+              className="filter-toggle-input"
+              checked={bottomingEnabled}
+              onChange={(e) => navigate(buildHref({ bottoming: e.target.checked }))}
+              disabled={isPending}
+            />
+            <label htmlFor="bottoming" className="filter-toggle-label">
+              <span className="filter-toggle-slider" aria-hidden />
+              <span className="filter-toggle-label__text">Recently bottomed</span>
+            </label>
+          </div>
+          <div className="filter-toggle">
+            <input
+              type="checkbox"
+              id="toppingChop"
+              className="filter-toggle-input"
+              checked={toppingChopEnabled}
+              onChange={(e) => navigate(buildHref({ toppingChop: e.target.checked }))}
+              disabled={isPending}
+            />
+            <label htmlFor="toppingChop" className="filter-toggle-label">
+              <span className="filter-toggle-slider" aria-hidden />
+              <span className="filter-toggle-label__text">Topping / choppy</span>
             </label>
           </div>
           {hasActiveFilters && (

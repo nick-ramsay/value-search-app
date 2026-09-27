@@ -10,10 +10,26 @@ type HistoryPoint = {
   label?: string;
 };
 
+type PriceTrendPatternSummary = {
+  fired: boolean;
+  priorMovePct: number | null;
+};
+
+type PriceTrendSummary = {
+  bottoming: PriceTrendPatternSummary;
+  toppingChop: PriceTrendPatternSummary;
+} | null;
+
 type HistoryResponse = {
   scoreHistory: HistoryPoint[];
   ratingHistory: HistoryPoint[];
+  priceHistory: HistoryPoint[];
+  priceTrend: PriceTrendSummary;
 };
+
+/** Trading days considered "recent" by price_trend.py — mirrors _RECENT_WINDOW
+ * there, used only to shade the matching window on the price chart. */
+const PRICE_TREND_RECENT_WINDOW = 10;
 
 type HistoryChartsProps = {
   symbol?: string;
@@ -28,7 +44,7 @@ type HistoryChartsProps = {
   onCloseThisPanel?: () => void;
 };
 
-type ActiveView = "score" | "rating";
+type ActiveView = "score" | "rating" | "price";
 
 type FetchState =
   | { status: "idle" }
@@ -561,6 +577,248 @@ function AiRatingHistoryChart({
   );
 }
 
+function formatPriceTooltip(value: number, dateLabel: string): string {
+  return `$${value.toFixed(2)} — ${dateLabel}`;
+}
+
+/** Daily closing price, with the recent window shaded when price_trend.py
+ * flagged a bottoming or topping-chop pattern (see that module for the
+ * underlying algorithm — this only visualizes the result, never recomputes it). */
+function PriceHistoryChart({
+  data,
+  priceTrend,
+  gradientId = "priceHistoryLineGrad",
+}: {
+  data: HistoryPoint[];
+  priceTrend: PriceTrendSummary;
+  gradientId?: string;
+}) {
+  const width = 560;
+  const height = 200;
+  const marginLeft = 60;
+  const marginRight = 14;
+  const marginTop = 10;
+  const marginBottom = 34;
+
+  const plotW = width - marginLeft - marginRight;
+  const plotH = height - marginTop - marginBottom;
+
+  const bottomingFired = priceTrend?.bottoming.fired ?? false;
+  const toppingFired = priceTrend?.toppingChop.fired ?? false;
+
+  const layout = useMemo(() => {
+    if (!data.length) return null;
+
+    const values = data.map((d) => d.value);
+    const rawMin = Math.min(...values);
+    const rawMax = Math.max(...values);
+    const pad = Math.max((rawMax - rawMin) * 0.08, rawMax * 0.01, 0.01);
+    const domainMin = Math.max(0, rawMin - pad);
+    const domainMax = rawMax + pad;
+    const span = domainMax - domainMin || 1;
+
+    const valueToY = (v: number) => marginTop + ((domainMax - v) / span) * plotH;
+
+    const n = data.length;
+    const xAt = (index: number) =>
+      marginLeft + (n === 1 ? plotW / 2 : (index / (n - 1)) * plotW);
+
+    const points = data.map((d, i) => ({
+      x: xAt(i),
+      y: valueToY(d.value),
+      dateLabel: formatDateLabel(d.date),
+      value: d.value,
+    }));
+
+    const lineD = points
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+      .join(" ");
+
+    const TICK_COUNT = 4;
+    const tickYs = Array.from({ length: TICK_COUNT + 1 }, (_, i) => {
+      const v = domainMin + (span * i) / TICK_COUNT;
+      return { value: v, y: valueToY(v), label: `$${v.toFixed(2)}` };
+    }).reverse();
+
+    const xTickIndices =
+      n <= 1
+        ? [0]
+        : n <= 4
+          ? data.map((_, i) => i)
+          : (() => {
+              const want = Math.min(6, n);
+              const out: number[] = [];
+              for (let k = 0; k < want; k++) {
+                out.push(Math.round((k / (want - 1)) * (n - 1)));
+              }
+              return [...new Set(out)].sort((a, b) => a - b);
+            })();
+
+    // Shade the trailing window price_trend.py actually evaluated — only
+    // when a pattern fired, so an unremarkable stretch of price stays plain.
+    let recentBand: { x1: number; x2: number; label: string } | null = null;
+    if ((bottomingFired || toppingFired) && n > PRICE_TREND_RECENT_WINDOW) {
+      recentBand = {
+        x1: xAt(n - PRICE_TREND_RECENT_WINDOW),
+        x2: xAt(n - 1),
+        label: bottomingFired ? "Possible bottom" : "Topping / chop",
+      };
+    }
+
+    return { points, lineD, tickYs, xTickIndices, recentBand };
+  }, [data, marginLeft, plotW, plotH, marginTop, bottomingFired, toppingFired]);
+
+  if (!data.length) {
+    return (
+      <div className="text-center text-muted small py-4">
+        No price history available yet for this symbol.
+      </div>
+    );
+  }
+
+  if (!layout) return null;
+
+  const showMarkers = data.length <= 60;
+  const last = data[data.length - 1];
+  const lastPriceLabel = `$${last.value.toFixed(2)}`;
+  const ariaLabel = `Daily closing price over time, latest ${lastPriceLabel}`;
+
+  const firstDateLabel = formatDateLabel(data[0].date);
+  const lastDateLabel = formatDateLabel(data[data.length - 1].date);
+  const rangeLabel =
+    firstDateLabel === lastDateLabel
+      ? firstDateLabel
+      : `${firstDateLabel} – ${lastDateLabel}`;
+
+  return (
+    <div className="stock-card__trends-chart-wrap stock-card__price-history-chart w-100">
+      <div className="d-flex align-items-center flex-wrap gap-2 mb-2 small">
+        <span className="badge bg-primary text-white stock-card__badge">
+          <span>Latest: {lastPriceLabel}</span>
+        </span>
+        {bottomingFired && (
+          <span className="badge bg-success text-white stock-card__badge">
+            <i className="bi bi-arrow-up-right-circle me-1" aria-hidden />
+            Possible bottom
+          </span>
+        )}
+        {toppingFired && (
+          <span className="badge bg-warning text-dark stock-card__badge">
+            <i className="bi bi-shuffle me-1" aria-hidden />
+            Topping / chop
+          </span>
+        )}
+        <span className="text-muted" aria-hidden>
+          •
+        </span>
+        <span className="text-muted">{rangeLabel}</span>
+      </div>
+
+      <div className="position-relative">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={ariaLabel}
+          className="stock-card__price-history-chart-svg"
+          style={{ width: "100%", height: "auto", minHeight: "200px" }}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#00A87C" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+          </defs>
+
+          {layout.recentBand && (
+            <>
+              <rect
+                x={layout.recentBand.x1}
+                y={marginTop}
+                width={Math.max(0, layout.recentBand.x2 - layout.recentBand.x1)}
+                height={plotH}
+                fill={bottomingFired ? "rgba(26, 127, 75, 0.10)" : "rgba(180, 83, 9, 0.10)"}
+              />
+              <text
+                x={(layout.recentBand.x1 + layout.recentBand.x2) / 2}
+                y={marginTop + 12}
+                textAnchor="middle"
+                fill={bottomingFired ? "#1a7f4b" : "#b45309"}
+                style={{ fontSize: "10px", fontWeight: 600 }}
+              >
+                {layout.recentBand.label}
+              </text>
+            </>
+          )}
+
+          {layout.tickYs.map((t) => (
+            <g key={t.value}>
+              <line
+                x1={marginLeft}
+                x2={marginLeft + plotW}
+                y1={t.y}
+                y2={t.y}
+                stroke="rgba(148, 163, 184, 0.22)"
+                strokeWidth={0.75}
+              />
+              <text
+                x={marginLeft - 8}
+                y={t.y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fill="currentColor"
+                style={{ fontSize: "11px" }}
+              >
+                {t.label}
+              </text>
+            </g>
+          ))}
+
+          <path
+            d={layout.lineD}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {showMarkers &&
+            layout.points.map((p, i) => (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={3}
+                fill="var(--bs-body-bg, #fff)"
+                stroke="#3b82f6"
+                strokeWidth={1.5}
+              >
+                <title>{formatPriceTooltip(data[i].value, p.dateLabel)}</title>
+              </circle>
+            ))}
+
+          {layout.xTickIndices.map((i) => {
+            const p = layout.points[i];
+            return (
+              <text
+                key={`price-xt-${i}`}
+                x={p.x}
+                y={height - 8}
+                textAnchor="middle"
+                fill="currentColor"
+                style={{ fontSize: "10px", opacity: 0.75 }}
+              >
+                {p.dateLabel}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export function HistoryChartsTrigger({
   collapseId,
   symbol,
@@ -731,6 +989,14 @@ export function HistoryChartsPanel({
               <i className="bi bi-stars me-1" aria-hidden />
               AI rating history
             </button>
+            <button
+              type="button"
+              className={`btn ${activeView === "price" ? "btn-primary" : "btn-outline-primary"}`}
+              onClick={() => setActiveView("price")}
+            >
+              <i className="bi bi-currency-dollar me-1" aria-hidden />
+              Price history
+            </button>
           </div>
         </div>
 
@@ -750,7 +1016,8 @@ export function HistoryChartsPanel({
         {state.status === "success" && (
           <div className="stock-card__trends-chart-content w-100 d-flex flex-column align-items-stretch">
             {state.data.scoreHistory.length === 0 &&
-              state.data.ratingHistory.length === 0 && (
+              state.data.ratingHistory.length === 0 &&
+              state.data.priceHistory.length === 0 && (
                 <div className="alert alert-info small w-100" role="status">
                   No history data found yet for this symbol. Once the value
                   score or AI rating has been recorded over time, trends will
@@ -765,12 +1032,21 @@ export function HistoryChartsPanel({
                   gradientId={`${collapseId}-score-gradient`}
                 />
               </div>
-            ) : (
+            ) : activeView === "rating" ? (
               <div className="w-100">
                 <h6 className="fw-semibold mb-3">AI rating over time</h6>
                 <AiRatingHistoryChart
                   data={state.data.ratingHistory}
                   gradientId={`${collapseId}-ai-rating-line`}
+                />
+              </div>
+            ) : (
+              <div className="w-100">
+                <h6 className="fw-semibold mb-3">Price history</h6>
+                <PriceHistoryChart
+                  data={state.data.priceHistory}
+                  priceTrend={state.data.priceTrend}
+                  gradientId={`${collapseId}-price-gradient`}
                 />
               </div>
             )}

@@ -1,4 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) and styled with Bootstrap.
+**value-search-app** is a [Next.js](https://nextjs.org) app, styled with Bootstrap, that surfaces AI-generated value-investing research. It reads data produced by the sibling **`value-search-pyworker`** repo (stock quotes/fundamentals scraping, LLM assessments, scoring, price-trend detection) out of a shared MongoDB database — this app itself is read-mostly against that pipeline, plus its own auth/portfolio/notes features layered on top.
+
+## Application overview
+
+### Stock search & assessments (`/`)
+The home page lists every symbol with an AI assessment (`stock-ai-assessments`), sorted by AI rating then value-score percentage, 25 per page. Search by ticker/name, or filter by industry/sector/country, exclude ETFs, set a minimum price, or narrow to symbols currently flagged by three price/trend signals:
+
+- **Moving average support** — `valueSearchScore.movingAverageSupport` (golden cross + price near the 50d MA)
+- **Recently bottomed** — `priceTrend.bottoming.isBottoming` (fell over recent weeks, shows signs of finding a bottom)
+- **Topping / choppy** — `priceTrend.toppingChop.isToppingChop` (rallied then stalled into a sideways range)
+
+Each result renders as a card (`StockResultCard`) showing price, AI rating, value-score badge (click for the full point breakdown), the bottoming/toppingChop pills above when they fire, and expandable panels for the full AI assessment, a "View trends" panel with three charts (value score over time, AI rating over time, and daily price history with the bottoming/toppingChop window shaded when applicable — `HistoryCharts.tsx`, backed by `/api/value-history`), the raw quote/fundamentals data used to generate the assessment (signed in only), and notes/status tracking (signed in only).
+
+### Undervalued Picks (`/undervalued-picks`)
+Renders the weekly AI-ranked shortlist from `stock-undervalued-reports` (`_id: "current"`, written by the pyworker's `generate_undervalued_report.py`): each pick shows its thesis/catalyst/bear case plus screening-signal chips — sector/market cap, country (tinted by market tier), any size/liquidity or value-trap warnings that survived selection, and a bottoming/topping-chop price-signal chip when one fired (display only — the pyworker doesn't let this retroactively change which stocks were picked).
+
+### Economy Assessment (`/economy-assessment`)
+Renders the current weekly macro report from `stock-economy-assessment` (`_id: "current"`, written by `generate_economy_assessment_claude.py`): State of the Economy, Leading Sectors and Industries, Late-Cycle and Overvaluation Risk, and Undervalued and Underappreciated Opportunities.
+
+### Sector Assessments (`/sector-assessments`)
+Browse `stock-sector-industry-assessments` (written by `generate_sector_industry_assessments_claude.py`) by sector, showing the current-sentiment / 12-month-outlook / investor-implications writeup for each industry within it.
+
+### Portfolio (`/portfolio`, signed in)
+Track individual symbols against a personal status — `Avoid`, `Watch`, `Queued`, `Own`, `Hold` — plus per-symbol notes, backed by `/api/user-stocks-by-status`, `/api/user-stock-counts`, and `/api/user-stock-labels`.
+
+### Authentication
+Email/password auth via NextAuth (`CredentialsProvider`), with account creation (`/create-account`, two-step via `/create-account-request`) and password reset (`/reset-password`, `/reset-password-request`) flows that send email through the configured SMTP/Gmail settings below. Monthly Balances and Portfolio are gated behind sign-in; the search/assessments/reports pages are open to everyone, with extra detail (research inputs, notes) unlocked once signed in.
+
+---
 
 ## Getting Started
 
@@ -11,7 +39,35 @@ export MONGODB_URI="mongodb://localhost:27017"
 export MONGODB_DB="value_search"
 ```
 
-The home page reads from the `values` collection and renders up to 25 documents.
+### Collection name overrides (optional)
+
+The app's default collection names match what `value-search-pyworker` writes, but each can be overridden if your database uses different names:
+
+| Variable | Default | Used by |
+|---|---|---|
+| `MONGODB_AI_ASSESSMENTS_COLLECTION` | *(required, no default)* | Stock search, portfolio, undervalued-picks source lookups |
+| `MONGODB_STOCK_QUOTES_COLLECTION` | `stock-quotes` | Price/industry/sector/country enrichment for search results |
+| `MONGODB_SECTOR_INDUSTRIES_COLLECTION` | `stock-sector-industries` | Industry picker narrowed by selected sector(s) |
+| `MONGODB_SCORE_HISTORY_COLLECTION` | `stock-score-history` | "Value score over time" chart |
+| `MONGODB_AI_ASSESSMENTS_HISTORY_COLLECTION` | `stock-ai-assessment-history` | "AI rating over time" chart |
+| `MONGODB_PRICE_HISTORY_COLLECTION` | `stock-price-history` | "Price history" chart + bottoming/toppingChop chart annotations |
+
+### Auth & email (for account creation / password reset)
+
+| Variable | Description |
+|---|---|
+| `NEXTAUTH_SECRET` | NextAuth session encryption secret |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_SECURE` / `EMAIL_USER` / `EMAIL_PASSWORD` / `EMAIL_FROM` | SMTP settings for account-creation/password-reset emails |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REFRESH_TOKEN` | Alternative Gmail OAuth send path, if used instead of plain SMTP |
+| `CRON_SECRET` | Shared secret for `/api/revalidate/*` cron-triggered cache revalidation |
+
+### Datadog RUM (optional, client-side)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_DATADOG_RUM_APPLICATION_ID` / `NEXT_PUBLIC_DATADOG_RUM_CLIENT_TOKEN` | Datadog RUM application credentials |
+| `NEXT_PUBLIC_DATADOG_SITE` / `NEXT_PUBLIC_DATADOG_ENV` | Datadog intake site and environment tag |
+| `NEXT_PUBLIC_APP_VERSION` | Version tag attached to RUM sessions |
 
 ### Monthly balances (signed-in users)
 

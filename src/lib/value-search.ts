@@ -37,6 +37,28 @@ export type ValueRecordMetrics = {
   analystTargetPrice?: number;
 };
 
+/**
+ * Bottoming / topping-chop price-shape signals, written by the pyworker's
+ * price_trend.py onto stock-ai-assessments as `priceTrend`. Purely a display
+ * signal — never affects valueSearchScore. See that module's docstring for
+ * how the score/gate/flags are computed.
+ */
+export type PriceTrendPattern = {
+  score: number;
+  gatePassed: boolean;
+  flags: string[];
+  priorMovePct?: number | null;
+  rsi?: number | null;
+};
+
+export type PriceTrendDisplay = {
+  hasSufficientHistory: boolean;
+  dataPoints?: number;
+  asOfDate?: string | null;
+  bottoming: PriceTrendPattern & { isBottoming: boolean };
+  toppingChop: PriceTrendPattern & { isToppingChop: boolean };
+};
+
 /** One cleanly-separated section of an AI assessment (e.g. "Financial Health"). */
 export type ValueRecordAssessmentSection = {
   key: string;
@@ -64,6 +86,7 @@ export type ValueRecord = {
   sector?: string;
   country?: string;
   valueSearchScore?: ValueSearchScoreDisplay;
+  priceTrend?: PriceTrendDisplay;
 } & ValueRecordMetrics;
 
 function escapeRegExp(value: string) {
@@ -185,6 +208,44 @@ function readAssessmentSections(v: unknown): ValueRecordAssessmentSection[] | un
   return sections.length > 0 ? sections : undefined;
 }
 
+/**
+ * Read `priceTrend` off a raw doc. Deliberately conservative: only trusts a
+ * pattern's fired boolean when the shape looks well-formed, so a malformed or
+ * partial document degrades to "no signal" rather than a false badge.
+ */
+function readPriceTrend(v: unknown): PriceTrendDisplay | undefined {
+  if (typeof v !== "object" || v === null) return undefined;
+  const obj = v as Record<string, unknown>;
+  if (obj.hasSufficientHistory !== true) return undefined;
+
+  const readBasePattern = (raw: unknown): PriceTrendPattern | undefined => {
+    if (typeof raw !== "object" || raw === null) return undefined;
+    const p = raw as Record<string, unknown>;
+    return {
+      score: toNumber(p.score) ?? 0,
+      gatePassed: p.gatePassed === true,
+      flags: Array.isArray(p.flags) ? p.flags.filter((f): f is string => typeof f === "string") : [],
+      priorMovePct: toNumber(p.priorMovePct) ?? null,
+      rsi: toNumber(p.rsi) ?? null,
+    };
+  };
+
+  const bottomingBase = readBasePattern(obj.bottoming);
+  const toppingChopBase = readBasePattern(obj.toppingChop);
+  if (!bottomingBase || !toppingChopBase) return undefined;
+
+  const bottomingRaw = obj.bottoming as Record<string, unknown>;
+  const toppingChopRaw = obj.toppingChop as Record<string, unknown>;
+
+  return {
+    hasSufficientHistory: true,
+    dataPoints: typeof obj.dataPoints === "number" ? obj.dataPoints : undefined,
+    asOfDate: typeof obj.asOfDate === "string" ? obj.asOfDate : null,
+    bottoming: { ...bottomingBase, isBottoming: bottomingRaw.isBottoming === true },
+    toppingChop: { ...toppingChopBase, isToppingChop: toppingChopRaw.isToppingChop === true },
+  };
+}
+
 /** Read a number from doc, valueSearchScore, or nested doc.metrics / doc.quote using the first matching key. */
 function readNumber(
   doc: Record<string, unknown>,
@@ -218,6 +279,7 @@ export type DocInput = {
   sector?: unknown;
   country?: unknown;
   valueSearchScore?: unknown;
+  priceTrend?: unknown;
   [key: string]: unknown;
 };
 
@@ -258,6 +320,7 @@ export function docToValueRecord(doc: DocInput): ValueRecord {
     sector: typeof doc.sector === "string" ? doc.sector : undefined,
     country: typeof doc.country === "string" ? doc.country : undefined,
     valueSearchScore: normalized,
+    priceTrend: readPriceTrend(doc.priceTrend),
     aiAssessmentLastUpdated: readAssessmentLastUpdatedFromAny(d),
     priceLastUpdated: readQuoteLastUpdatedFromAny(d),
     price: readNumber(d, "price", "currentPrice", "regularMarketPrice", "current_price", "close"),
