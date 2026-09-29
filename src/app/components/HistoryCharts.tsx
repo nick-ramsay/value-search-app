@@ -704,7 +704,7 @@ function PriceHistoryChart({
         )}
         {toppingFired && (
           <span className="badge bg-warning text-dark stock-card__badge">
-            <i className="bi bi-shuffle me-1" aria-hidden />
+            <i className="bi bi-activity me-1" aria-hidden />
             Topping / chop
           </span>
         )}

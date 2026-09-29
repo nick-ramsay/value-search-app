@@ -592,7 +592,7 @@ export default function StockResultCard({
             title="Rallied then stalled into a sideways range — possible top"
             aria-label="Rallied then stalled into a sideways range — possible top"
           >
-            <i className="bi bi-shuffle" aria-hidden />
+            <i className="bi bi-activity" aria-hidden />
           </span>
         ) : null}
       </div>

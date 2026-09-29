@@ -310,7 +310,7 @@ export default async function UndervaluedPicksPage() {
                               )}
                               {pick.priceTrend?.signal?.includes("TOPPING_CHOP") && (
                                 <span className="undervalued-chip undervalued-chip--warn">
-                                  <i className="bi bi-shuffle" aria-hidden /> Topping / choppy after a
+                                  <i className="bi bi-activity" aria-hidden /> Topping / choppy after a
                                   run-up
                                   {typeof pick.priceTrend.toppingMovePct === "number" &&
                                     ` (+${pick.priceTrend.toppingMovePct.toFixed(0)}%)`}
