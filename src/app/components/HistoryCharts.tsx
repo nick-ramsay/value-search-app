@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
-import BottomingIcon from "./icons/BottomingIcon";
 
 type HistoryPoint = {
   date: string;
@@ -712,7 +711,7 @@ function PriceHistoryChart({
         </span>
         {bottomingFired && (
           <span className="badge bg-success text-white stock-card__badge">
-            <BottomingIcon className="me-1" />
+            <i className="bi bi-check-lg me-1" aria-hidden />
             Possible bottom
           </span>
         )}

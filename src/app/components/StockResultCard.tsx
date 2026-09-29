@@ -6,7 +6,6 @@ import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
 import ScoreModalTrigger from "./ScoreModalTrigger";
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
-import BottomingIcon from "./icons/BottomingIcon";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
 import CardNotes from "./CardComments";
@@ -562,7 +561,7 @@ export default function StockResultCard({
             title="Fell over recent weeks but shows signs of finding a bottom"
             aria-label="Fell over recent weeks but shows signs of finding a bottom"
           >
-            <BottomingIcon />
+            <i className="bi bi-check-lg" aria-hidden />
           </span>
         ) : null}
         {item.priceTrend?.toppingChop?.isToppingChop ? (

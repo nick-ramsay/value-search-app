@@ -4,7 +4,6 @@ import ReactMarkdown from "react-markdown";
 
 import clientPromise from "@/lib/mongodb";
 import AppNavbar from "../components/AppNavbar";
-import BottomingIcon from "../components/icons/BottomingIcon";
 
 const COLLECTION = "stock-undervalued-reports";
 
@@ -304,7 +303,7 @@ export default async function UndervaluedPicksPage() {
                               )}
                               {pick.priceTrend?.signal?.includes("BOTTOMING") && (
                                 <span className="undervalued-chip undervalued-chip--good">
-                                  <BottomingIcon /> Recently
+                                  <i className="bi bi-check-lg" aria-hidden /> Recently
                                   bottomed
                                   {typeof pick.priceTrend.bottomingMovePct === "number" &&
                                     ` (${pick.priceTrend.bottomingMovePct.toFixed(0)}%)`}
