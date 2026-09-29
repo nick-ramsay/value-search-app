@@ -712,9 +712,9 @@ async function ResultsCard({
     }] : []),
     ...(!isFiltered && toppingChopEnabled ? [{
       id: "toppingChop",
-      label: "Topping / choppy",
+      label: "Topping",
       removeHref: buildHref({ toppingChop: false }),
-      ariaLabel: "Remove topping / choppy filter",
+      ariaLabel: "Remove topping filter",
     }] : []),
     ...(!isFiltered && momentumEnabled ? [{
       id: "momentum",
@@ -847,7 +847,7 @@ function ResultsLoadingFallback({
                 )}
                 {toppingChopEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
-                    Topping / choppy
+                    Topping
                     <i className="bi bi-x" />
                   </span>
                 )}

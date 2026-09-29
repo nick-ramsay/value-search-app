@@ -586,8 +586,8 @@ function formatPriceTooltip(value: number, dateLabel: string): string {
  * price_trend.py pattern fired (bottoming/toppingChop/momentum are mutually
  * exclusive by construction — see that module's gates). */
 const PRICE_TREND_BAND_STYLE = {
-  bottoming: { label: "Possible bottom", fill: "rgba(26, 127, 75, 0.10)", text: "#1a7f4b" },
-  topping: { label: "Topping / chop", fill: "rgba(180, 83, 9, 0.10)", text: "#b45309" },
+  bottoming: { label: "Bottom", fill: "rgba(26, 127, 75, 0.10)", text: "#1a7f4b" },
+  topping: { label: "Topping", fill: "rgba(180, 83, 9, 0.10)", text: "#b45309" },
   momentum: { label: "Momentum", fill: "rgba(37, 99, 235, 0.10)", text: "#2563eb" },
 } as const;
 
@@ -711,20 +711,20 @@ function PriceHistoryChart({
         </span>
         {bottomingFired && (
           <span className="badge bg-success text-white stock-card__badge">
-            <i className="bi bi-check-lg me-1" aria-hidden />
-            Possible bottom
+            Bottom
+            <i className="bi bi-check-lg ms-1" aria-hidden />
           </span>
         )}
         {toppingFired && (
           <span className="badge bg-warning text-dark stock-card__badge">
-            <i className="bi bi-activity me-1" aria-hidden />
-            Topping / chop
+            Topping
+            <i className="bi bi-activity ms-1" aria-hidden />
           </span>
         )}
         {momentumFired && (
           <span className="badge bg-info text-dark stock-card__badge">
-            <i className="bi bi-rocket-takeoff-fill me-1" aria-hidden />
             Momentum
+            <i className="bi bi-rocket-takeoff-fill ms-1" aria-hidden />
           </span>
         )}
         <span className="text-muted" aria-hidden>
@@ -914,6 +914,17 @@ export function HistoryChartsPanel({
       el.removeEventListener("shown.bs.collapse", onShown);
       el.removeEventListener("hidden.bs.collapse", onHidden);
     };
+  }, [collapseId]);
+
+  // A price-trend signal pill on the card (bottoming/toppingChop/momentum —
+  // see StockResultCard.tsx) dispatches this on the same collapse element to
+  // jump straight to the price view, instead of whatever tab was last open.
+  useEffect(() => {
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onShowPriceTrend = () => setActiveView("price");
+    el.addEventListener("stockcard:show-price-trend", onShowPriceTrend);
+    return () => el.removeEventListener("stockcard:show-price-trend", onShowPriceTrend);
   }, [collapseId]);
 
   useEffect(() => {

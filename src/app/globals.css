@@ -1014,15 +1014,29 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: none !important;
 }
 
-/* Bottoming / topping-chop / momentum price-trend pills — same dimensions as
-   the rating/score pills, transparent background, tinted to distinguish the
-   patterns. */
+/* Bottoming / topping-chop / momentum price-trend pills — clickable (jump to
+   the price trends chart), so styled as real buttons rather than plain
+   badges: a tinted background per pattern, a label to the left of the icon,
+   and a hover/focus affordance. */
 .stock-card__price-trend-pill {
   display: inline-flex !important;
   align-items: center;
-  justify-content: center;
-  background: transparent !important;
-  opacity: 0.9;
+  gap: 0.3rem;
+  border: none !important;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.95;
+  transition: opacity 0.15s ease;
+  /* Wrap as one atomic unit within the flex-wrap signals row (never shrunk
+     below its natural width, which would otherwise force the label text
+     inside it onto a second line instead of moving the whole pill down). */
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.stock-card__price-trend-pill:hover,
+.stock-card__price-trend-pill:focus-visible {
+  opacity: 1;
 }
 
 .stock-card__price-trend-pill .bi {
@@ -1030,9 +1044,24 @@ button.accordion-button.ai-accordion-button:focus-visible {
   line-height: 1;
 }
 
-.stock-card__price-trend-pill--bottoming { color: #1a7f4b; }
-.stock-card__price-trend-pill--topping { color: #b45309; }
-.stock-card__price-trend-pill--momentum { color: #2563eb; }
+.stock-card__price-trend-pill__label {
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stock-card__price-trend-pill--bottoming {
+  color: #1a7f4b;
+  background: color-mix(in srgb, #1a7f4b 12%, transparent) !important;
+}
+.stock-card__price-trend-pill--topping {
+  color: #b45309;
+  background: color-mix(in srgb, #b45309 12%, transparent) !important;
+}
+.stock-card__price-trend-pill--momentum {
+  color: #2563eb;
+  background: color-mix(in srgb, #2563eb 12%, transparent) !important;
+}
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #4ade80; }

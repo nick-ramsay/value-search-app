@@ -331,6 +331,22 @@ export default function StockResultCard({
     instance?.hide();
   }, []);
 
+  // A price-trend signal pill (bottoming/toppingChop/momentum) jumps straight
+  // to the price trends view: tell HistoryChartsPanel to switch to it (it
+  // listens on the same collapse element — see HistoryCharts.tsx), then open
+  // the panel with .show() rather than .toggle() so clicking a pill never
+  // closes an already-open panel, only ensures the price view is visible.
+  const handleOpenPriceTrend = useCallback(async () => {
+    const el = document.getElementById(trendsCollapseId);
+    if (!el) return;
+    el.dispatchEvent(new CustomEvent("stockcard:show-price-trend"));
+    const bootstrap = await import(
+      "bootstrap/dist/js/bootstrap.bundle.min.js"
+    );
+    const Collapse = (bootstrap as { Collapse?: { getOrCreateInstance: (el: Element) => { show: () => void } } }).Collapse;
+    Collapse?.getOrCreateInstance(el).show();
+  }, [trendsCollapseId]);
+
   const closeAllOpenPanels = useCallback(async () => {
     const card = cardRef.current;
     if (!card) return;
@@ -556,31 +572,40 @@ export default function StockResultCard({
           aria-hidden="true"
         />
         {item.priceTrend?.bottoming?.isBottoming ? (
-          <span
+          <button
+            type="button"
             className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--bottoming"
-            title="Fell over recent weeks but shows signs of finding a bottom"
-            aria-label="Fell over recent weeks but shows signs of finding a bottom"
+            title="Fell over recent weeks but shows signs of finding a bottom — view price trends"
+            aria-label="Fell over recent weeks but shows signs of finding a bottom — view price trends"
+            onClick={handleOpenPriceTrend}
           >
+            <span className="stock-card__price-trend-pill__label">Bottom</span>
             <i className="bi bi-check-lg" aria-hidden />
-          </span>
+          </button>
         ) : null}
         {item.priceTrend?.toppingChop?.isToppingChop ? (
-          <span
+          <button
+            type="button"
             className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--topping"
-            title="Rallied then stalled into a sideways range — possible top"
-            aria-label="Rallied then stalled into a sideways range — possible top"
+            title="Rallied then stalled into a sideways range — possible top — view price trends"
+            aria-label="Rallied then stalled into a sideways range — possible top — view price trends"
+            onClick={handleOpenPriceTrend}
           >
+            <span className="stock-card__price-trend-pill__label">Topping</span>
             <i className="bi bi-activity" aria-hidden />
-          </span>
+          </button>
         ) : null}
         {item.priceTrend?.momentum?.isMomentum ? (
-          <span
+          <button
+            type="button"
             className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--momentum"
-            title="Rising and still pushing to fresh highs — strong momentum"
-            aria-label="Rising and still pushing to fresh highs — strong momentum"
+            title="Rising and still pushing to fresh highs — strong momentum — view price trends"
+            aria-label="Rising and still pushing to fresh highs — strong momentum — view price trends"
+            onClick={handleOpenPriceTrend}
           >
+            <span className="stock-card__price-trend-pill__label">Momentum</span>
             <i className="bi bi-rocket-takeoff-fill" aria-hidden />
-          </span>
+          </button>
         ) : null}
       </div>
 

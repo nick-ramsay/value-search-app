@@ -266,7 +266,7 @@ export default function FiltersFormClient({
             />
             <label htmlFor="toppingChop" className="filter-toggle-label">
               <span className="filter-toggle-slider" aria-hidden />
-              <span className="filter-toggle-label__text">Topping / choppy</span>
+              <span className="filter-toggle-label__text">Topping</span>
             </label>
           </div>
           <div className="filter-toggle">
