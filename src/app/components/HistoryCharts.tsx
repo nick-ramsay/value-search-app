@@ -18,6 +18,7 @@ type PriceTrendPatternSummary = {
 type PriceTrendSummary = {
   bottoming: PriceTrendPatternSummary;
   toppingChop: PriceTrendPatternSummary;
+  momentum: PriceTrendPatternSummary;
 } | null;
 
 type HistoryResponse = {
@@ -581,9 +582,19 @@ function formatPriceTooltip(value: number, dateLabel: string): string {
   return `$${value.toFixed(2)} — ${dateLabel}`;
 }
 
+/** One recent-window band's label/fill/text color, keyed by which
+ * price_trend.py pattern fired (bottoming/toppingChop/momentum are mutually
+ * exclusive by construction — see that module's gates). */
+const PRICE_TREND_BAND_STYLE = {
+  bottoming: { label: "Possible bottom", fill: "rgba(26, 127, 75, 0.10)", text: "#1a7f4b" },
+  topping: { label: "Topping / chop", fill: "rgba(180, 83, 9, 0.10)", text: "#b45309" },
+  momentum: { label: "Momentum", fill: "rgba(37, 99, 235, 0.10)", text: "#2563eb" },
+} as const;
+
 /** Daily closing price, with the recent window shaded when price_trend.py
- * flagged a bottoming or topping-chop pattern (see that module for the
- * underlying algorithm — this only visualizes the result, never recomputes it). */
+ * flagged a bottoming, topping-chop, or momentum pattern (see that module
+ * for the underlying algorithm — this only visualizes the result, never
+ * recomputes it). */
 function PriceHistoryChart({
   data,
   priceTrend,
@@ -605,6 +616,8 @@ function PriceHistoryChart({
 
   const bottomingFired = priceTrend?.bottoming.fired ?? false;
   const toppingFired = priceTrend?.toppingChop.fired ?? false;
+  const momentumFired = priceTrend?.momentum.fired ?? false;
+  const firedKind = bottomingFired ? "bottoming" : toppingFired ? "topping" : momentumFired ? "momentum" : null;
 
   const layout = useMemo(() => {
     if (!data.length) return null;
@@ -657,16 +670,16 @@ function PriceHistoryChart({
     // Shade the trailing window price_trend.py actually evaluated — only
     // when a pattern fired, so an unremarkable stretch of price stays plain.
     let recentBand: { x1: number; x2: number; label: string } | null = null;
-    if ((bottomingFired || toppingFired) && n > PRICE_TREND_RECENT_WINDOW) {
+    if (firedKind && n > PRICE_TREND_RECENT_WINDOW) {
       recentBand = {
         x1: xAt(n - PRICE_TREND_RECENT_WINDOW),
         x2: xAt(n - 1),
-        label: bottomingFired ? "Possible bottom" : "Topping / chop",
+        label: PRICE_TREND_BAND_STYLE[firedKind].label,
       };
     }
 
     return { points, lineD, tickYs, xTickIndices, recentBand };
-  }, [data, marginLeft, plotW, plotH, marginTop, bottomingFired, toppingFired]);
+  }, [data, marginLeft, plotW, plotH, marginTop, firedKind]);
 
   if (!data.length) {
     return (
@@ -708,6 +721,12 @@ function PriceHistoryChart({
             Topping / chop
           </span>
         )}
+        {momentumFired && (
+          <span className="badge bg-info text-dark stock-card__badge">
+            <i className="bi bi-rocket-takeoff-fill me-1" aria-hidden />
+            Momentum
+          </span>
+        )}
         <span className="text-muted" aria-hidden>
           •
         </span>
@@ -730,20 +749,20 @@ function PriceHistoryChart({
             </linearGradient>
           </defs>
 
-          {layout.recentBand && (
+          {layout.recentBand && firedKind && (
             <>
               <rect
                 x={layout.recentBand.x1}
                 y={marginTop}
                 width={Math.max(0, layout.recentBand.x2 - layout.recentBand.x1)}
                 height={plotH}
-                fill={bottomingFired ? "rgba(26, 127, 75, 0.10)" : "rgba(180, 83, 9, 0.10)"}
+                fill={PRICE_TREND_BAND_STYLE[firedKind].fill}
               />
               <text
                 x={(layout.recentBand.x1 + layout.recentBand.x2) / 2}
                 y={marginTop + 12}
                 textAnchor="middle"
-                fill={bottomingFired ? "#1a7f4b" : "#b45309"}
+                fill={PRICE_TREND_BAND_STYLE[firedKind].text}
                 style={{ fontSize: "10px", fontWeight: 600 }}
               >
                 {layout.recentBand.label}

@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-export const VALUE_SCORE_MA_SUPPORT_KEY = "movingAverageSupport";
-
 // Keys and labels mirror value-search-pyworker/stock_score.py's rule set
 // exactly — a mismatched key here silently drops that criterion from the
 // breakdown list while its points still count toward the header total.
@@ -16,12 +14,10 @@ const VALUE_SCORE_BREAKDOWN: { key: string; label: string }[] = [
   { key: "healthyDebtEquity", label: "Healthy debt/equity (0–2)" },
   { key: "healthyPriceBook", label: "Healthy P/B (0–3.0)" },
   { key: "healthyPriceSales", label: "Healthy P/S (0–2)" },
-  // priceInUptrend and movingAverageSupport are still populated on the
-  // backend (VALUE_SCORE_MA_SUPPORT_KEY reads movingAverageSupport directly
-  // for the card badge/filter), but their points no longer count toward the
-  // header total individually — movingAverageTrend below carries that budget
-  // now, so it's the one listed here to keep this list's points summing to
-  // the header total.
+  // priceInUptrend is still populated on the backend but its points no
+  // longer count toward the header total individually — movingAverageTrend
+  // below carries that budget now, so it's the one listed here to keep this
+  // list's points summing to the header total.
   { key: "movingAverageTrend", label: "Moving average trend (0–2)" },
   { key: "returnOnEquity", label: "Return on equity (≥15%)" },
   { key: "returnOnInvestment", label: "Return on investment (≥10.5%)" },

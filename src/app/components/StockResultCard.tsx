@@ -4,7 +4,7 @@ import { Fragment, useState, useCallback, useRef, useId } from "react";
 import { useSession } from "next-auth/react";
 import { getRatingBadgeClass, toTitleCase } from "@/lib/ai-rating-display";
 import type { ValueRecord, ValueSearchScoreDisplay } from "@/lib/value-search";
-import ScoreModalTrigger, { VALUE_SCORE_MA_SUPPORT_KEY } from "./ScoreModalTrigger";
+import ScoreModalTrigger from "./ScoreModalTrigger";
 import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
@@ -555,28 +555,6 @@ export default function StockResultCard({
           id={`stock-card-labels-slot-${cardDomId}`}
           aria-hidden="true"
         />
-        {(() => {
-          const vs = item.valueSearchScore as Record<string, unknown> | undefined;
-          if (!vs) return null;
-          const breakdown = vs.breakdown as Record<string, unknown> | undefined;
-          const raw =
-            vs[VALUE_SCORE_MA_SUPPORT_KEY] ??
-            vs.moving_average_support ??
-            breakdown?.[VALUE_SCORE_MA_SUPPORT_KEY] ??
-            breakdown?.moving_average_support;
-          const maSupport =
-            raw === true ? 1 : typeof raw === "number" ? raw : Number(raw);
-          const hasSupport = !Number.isNaN(maSupport) && maSupport >= 1;
-          return hasSupport ? (
-            <span
-              className="badge stock-card__badge stock-card__ma-support-pill"
-              title="Stock may have found moving average support"
-              aria-label="Stock may have found moving average support"
-            >
-              <i className="bi bi-graph-up-arrow" aria-hidden />
-            </span>
-          ) : null;
-        })()}
         {item.priceTrend?.bottoming?.isBottoming ? (
           <span
             className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--bottoming"
@@ -593,6 +571,15 @@ export default function StockResultCard({
             aria-label="Rallied then stalled into a sideways range — possible top"
           >
             <i className="bi bi-activity" aria-hidden />
+          </span>
+        ) : null}
+        {item.priceTrend?.momentum?.isMomentum ? (
+          <span
+            className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--momentum"
+            title="Rising and still pushing to fresh highs — strong momentum"
+            aria-label="Rising and still pushing to fresh highs — strong momentum"
+          >
+            <i className="bi bi-rocket-takeoff-fill" aria-hidden />
           </span>
         ) : null}
       </div>

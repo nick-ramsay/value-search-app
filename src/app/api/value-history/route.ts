@@ -38,6 +38,7 @@ type PriceTrendPatternSummary = {
 type PriceTrendSummary = {
   bottoming: PriceTrendPatternSummary;
   toppingChop: PriceTrendPatternSummary;
+  momentum: PriceTrendPatternSummary;
 } | null;
 
 type HistoryResponse = {
@@ -45,7 +46,7 @@ type HistoryResponse = {
   ratingHistory: HistoryPoint[];
   /** Daily close price from stock-price-history (fetch_price_history.py), oldest first. */
   priceHistory: HistoryPoint[];
-  /** Bottoming/toppingChop signal (price_trend.py), for annotating the price chart. */
+  /** Bottoming/toppingChop/momentum signal (price_trend.py), for annotating the price chart. */
   priceTrend: PriceTrendSummary;
 };
 
@@ -57,6 +58,7 @@ type AssessmentPriceTrendDoc = {
   priceTrend?: {
     bottoming?: { isBottoming?: unknown; priorMovePct?: unknown };
     toppingChop?: { isToppingChop?: unknown; priorMovePct?: unknown };
+    momentum?: { isMomentum?: unknown; priorMovePct?: unknown };
   };
 };
 
@@ -282,9 +284,9 @@ export async function GET(request: Request) {
     .filter((point): point is HistoryPoint => point !== null)
     .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 
-  // Bottoming/toppingChop signal (price_trend.py), computed and stored on the
-  // assessment doc — read here only to annotate the price chart, not
-  // recomputed.
+  // Bottoming/toppingChop/momentum signal (price_trend.py), computed and
+  // stored on the assessment doc — read here only to annotate the price
+  // chart, not recomputed.
   const assessmentDoc = (await db
     .collection(aiAssessmentsCollection)
     .findOne(symbolFilter, { projection: { priceTrend: 1 } })) as AssessmentPriceTrendDoc | null;
@@ -298,6 +300,10 @@ export async function GET(request: Request) {
         toppingChop: {
           fired: assessmentDoc.priceTrend.toppingChop?.isToppingChop === true,
           priorMovePct: toNumber(assessmentDoc.priceTrend.toppingChop?.priorMovePct),
+        },
+        momentum: {
+          fired: assessmentDoc.priceTrend.momentum?.isMomentum === true,
+          priorMovePct: toNumber(assessmentDoc.priceTrend.momentum?.priorMovePct),
         },
       }
     : null;

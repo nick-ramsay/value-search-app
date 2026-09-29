@@ -15,9 +15,9 @@ type PaginationWithLoaderProps = {
   selectedSectors: string[];
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
-  maSupportEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
+  momentumEnabled: boolean;
   minPrice?: number;
   children: React.ReactNode;
 };
@@ -30,9 +30,9 @@ function buildPageHref(
     selectedSectors: string[];
     selectedCountries: string[];
     excludeEtfsEnabled: boolean;
-    maSupportEnabled: boolean;
     bottomingEnabled: boolean;
     toppingChopEnabled: boolean;
+    momentumEnabled: boolean;
     minPrice?: number;
   }
 ): string {
@@ -43,9 +43,9 @@ function buildPageHref(
   for (const sector of params.selectedSectors) searchParams.append("sector", sector);
   for (const country of params.selectedCountries) searchParams.append("country", country);
   if (!params.excludeEtfsEnabled) searchParams.set("excludeEtfs", "0");
-  if (params.maSupportEnabled) searchParams.set("maSupport", "1");
   if (params.bottomingEnabled) searchParams.set("bottoming", "1");
   if (params.toppingChopEnabled) searchParams.set("toppingChop", "1");
+  if (params.momentumEnabled) searchParams.set("momentum", "1");
   if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString());
   const search = searchParams.toString();
   return search.length > 0 ? `/?${search}` : "/";
@@ -60,9 +60,9 @@ export default function PaginationWithLoader({
   selectedSectors,
   selectedCountries,
   excludeEtfsEnabled,
-  maSupportEnabled,
   bottomingEnabled,
   toppingChopEnabled,
+  momentumEnabled,
   minPrice,
   children,
 }: PaginationWithLoaderProps) {
@@ -75,9 +75,9 @@ export default function PaginationWithLoader({
     selectedSectors,
     selectedCountries,
     excludeEtfsEnabled,
-    maSupportEnabled,
     bottomingEnabled,
     toppingChopEnabled,
+    momentumEnabled,
     minPrice,
   };
 

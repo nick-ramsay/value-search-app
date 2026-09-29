@@ -16,9 +16,9 @@ type Props = {
   selectedSectors: string[];
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
-  maSupportEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
+  momentumEnabled: boolean;
   minPrice?: number;
   symbols: string[];
 };
@@ -32,9 +32,9 @@ export default function FiltersFormClient({
   selectedSectors,
   selectedCountries,
   excludeEtfsEnabled,
-  maSupportEnabled,
   bottomingEnabled,
   toppingChopEnabled,
+  momentumEnabled,
   minPrice,
   symbols,
 }: Props) {
@@ -46,9 +46,9 @@ export default function FiltersFormClient({
     sectors?: string[];
     countries?: string[];
     excludeEtfs?: boolean;
-    maSupport?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
+    momentum?: boolean;
     minPrice?: number;
   }) => {
     const p = new URLSearchParams();
@@ -56,9 +56,9 @@ export default function FiltersFormClient({
     const secs = overrides.sectors ?? selectedSectors;
     const cous = overrides.countries ?? selectedCountries;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
-    const mas = overrides.maSupport ?? maSupportEnabled;
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
+    const mom = overrides.momentum ?? momentumEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it
     // — see the identical pattern (and why) in page.tsx's buildHref.
     const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
@@ -67,9 +67,9 @@ export default function FiltersFormClient({
     for (const sector of secs) p.append("sector", sector);
     for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
-    if (mas) p.set("maSupport", "1");
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
+    if (mom) p.set("momentum", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
@@ -134,9 +134,9 @@ export default function FiltersFormClient({
     selectedSectors.length > 0 ||
     selectedCountries.length > 0 ||
     !excludeEtfsEnabled ||
-    maSupportEnabled ||
     bottomingEnabled ||
     toppingChopEnabled ||
+    momentumEnabled ||
     minPrice !== undefined;
 
   return (
@@ -244,20 +244,6 @@ export default function FiltersFormClient({
           <div className="filter-toggle">
             <input
               type="checkbox"
-              id="maSupport"
-              className="filter-toggle-input"
-              checked={maSupportEnabled}
-              onChange={(e) => navigate(buildHref({ maSupport: e.target.checked }))}
-              disabled={isPending}
-            />
-            <label htmlFor="maSupport" className="filter-toggle-label">
-              <span className="filter-toggle-slider" aria-hidden />
-              <span className="filter-toggle-label__text">Moving average support</span>
-            </label>
-          </div>
-          <div className="filter-toggle">
-            <input
-              type="checkbox"
               id="bottoming"
               className="filter-toggle-input"
               checked={bottomingEnabled}
@@ -281,6 +267,20 @@ export default function FiltersFormClient({
             <label htmlFor="toppingChop" className="filter-toggle-label">
               <span className="filter-toggle-slider" aria-hidden />
               <span className="filter-toggle-label__text">Topping / choppy</span>
+            </label>
+          </div>
+          <div className="filter-toggle">
+            <input
+              type="checkbox"
+              id="momentum"
+              className="filter-toggle-input"
+              checked={momentumEnabled}
+              onChange={(e) => navigate(buildHref({ momentum: e.target.checked }))}
+              disabled={isPending}
+            />
+            <label htmlFor="momentum" className="filter-toggle-label">
+              <span className="filter-toggle-slider" aria-hidden />
+              <span className="filter-toggle-label__text">Momentum</span>
             </label>
           </div>
           {hasActiveFilters && (

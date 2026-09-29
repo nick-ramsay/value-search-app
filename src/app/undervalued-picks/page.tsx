@@ -38,6 +38,7 @@ type UndervaluedPick = {
     signal?: string | null;
     bottomingMovePct?: number | null;
     toppingMovePct?: number | null;
+    momentumMovePct?: number | null;
   } | null;
 };
 
@@ -314,6 +315,14 @@ export default async function UndervaluedPicksPage() {
                                   run-up
                                   {typeof pick.priceTrend.toppingMovePct === "number" &&
                                     ` (+${pick.priceTrend.toppingMovePct.toFixed(0)}%)`}
+                                </span>
+                              )}
+                              {pick.priceTrend?.signal?.includes("MOMENTUM") && (
+                                <span className="undervalued-chip undervalued-chip--info">
+                                  <i className="bi bi-rocket-takeoff-fill" aria-hidden /> Still pushing
+                                  to fresh highs
+                                  {typeof pick.priceTrend.momentumMovePct === "number" &&
+                                    ` (+${pick.priceTrend.momentumMovePct.toFixed(0)}%)`}
                                 </span>
                               )}
                             </div>

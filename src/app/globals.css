@@ -1014,31 +1014,9 @@ button.accordion-button.ai-accordion-button:focus-visible {
   box-shadow: none !important;
 }
 
-/* Wrapper so score pill and MA support pill stay side-by-side */
-.stock-card__score-and-ma-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-
-/* Moving average support pill – same dimensions as rating/score pills, transparent background */
-.stock-card__ma-support-pill {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  background: transparent !important;
-  color: inherit;
-  opacity: 0.85;
-}
-
-.stock-card__ma-support-pill .bi {
-  font-size: 0.75rem;
-  line-height: 1;
-}
-
-/* Bottoming / topping-chop price-trend pills — same dimensions/transparency
-   as the MA support pill, tinted to distinguish the two patterns. */
+/* Bottoming / topping-chop / momentum price-trend pills — same dimensions as
+   the rating/score pills, transparent background, tinted to distinguish the
+   patterns. */
 .stock-card__price-trend-pill {
   display: inline-flex !important;
   align-items: center;
@@ -1054,14 +1032,17 @@ button.accordion-button.ai-accordion-button:focus-visible {
 
 .stock-card__price-trend-pill--bottoming { color: #1a7f4b; }
 .stock-card__price-trend-pill--topping { color: #b45309; }
+.stock-card__price-trend-pill--momentum { color: #2563eb; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #4ade80; }
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--topping { color: #fbbf24; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--momentum { color: #60a5fa; }
 }
 
 :root[data-theme="dark"] .stock-card__price-trend-pill--bottoming { color: #4ade80; }
 :root[data-theme="dark"] .stock-card__price-trend-pill--topping { color: #fbbf24; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--momentum { color: #60a5fa; }
 
 /* ---- Value score progress bar (thin accent strip below signals) ---- */
 .stock-card__score-bar-wrap {
@@ -5264,15 +5245,23 @@ a:hover {
   border-color: color-mix(in srgb, #b91c1c 26%, transparent);
 }
 
+.undervalued-chip--info {
+  color: #2563eb;
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+  border-color: color-mix(in srgb, #2563eb 26%, transparent);
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .undervalued-chip--good { color: #4ade80; }
   :root:not([data-theme="light"]) .undervalued-chip--warn { color: #fbbf24; }
   :root:not([data-theme="light"]) .undervalued-chip--danger { color: #f87171; }
+  :root:not([data-theme="light"]) .undervalued-chip--info { color: #60a5fa; }
 }
 
 :root[data-theme="dark"] .undervalued-chip--good { color: #4ade80; }
 :root[data-theme="dark"] .undervalued-chip--warn { color: #fbbf24; }
 :root[data-theme="dark"] .undervalued-chip--danger { color: #f87171; }
+:root[data-theme="dark"] .undervalued-chip--info { color: #60a5fa; }
 
 /* Criteria summary under the meta line — makes the screen visible even on a
    week where every pick comes through clean and carries no warning chips. */

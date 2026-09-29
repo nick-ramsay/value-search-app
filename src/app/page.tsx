@@ -32,9 +32,9 @@ function FiltersSection({
   selectedSectors,
   selectedCountries,
   excludeEtfsEnabled,
-  maSupportEnabled,
   bottomingEnabled,
   toppingChopEnabled,
+  momentumEnabled,
   minPrice,
 }: {
   filterOptions: FilterOptions;
@@ -43,9 +43,9 @@ function FiltersSection({
   selectedSectors: string[];
   selectedCountries: string[];
   excludeEtfsEnabled: boolean;
-  maSupportEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
+  momentumEnabled: boolean;
   minPrice?: number;
 }) {
   const { industries, sectors, countries, sectorIndustryMap } = filterOptions;
@@ -81,9 +81,9 @@ function FiltersSection({
                 selectedSectors={selectedSectors}
                 selectedCountries={selectedCountries}
                 excludeEtfsEnabled={excludeEtfsEnabled}
-                maSupportEnabled={maSupportEnabled}
                 bottomingEnabled={bottomingEnabled}
                 toppingChopEnabled={toppingChopEnabled}
+                momentumEnabled={momentumEnabled}
                 minPrice={minPrice}
                 symbols={symbols}
               />
@@ -149,9 +149,9 @@ type HomeSearchParams = {
   sector?: string | string[];
   country?: string | string[];
   excludeEtfs?: string | string[];
-  maSupport?: string | string[];
   bottoming?: string | string[];
   toppingChop?: string | string[];
+  momentum?: string | string[];
   minPrice?: string | string[];
 };
 
@@ -176,10 +176,9 @@ async function FiltersAsyncWrapper({
   const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
-  const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
-  const maSupportEnabled = maSupportParam === "1";
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
+  const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   return (
     <FiltersSection
@@ -189,9 +188,9 @@ async function FiltersAsyncWrapper({
       selectedSectors={selectedSectors}
       selectedCountries={selectedCountries}
       excludeEtfsEnabled={excludeEtfsEnabled}
-      maSupportEnabled={maSupportEnabled}
       bottomingEnabled={bottomingEnabled}
       toppingChopEnabled={toppingChopEnabled}
+      momentumEnabled={momentumEnabled}
       minPrice={minPrice}
     />
   );
@@ -340,9 +339,9 @@ async function buildValueFilterConditions({
   sectors,
   countries,
   excludeEtfs,
-  maSupport,
   bottoming,
   toppingChop,
+  momentum,
   minPrice,
 }: {
   symbols?: string[];
@@ -350,9 +349,9 @@ async function buildValueFilterConditions({
   sectors?: string[];
   countries?: string[];
   excludeEtfs?: boolean;
-  maSupport?: boolean;
   bottoming?: boolean;
   toppingChop?: boolean;
+  momentum?: boolean;
   minPrice?: number;
 }): Promise<Record<string, unknown>[]> {
   const conditions: Record<string, unknown>[] = [];
@@ -389,16 +388,16 @@ async function buildValueFilterConditions({
     conditions.push({ country: { $in: countries } });
   }
 
-  if (maSupport) {
-    conditions.push({ "valueSearchScore.movingAverageSupport": { $gte: 1 } });
-  }
-
   if (bottoming) {
     conditions.push({ "priceTrend.bottoming.isBottoming": true });
   }
 
   if (toppingChop) {
     conditions.push({ "priceTrend.toppingChop.isToppingChop": true });
+  }
+
+  if (momentum) {
+    conditions.push({ "priceTrend.momentum.isMomentum": true });
   }
 
   if (minPrice !== undefined) {
@@ -420,9 +419,9 @@ async function getValues(
     sectors,
     countries,
     excludeEtfs,
-    maSupport,
     bottoming,
     toppingChop,
+    momentum,
     minPrice,
   }: {
     symbols?: string[];
@@ -430,9 +429,9 @@ async function getValues(
     sectors?: string[];
     countries?: string[];
     excludeEtfs?: boolean;
-    maSupport?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
+    momentum?: boolean;
     minPrice?: number;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
@@ -464,9 +463,9 @@ async function getValues(
     sectors,
     countries,
     excludeEtfs,
-    maSupport,
     bottoming,
     toppingChop,
+    momentum,
     minPrice,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
@@ -521,9 +520,9 @@ async function getValuesCount({
   sectors,
   countries,
   excludeEtfs,
-  maSupport,
   bottoming,
   toppingChop,
+  momentum,
   minPrice,
 }: {
   symbols?: string[];
@@ -531,9 +530,9 @@ async function getValuesCount({
   sectors?: string[];
   countries?: string[];
   excludeEtfs?: boolean;
-  maSupport?: boolean;
   bottoming?: boolean;
   toppingChop?: boolean;
+  momentum?: boolean;
   minPrice?: number;
 }): Promise<number> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
@@ -560,9 +559,9 @@ async function getValuesCount({
     sectors,
     countries,
     excludeEtfs,
-    maSupport,
     bottoming,
     toppingChop,
+    momentum,
     minPrice,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
@@ -592,10 +591,9 @@ async function ResultsCard({
   const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsParam = getSearchParamValue(resolvedSearchParams?.excludeEtfs);
   const excludeEtfsEnabled = excludeEtfsParam !== "0";
-  const maSupportParam = getSearchParamValue(resolvedSearchParams?.maSupport);
-  const maSupportEnabled = maSupportParam === "1";
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
+  const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   const isFiltered = symbols.length > 0;
 
@@ -605,9 +603,9 @@ async function ResultsCard({
     sectors: selectedSectors,
     countries: selectedCountries,
     excludeEtfs: excludeEtfsEnabled,
-    maSupport: maSupportEnabled,
     bottoming: bottomingEnabled,
     toppingChop: toppingChopEnabled,
+    momentum: momentumEnabled,
     minPrice,
   };
 
@@ -620,8 +618,8 @@ async function ResultsCard({
 
   // Single href builder for every navigation this card triggers (pagination,
   // removing one symbol/industry/sector/country, clearing all symbols,
-  // toggling excludeEtfs/maSupport) — each just overrides the one field that
-  // changed and leaves everything else at its current selected value.
+  // toggling excludeEtfs) — each just overrides the one field that changed
+  // and leaves everything else at its current selected value.
   const buildHref = (overrides: {
     page?: number;
     symbols?: string[];
@@ -629,9 +627,9 @@ async function ResultsCard({
     sectors?: string[];
     countries?: string[];
     excludeEtfs?: boolean;
-    maSupport?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
+    momentum?: boolean;
     minPrice?: number;
   }) => {
     const p = new URLSearchParams();
@@ -640,9 +638,9 @@ async function ResultsCard({
     const secs = overrides.sectors ?? selectedSectors;
     const cous = overrides.countries ?? selectedCountries;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
-    const mas = overrides.maSupport ?? maSupportEnabled;
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
+    const mom = overrides.momentum ?? momentumEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it,
     // distinct from omitting the key entirely (which keeps the current value)
     // — minPrice can't use ?? like the booleans above, since undefined is
@@ -654,9 +652,9 @@ async function ResultsCard({
     for (const sector of secs) p.append("sector", sector);
     for (const country of cous) p.append("country", country);
     if (!exc) p.set("excludeEtfs", "0");
-    if (mas) p.set("maSupport", "1");
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
+    if (mom) p.set("momentum", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
@@ -706,12 +704,6 @@ async function ResultsCard({
       removeHref: buildHref({ countries: selectedCountries.filter((c) => c !== country) }),
       ariaLabel: `Remove ${country} filter`,
     })) : []),
-    ...(!isFiltered && maSupportEnabled ? [{
-      id: "maSupport",
-      label: "MA support",
-      removeHref: buildHref({ maSupport: false }),
-      ariaLabel: "Remove moving average support filter",
-    }] : []),
     ...(!isFiltered && bottomingEnabled ? [{
       id: "bottoming",
       label: "Recently bottomed",
@@ -723,6 +715,12 @@ async function ResultsCard({
       label: "Topping / choppy",
       removeHref: buildHref({ toppingChop: false }),
       ariaLabel: "Remove topping / choppy filter",
+    }] : []),
+    ...(!isFiltered && momentumEnabled ? [{
+      id: "momentum",
+      label: "Momentum",
+      removeHref: buildHref({ momentum: false }),
+      ariaLabel: "Remove momentum filter",
     }] : []),
     ...(!isFiltered && minPrice !== undefined ? [{
       id: "minPrice",
@@ -754,9 +752,9 @@ async function ResultsCard({
             selectedSectors={selectedSectors}
             selectedCountries={selectedCountries}
             excludeEtfsEnabled={excludeEtfsEnabled}
-            maSupportEnabled={maSupportEnabled}
             bottomingEnabled={bottomingEnabled}
             toppingChopEnabled={toppingChopEnabled}
+            momentumEnabled={momentumEnabled}
             minPrice={minPrice}
           >
             {values.length === 0 ? (
@@ -784,9 +782,9 @@ function ResultsLoadingFallback({
   selectedSectors = [],
   selectedCountries = [],
   excludeEtfsEnabled = true,
-  maSupportEnabled = false,
   bottomingEnabled = false,
   toppingChopEnabled = false,
+  momentumEnabled = false,
   minPrice,
 }: {
   isFiltered?: boolean;
@@ -795,9 +793,9 @@ function ResultsLoadingFallback({
   selectedSectors?: string[];
   selectedCountries?: string[];
   excludeEtfsEnabled?: boolean;
-  maSupportEnabled?: boolean;
   bottomingEnabled?: boolean;
   toppingChopEnabled?: boolean;
+  momentumEnabled?: boolean;
   minPrice?: number;
 }) {
   return (
@@ -841,12 +839,6 @@ function ResultsLoadingFallback({
                     <i className="bi bi-x" />
                   </span>
                 ))}
-                {maSupportEnabled && (
-                  <span className="active-filter-chip active-filter-chip--skeleton">
-                    MA support
-                    <i className="bi bi-x" />
-                  </span>
-                )}
                 {bottomingEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     Recently bottomed
@@ -856,6 +848,12 @@ function ResultsLoadingFallback({
                 {toppingChopEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     Topping / choppy
+                    <i className="bi bi-x" />
+                  </span>
+                )}
+                {momentumEnabled && (
+                  <span className="active-filter-chip active-filter-chip--skeleton">
+                    Momentum
                     <i className="bi bi-x" />
                   </span>
                 )}
@@ -918,9 +916,9 @@ export default async function Home({
   const selectedSectors = getSelectedValues(resolvedSearchParams?.sector);
   const selectedCountries = getSelectedValues(resolvedSearchParams?.country);
   const excludeEtfsEnabled = getSearchParamValue(resolvedSearchParams?.excludeEtfs) !== "0";
-  const maSupportEnabled = getSearchParamValue(resolvedSearchParams?.maSupport) === "1";
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
+  const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
 
   const isFiltered = symbols.length > 0;
@@ -965,9 +963,9 @@ export default async function Home({
                   selectedSectors={selectedSectors}
                   selectedCountries={selectedCountries}
                   excludeEtfsEnabled={excludeEtfsEnabled}
-                  maSupportEnabled={maSupportEnabled}
                   bottomingEnabled={bottomingEnabled}
                   toppingChopEnabled={toppingChopEnabled}
+                  momentumEnabled={momentumEnabled}
                   minPrice={minPrice}
                 />
               }>
