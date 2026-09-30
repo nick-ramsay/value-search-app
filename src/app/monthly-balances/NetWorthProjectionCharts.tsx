@@ -44,7 +44,7 @@ function ScalarUsdAreaChart({
 }) {
   const gradId = useId().replace(/:/g, "");
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState(false);
+  const [fit, setFit] = useState(true);
   const containerWidth = useContainerWidth(wrapRef);
 
   const vals = points.map((p) => p.value).filter((v) => Number.isFinite(v));

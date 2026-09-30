@@ -76,7 +76,7 @@ const MIN_FIT_PLOT_W = 160;
 export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartProps) {
   const gradId = useId().replace(/:/g, "");
   const chartScrollWrapRef = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState(false);
+  const [fit, setFit] = useState(true);
   const containerWidth = useContainerWidth(chartScrollWrapRef);
 
   const okVals = useMemo(

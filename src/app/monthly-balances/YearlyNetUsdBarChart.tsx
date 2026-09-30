@@ -48,7 +48,7 @@ const MIN_FIT_PLOT_W = 160;
 export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps) {
   const gradId = useId().replace(/:/g, "");
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState(false);
+  const [fit, setFit] = useState(true);
   const containerWidth = useContainerWidth(wrapRef);
 
   const points = useMemo(
