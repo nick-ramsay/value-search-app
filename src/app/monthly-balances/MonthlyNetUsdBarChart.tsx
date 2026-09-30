@@ -1,8 +1,11 @@
 "use client";
 
-import { useId, useLayoutEffect, useMemo, useRef } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
 import { parseMonthKey } from "@/lib/monthly-balances";
+import { buildAreaPath, computeLabelStep, toLineSegments } from "./areaLineChartMath";
+import { useContainerWidth } from "./useContainerWidth";
+import FitToScreenToggle from "./FitToScreenToggle";
 
 export type NetUsdBarPoint = {
   monthKey: string;
@@ -48,13 +51,33 @@ type MonthlyNetUsdBarChartProps = {
   points: NetUsdBarPoint[];
 };
 
+/** Minimum horizontal space per month in the natural (scrollable) layout, and
+ * the narrower minimum a label alone needs once "fit to screen" compresses
+ * points closer together than that. */
+const MIN_SLOT_W = 56;
+const MIN_LABEL_SLOT_W = 34;
+const BASE_CHART_W = 720;
+const PAD_L = 52;
+const PAD_R = 12;
+const PAD_T = 10;
+const PAD_B = 50;
+const H = 222;
+const MIN_PLOT_W = BASE_CHART_W - PAD_L - PAD_R;
+/** Floor so an unusually narrow container can't collapse the fitted plot to nothing. */
+const MIN_FIT_PLOT_W = 160;
+
 /**
- * Vertical bars of Net (USD) by month (chronological left → right).
- * Chart width grows with month count so labels stay legible; scroll horizontally when needed.
+ * Area/line chart of Net (USD) by month (chronological left → right).
+ * Defaults to a natural width that scrolls horizontally once there are many
+ * months; "Fit to screen" compresses the whole series into the available
+ * width instead, thinning x-axis labels (never data points) so they don't
+ * collide.
  */
 export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartProps) {
   const gradId = useId().replace(/:/g, "");
   const chartScrollWrapRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(false);
+  const containerWidth = useContainerWidth(chartScrollWrapRef);
 
   const okVals = useMemo(
     () =>
@@ -64,25 +87,19 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
     [points],
   );
 
-  /** Layout width (must match values below) for scroll sync when the figure is shown. */
-  const layoutW = useMemo(() => {
-    const MIN_SLOT_W = 56;
-    const BASE_CHART_W = 720;
-    const padL = 52;
-    const padR = 12;
-    const n = points.length;
-    const MIN_PLOT_W = BASE_CHART_W - padL - padR;
-    const plotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
-    return padL + plotW + padR;
-  }, [points]);
+  const n = points.length;
+  const naturalPlotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
+  const fitPlotW =
+    containerWidth != null ? Math.max(MIN_FIT_PLOT_W, containerWidth - PAD_L - PAD_R) : naturalPlotW;
+  const plotW = fit ? fitPlotW : naturalPlotW;
+  const layoutW = PAD_L + plotW + PAD_R;
 
   const chartScrollSyncKey = useMemo(
-    () =>
-      `${points.length}:${points.map((p) => p.monthKey).join(",")}:${layoutW}`,
-    [points, layoutW],
+    () => `${points.length}:${points.map((p) => p.monthKey).join(",")}:${layoutW}:${fit}`,
+    [points, layoutW, fit],
   );
 
-  /** Latest months are on the right; scroll the wrap so they’re in view first (matches wide sheet table). */
+  /** Latest months are on the right; scroll the wrap so they’re in view first (matches wide sheet table). No-op once "fit" makes the whole chart visible without scrolling. */
   useLayoutEffect(() => {
     if (points.length === 0 || okVals.length === 0) return;
     const wrap = chartScrollWrapRef.current;
@@ -121,8 +138,8 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
   if (okVals.length === 0) {
     return (
       <p className="small text-secondary mb-0">
-        Net (USD) bars appear when at least one month has a computable total (entered balances and
-        valid FX rates).
+        The Net (USD) line appears when at least one month has a computable total (entered
+        balances and valid FX rates).
       </p>
     );
   }
@@ -138,27 +155,16 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
     maxV += pad;
   }
 
-  /** Minimum horizontal space per month so stacked labels stay readable (no squashing). */
-  const MIN_SLOT_W = 56;
-  const BASE_CHART_W = 720;
-  const padL = 52;
-  const padR = 12;
-  const padT = 10;
-  const padB = 50;
-  const H = 222;
-  const MIN_PLOT_W = BASE_CHART_W - padL - padR;
+  const W = PAD_L + plotW + PAD_R;
+  const plotH = H - PAD_T - PAD_B;
 
-  const n = points.length;
-  const plotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
-  const W = padL + plotW + padR;
-  const plotH = H - padT - padB;
-
-  const yAt = (v: number) => padT + ((maxV - v) / (maxV - minV)) * plotH;
+  const yAt = (v: number) => PAD_T + ((maxV - v) / (maxV - minV)) * plotH;
   const zeroY = yAt(0);
   const slotW = plotW / n;
-  const barW = Math.max(4, Math.min(slotW * 0.58, 52));
+  const pointR = Math.max(1.8, Math.min(slotW * 0.22, 4));
 
-  const showScrollHint = plotW > MIN_PLOT_W;
+  const showScrollHint = !fit && plotW > MIN_PLOT_W;
+  const labelStep = computeLabelStep(n, plotW, MIN_LABEL_SLOT_W);
 
   const monthBaselineY = H - 36;
   const ariaSummary = points
@@ -171,8 +177,19 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
     })
     .join("; ");
 
+  const lineData = points.map((p, i) => ({
+    x: PAD_L + i * slotW + slotW / 2,
+    y: p.kind === "ok" ? yAt(p.netUsd) : null,
+  }));
+  const segments = toLineSegments(lineData);
+  const posClipId = `${gradId}-clip-pos`;
+  const negClipId = `${gradId}-clip-neg`;
+
   return (
     <figure className="monthly-balances-net-chart-figure mb-0">
+      <div className="monthly-balances-net-chart-toolbar">
+        <FitToScreenToggle fit={fit} onToggle={() => setFit((f) => !f)} />
+      </div>
       <div
         ref={chartScrollWrapRef}
         className="monthly-balances-net-chart-svg-wrap"
@@ -188,18 +205,29 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.92" />
-              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.42" />
+              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.03" />
             </linearGradient>
             <linearGradient id={`${gradId}-neg`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.48" />
-              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.5" />
             </linearGradient>
+            <clipPath id={posClipId}>
+              <rect x={PAD_L} y={PAD_T} width={plotW} height={Math.max(0, zeroY - PAD_T)} />
+            </clipPath>
+            <clipPath id={negClipId}>
+              <rect
+                x={PAD_L}
+                y={zeroY}
+                width={plotW}
+                height={Math.max(0, PAD_T + plotH - zeroY)}
+              />
+            </clipPath>
           </defs>
 
           <rect
-            x={padL}
-            y={padT}
+            x={PAD_L}
+            y={PAD_T}
             width={plotW}
             height={plotH}
             rx={10}
@@ -211,10 +239,10 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
             {([0.25, 0.5, 0.75] as const).map((frac) => (
               <line
                 key={frac}
-                x1={padL}
-                x2={padL + plotW}
-                y1={padT + frac * plotH}
-                y2={padT + frac * plotH}
+                x1={PAD_L}
+                x2={PAD_L + plotW}
+                y1={PAD_T + frac * plotH}
+                y2={PAD_T + frac * plotH}
                 className="monthly-balances-net-chart-grid-line"
               />
             ))}
@@ -222,16 +250,16 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
 
           <g>
             <line
-              x1={padL}
-              x2={W - padR}
+              x1={PAD_L}
+              x2={W - PAD_R}
               y1={zeroY}
               y2={zeroY}
               className="monthly-balances-net-chart-zero-line"
               strokeWidth={1}
             />
             <text
-              x={padL - 8}
-              y={padT + 11}
+              x={PAD_L - 8}
+              y={PAD_T + 11}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -239,8 +267,8 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
               {formatAxisUsd(maxV)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH * 0.5 + 4}
+              x={PAD_L - 8}
+              y={PAD_T + plotH * 0.5 + 4}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -248,8 +276,8 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
               {formatAxisUsd((maxV + minV) / 2)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH - 3}
+              x={PAD_L - 8}
+              y={PAD_T + plotH - 3}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -258,63 +286,88 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
             </text>
           </g>
 
+          {/* Area + line, split into segments so gap months (no computable total) break the line
+              instead of being interpolated across, and clipped by the zero baseline so the fill/
+              stroke color still flips at zero like the old bars did. */}
           <g>
-            {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
-              const x = cx - barW / 2;
-              const fullMonth = formatMonthFull(p.monthKey);
-
-              if (p.kind !== "ok") {
-                return (
-                  <g key={p.monthKey}>
-                    <rect
-                      x={x}
-                      y={zeroY - 3}
-                      width={barW}
-                      height={6}
-                      rx={3}
-                      className="monthly-balances-net-chart-placeholder-bar"
-                    >
-                      <title>
-                        {fullMonth}: Net unavailable
-                        {p.kind === "mixed" ? " (missing FX rate or invalid rate)" : ""}
-                      </title>
-                    </rect>
-                  </g>
-                );
-              }
-
-              const v = p.netUsd;
-              const yTop = yAt(v);
-              const yBot = zeroY;
-              const top = Math.min(yTop, yBot);
-              const h = Math.max(Math.abs(yBot - yTop), 2);
-              const fill = v >= 0 ? `url(#${gradId})` : `url(#${gradId}-neg)`;
-
+            {segments.map((segment, si) => {
+              const areaPath = buildAreaPath(segment, zeroY);
+              const linePath = segment
+                .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+                .join(" ");
               return (
-                <g key={p.monthKey}>
-                  <rect
-                    x={x}
-                    y={top}
-                    width={barW}
-                    height={h}
-                    rx={4}
-                    className="monthly-balances-net-chart-bar"
-                    fill={fill}
-                  >
-                    <title>
-                      {fullMonth}: {formatMoneyAmount(v, "USD")}
-                    </title>
-                  </rect>
+                <g key={si}>
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId})`}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId}-neg)`}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--pos"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--neg"
+                  />
                 </g>
               );
             })}
           </g>
 
-          {/* Stacked month / year — drawn above bars, horizontal (no diagonal overlap). */}
+          <g>
+            {points.map((p, i) => {
+              const cx = PAD_L + i * slotW + slotW / 2;
+              const fullMonth = formatMonthFull(p.monthKey);
+
+              if (p.kind !== "ok") {
+                return (
+                  <circle
+                    key={p.monthKey}
+                    cx={cx}
+                    cy={zeroY}
+                    r={pointR}
+                    className="monthly-balances-net-chart-placeholder-point"
+                  >
+                    <title>
+                      {fullMonth}: Net unavailable
+                      {p.kind === "mixed" ? " (missing FX rate or invalid rate)" : ""}
+                    </title>
+                  </circle>
+                );
+              }
+
+              const v = p.netUsd;
+              return (
+                <circle
+                  key={p.monthKey}
+                  cx={cx}
+                  cy={yAt(v)}
+                  r={pointR}
+                  className={`monthly-balances-net-chart-point ${v >= 0 ? "monthly-balances-net-chart-point--pos" : "monthly-balances-net-chart-point--neg"}`}
+                >
+                  <title>
+                    {fullMonth}: {formatMoneyAmount(v, "USD")}
+                  </title>
+                </circle>
+              );
+            })}
+          </g>
+
+          {/* Stacked month / year — thinned to labelStep so labels never collide when compressed. */}
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
+              if (i !== n - 1 && i % labelStep !== 0) return null;
+              const cx = PAD_L + i * slotW + slotW / 2;
               const { month, year } = monthAxisTwoLines(p.monthKey);
               return (
                 <text
@@ -339,7 +392,8 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
       {showScrollHint ? (
         <p className="small text-secondary mb-0 mt-2 monthly-balances-net-chart-scroll-hint">
           <i className="bi bi-arrow-left-right me-1" aria-hidden />
-          Scroll sideways to see every month; hover a bar for the full date and amount.
+          Scroll sideways to see every month, or use “Fit to screen” — hover a point for the full
+          date and amount.
         </p>
       ) : null}
     </figure>

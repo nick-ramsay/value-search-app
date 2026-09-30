@@ -1,9 +1,12 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
 import type { MonteCarloYearSummaryJson } from "@/lib/monte-carlo-simulation-types";
 import type { TrendAndProjectionPayload } from "@/lib/net-worth-projection";
+import { buildAreaPath, computeLabelStep, toLineSegments } from "./areaLineChartMath";
+import { useContainerWidth } from "./useContainerWidth";
+import FitToScreenToggle from "./FitToScreenToggle";
 
 function formatAxisUsd(n: number): string {
   try {
@@ -21,7 +24,18 @@ function formatAxisUsd(n: number): string {
 
 type ScalarPoint = { year: number; value: number };
 
-function ScalarUsdBarChart({
+const MIN_SLOT_W = 44;
+const MIN_LABEL_SLOT_W = 30;
+const BASE_CHART_W = 720;
+const PAD_L = 52;
+const PAD_R = 12;
+const PAD_T = 10;
+const PAD_B = 46;
+const H = 222;
+const MIN_PLOT_W = BASE_CHART_W - PAD_L - PAD_R;
+const MIN_FIT_PLOT_W = 160;
+
+function ScalarUsdAreaChart({
   points,
   ariaSummaryPrefix,
 }: {
@@ -29,6 +43,9 @@ function ScalarUsdBarChart({
   ariaSummaryPrefix: string;
 }) {
   const gradId = useId().replace(/:/g, "");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(false);
+  const containerWidth = useContainerWidth(wrapRef);
 
   const vals = points.map((p) => p.value).filter((v) => Number.isFinite(v));
 
@@ -55,35 +72,41 @@ function ScalarUsdBarChart({
     maxV += pad;
   }
 
-  const MIN_SLOT_W = 44;
-  const BASE_CHART_W = 720;
-  const padL = 52;
-  const padR = 12;
-  const padT = 10;
-  const padB = 46;
-  const H = 222;
-  const MIN_PLOT_W = BASE_CHART_W - padL - padR;
-
   const n = points.length;
-  const plotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
-  const W = padL + plotW + padR;
-  const plotH = H - padT - padB;
+  const naturalPlotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
+  const fitPlotW =
+    containerWidth != null ? Math.max(MIN_FIT_PLOT_W, containerWidth - PAD_L - PAD_R) : naturalPlotW;
+  const plotW = fit ? fitPlotW : naturalPlotW;
+  const W = PAD_L + plotW + PAD_R;
+  const plotH = H - PAD_T - PAD_B;
 
-  const yAt = (v: number) => padT + ((maxV - v) / (maxV - minV)) * plotH;
+  const yAt = (v: number) => PAD_T + ((maxV - v) / (maxV - minV)) * plotH;
   const zeroY = yAt(0);
   const slotW = plotW / n;
-  const barW = Math.max(3, Math.min(slotW * 0.52, 44));
+  const pointR = Math.max(1.8, Math.min(slotW * 0.22, 4));
 
-  const showScrollHint = plotW > MIN_PLOT_W;
+  const showScrollHint = !fit && plotW > MIN_PLOT_W;
+  const labelStep = computeLabelStep(n, plotW, MIN_LABEL_SLOT_W);
 
   const monthBaselineY = H - 34;
   const ariaSummary = points
     .map((p) => `${p.year}: ${formatMoneyAmount(p.value, "USD")}`)
     .join("; ");
 
+  const lineData = points.map((p, i) => ({
+    x: PAD_L + i * slotW + slotW / 2,
+    y: Number.isFinite(p.value) ? yAt(p.value) : null,
+  }));
+  const segments = toLineSegments(lineData);
+  const posClipId = `${gradId}-clip-pos`;
+  const negClipId = `${gradId}-clip-neg`;
+
   return (
     <figure className="monthly-balances-net-chart-figure mb-0">
-      <div className="monthly-balances-net-chart-svg-wrap">
+      <div className="monthly-balances-net-chart-toolbar">
+        <FitToScreenToggle fit={fit} onToggle={() => setFit((f) => !f)} />
+      </div>
+      <div ref={wrapRef} className="monthly-balances-net-chart-svg-wrap">
         <svg
           className="monthly-balances-net-chart-svg"
           width={W}
@@ -95,18 +118,29 @@ function ScalarUsdBarChart({
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.92" />
-              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.42" />
+              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.03" />
             </linearGradient>
             <linearGradient id={`${gradId}-neg`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.48" />
-              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.5" />
             </linearGradient>
+            <clipPath id={posClipId}>
+              <rect x={PAD_L} y={PAD_T} width={plotW} height={Math.max(0, zeroY - PAD_T)} />
+            </clipPath>
+            <clipPath id={negClipId}>
+              <rect
+                x={PAD_L}
+                y={zeroY}
+                width={plotW}
+                height={Math.max(0, PAD_T + plotH - zeroY)}
+              />
+            </clipPath>
           </defs>
 
           <rect
-            x={padL}
-            y={padT}
+            x={PAD_L}
+            y={PAD_T}
             width={plotW}
             height={plotH}
             rx={10}
@@ -118,10 +152,10 @@ function ScalarUsdBarChart({
             {([0.25, 0.5, 0.75] as const).map((frac) => (
               <line
                 key={frac}
-                x1={padL}
-                x2={padL + plotW}
-                y1={padT + frac * plotH}
-                y2={padT + frac * plotH}
+                x1={PAD_L}
+                x2={PAD_L + plotW}
+                y1={PAD_T + frac * plotH}
+                y2={PAD_T + frac * plotH}
                 className="monthly-balances-net-chart-grid-line"
               />
             ))}
@@ -129,16 +163,16 @@ function ScalarUsdBarChart({
 
           <g>
             <line
-              x1={padL}
-              x2={W - padR}
+              x1={PAD_L}
+              x2={W - PAD_R}
               y1={zeroY}
               y2={zeroY}
               className="monthly-balances-net-chart-zero-line"
               strokeWidth={1}
             />
             <text
-              x={padL - 8}
-              y={padT + 11}
+              x={PAD_L - 8}
+              y={PAD_T + 11}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -146,8 +180,8 @@ function ScalarUsdBarChart({
               {formatAxisUsd(maxV)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH * 0.5 + 4}
+              x={PAD_L - 8}
+              y={PAD_T + plotH * 0.5 + 4}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -155,8 +189,8 @@ function ScalarUsdBarChart({
               {formatAxisUsd((maxV + minV) / 2)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH - 3}
+              x={PAD_L - 8}
+              y={PAD_T + plotH - 3}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -166,39 +200,64 @@ function ScalarUsdBarChart({
           </g>
 
           <g>
-            {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
-              const x = cx - barW / 2;
-              const v = p.value;
-              const yTop = yAt(v);
-              const yBot = zeroY;
-              const top = Math.min(yTop, yBot);
-              const h = Math.max(Math.abs(yBot - yTop), 2);
-              const fill = v >= 0 ? `url(#${gradId})` : `url(#${gradId}-neg)`;
-
+            {segments.map((segment, si) => {
+              const areaPath = buildAreaPath(segment, zeroY);
+              const linePath = segment
+                .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+                .join(" ");
               return (
-                <g key={`${p.year}-${i}`}>
-                  <rect
-                    x={x}
-                    y={top}
-                    width={barW}
-                    height={h}
-                    rx={4}
-                    className="monthly-balances-net-chart-bar"
-                    fill={fill}
-                  >
-                    <title>
-                      {p.year}: {formatMoneyAmount(v, "USD")}
-                    </title>
-                  </rect>
+                <g key={si}>
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId})`}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId}-neg)`}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--pos"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--neg"
+                  />
                 </g>
+              );
+            })}
+          </g>
+
+          <g>
+            {points.map((p, i) => {
+              const cx = PAD_L + i * slotW + slotW / 2;
+              const v = p.value;
+              return (
+                <circle
+                  key={`${p.year}-${i}`}
+                  cx={cx}
+                  cy={yAt(v)}
+                  r={pointR}
+                  className={`monthly-balances-net-chart-point ${v >= 0 ? "monthly-balances-net-chart-point--pos" : "monthly-balances-net-chart-point--neg"}`}
+                >
+                  <title>
+                    {p.year}: {formatMoneyAmount(v, "USD")}
+                  </title>
+                </circle>
               );
             })}
           </g>
 
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
+              if (i !== n - 1 && i % labelStep !== 0) return null;
+              const cx = PAD_L + i * slotW + slotW / 2;
               return (
                 <text
                   key={`${p.year}-xl-${i}`}
@@ -219,7 +278,7 @@ function ScalarUsdBarChart({
       {showScrollHint ? (
         <p className="small text-secondary mb-0 mt-2 monthly-balances-net-chart-scroll-hint">
           <i className="bi bi-arrow-left-right me-1" aria-hidden />
-          Scroll sideways to see every year; hover a bar for the amount.
+          Scroll sideways to see every year, or use “Fit to screen” — hover a point for the amount.
         </p>
       ) : null}
     </figure>
@@ -301,7 +360,7 @@ type NetWorthProjectionChartsProps = {
   monteCarloYearSummaries: MonteCarloYearSummaryJson[] | null;
 };
 
-/** Bar chart: Monte Carlo median path when stored; otherwise CAGR-compounded projection. */
+/** Area/line chart: Monte Carlo median path when stored; otherwise CAGR-compounded projection. */
 export default function NetWorthProjectionCharts({
   projection,
   monteCarloYearSummaries,
@@ -326,7 +385,7 @@ export default function NetWorthProjectionCharts({
     return (
       <p className="text-secondary small mb-0">
         No projections to chart yet. For the <strong>CAGR</strong> view, yearly averages must
-        sync first—use <strong>Monthly sheet</strong> or <strong>Year averages</strong>. For the{" "}
+        sync first—use <strong>Monthly Sheet</strong> or <strong>Year Averages</strong>. For the{" "}
         <strong>Monte Carlo (most likely)</strong> view, run the pyworker projection script so{" "}
         <code className="user-select-all">usernetworthmontecarlosimulations</code> has a document
         for your account.
@@ -349,7 +408,7 @@ export default function NetWorthProjectionCharts({
           ? "Median (p50) across simulated paths. Illustrative only."
           : "Compounded from your baseline using your historical CAGR. Illustrative only."}
       </p>
-      <ScalarUsdBarChart
+      <ScalarUsdAreaChart
         points={nwPoints}
         ariaSummaryPrefix={
           useMonteCarlo

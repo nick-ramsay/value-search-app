@@ -1,7 +1,10 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
+import { buildAreaPath, computeLabelStep, toLineSegments } from "./areaLineChartMath";
+import { useContainerWidth } from "./useContainerWidth";
+import FitToScreenToggle from "./FitToScreenToggle";
 
 export type YearlyNetUsdBarRow = {
   year: number;
@@ -27,12 +30,26 @@ type YearlyNetUsdBarChartProps = {
   rows: YearlyNetUsdBarRow[];
 };
 
+const MIN_SLOT_W = 56;
+const MIN_LABEL_SLOT_W = 34;
+const BASE_CHART_W = 720;
+const PAD_L = 52;
+const PAD_R = 12;
+const PAD_T = 10;
+const PAD_B = 50;
+const H = 222;
+const MIN_PLOT_W = BASE_CHART_W - PAD_L - PAD_R;
+const MIN_FIT_PLOT_W = 160;
+
 /**
- * Vertical bars of average monthly Net (USD) by calendar year (chronological left → right).
- * Matches {@link MonthlyNetUsdBarChart} styling; chart width grows with year count.
+ * Area/line chart of average monthly Net (USD) by calendar year (chronological left → right).
+ * Matches {@link MonthlyNetUsdBarChart}'s styling and "fit to screen" behavior.
  */
 export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps) {
   const gradId = useId().replace(/:/g, "");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(false);
+  const containerWidth = useContainerWidth(wrapRef);
 
   const points = useMemo(
     () => [...rows].sort((a, b) => a.year - b.year),
@@ -52,7 +69,7 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
   if (okVals.length === 0) {
     return (
       <p className="small text-secondary mb-0">
-        Bars appear when yearly averages include valid amounts.
+        The line appears when yearly averages include valid amounts.
       </p>
     );
   }
@@ -68,26 +85,21 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
     maxV += pad;
   }
 
-  const MIN_SLOT_W = 56;
-  const BASE_CHART_W = 720;
-  const padL = 52;
-  const padR = 12;
-  const padT = 10;
-  const padB = 50;
-  const H = 222;
-  const MIN_PLOT_W = BASE_CHART_W - padL - padR;
-
   const n = points.length;
-  const plotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
-  const W = padL + plotW + padR;
-  const plotH = H - padT - padB;
+  const naturalPlotW = Math.max(MIN_PLOT_W, n * MIN_SLOT_W);
+  const fitPlotW =
+    containerWidth != null ? Math.max(MIN_FIT_PLOT_W, containerWidth - PAD_L - PAD_R) : naturalPlotW;
+  const plotW = fit ? fitPlotW : naturalPlotW;
+  const W = PAD_L + plotW + PAD_R;
+  const plotH = H - PAD_T - PAD_B;
 
-  const yAt = (v: number) => padT + ((maxV - v) / (maxV - minV)) * plotH;
+  const yAt = (v: number) => PAD_T + ((maxV - v) / (maxV - minV)) * plotH;
   const zeroY = yAt(0);
   const slotW = plotW / n;
-  const barW = Math.max(4, Math.min(slotW * 0.58, 52));
+  const pointR = Math.max(1.8, Math.min(slotW * 0.22, 4));
 
-  const showScrollHint = plotW > MIN_PLOT_W;
+  const showScrollHint = !fit && plotW > MIN_PLOT_W;
+  const labelStep = computeLabelStep(n, plotW, MIN_LABEL_SLOT_W);
 
   const xBaselineY = H - 36;
   const ariaSummary = points
@@ -97,9 +109,20 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
     })
     .join("; ");
 
+  const lineData = points.map((p, i) => ({
+    x: PAD_L + i * slotW + slotW / 2,
+    y: Number.isFinite(p.averageNetUsd) ? yAt(p.averageNetUsd) : null,
+  }));
+  const segments = toLineSegments(lineData);
+  const posClipId = `${gradId}-clip-pos`;
+  const negClipId = `${gradId}-clip-neg`;
+
   return (
     <figure className="monthly-balances-net-chart-figure mb-0">
-      <div className="monthly-balances-net-chart-svg-wrap">
+      <div className="monthly-balances-net-chart-toolbar">
+        <FitToScreenToggle fit={fit} onToggle={() => setFit((f) => !f)} />
+      </div>
+      <div ref={wrapRef} className="monthly-balances-net-chart-svg-wrap">
         <svg
           className="monthly-balances-net-chart-svg"
           width={W}
@@ -111,18 +134,29 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.92" />
-              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.42" />
+              <stop offset="0%" stopColor="var(--success)" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="var(--success)" stopOpacity="0.03" />
             </linearGradient>
             <linearGradient id={`${gradId}-neg`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.48" />
-              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="var(--danger)" stopOpacity="0.5" />
             </linearGradient>
+            <clipPath id={posClipId}>
+              <rect x={PAD_L} y={PAD_T} width={plotW} height={Math.max(0, zeroY - PAD_T)} />
+            </clipPath>
+            <clipPath id={negClipId}>
+              <rect
+                x={PAD_L}
+                y={zeroY}
+                width={plotW}
+                height={Math.max(0, PAD_T + plotH - zeroY)}
+              />
+            </clipPath>
           </defs>
 
           <rect
-            x={padL}
-            y={padT}
+            x={PAD_L}
+            y={PAD_T}
             width={plotW}
             height={plotH}
             rx={10}
@@ -134,10 +168,10 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
             {([0.25, 0.5, 0.75] as const).map((frac) => (
               <line
                 key={frac}
-                x1={padL}
-                x2={padL + plotW}
-                y1={padT + frac * plotH}
-                y2={padT + frac * plotH}
+                x1={PAD_L}
+                x2={PAD_L + plotW}
+                y1={PAD_T + frac * plotH}
+                y2={PAD_T + frac * plotH}
                 className="monthly-balances-net-chart-grid-line"
               />
             ))}
@@ -145,16 +179,16 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
 
           <g>
             <line
-              x1={padL}
-              x2={W - padR}
+              x1={PAD_L}
+              x2={W - PAD_R}
               y1={zeroY}
               y2={zeroY}
               className="monthly-balances-net-chart-zero-line"
               strokeWidth={1}
             />
             <text
-              x={padL - 8}
-              y={padT + 11}
+              x={PAD_L - 8}
+              y={PAD_T + 11}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -162,8 +196,8 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
               {formatAxisUsd(maxV)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH * 0.5 + 4}
+              x={PAD_L - 8}
+              y={PAD_T + plotH * 0.5 + 4}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -171,8 +205,8 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
               {formatAxisUsd((maxV + minV) / 2)}
             </text>
             <text
-              x={padL - 8}
-              y={padT + plotH - 3}
+              x={PAD_L - 8}
+              y={PAD_T + plotH - 3}
               textAnchor="end"
               className="monthly-balances-net-chart-axis-label"
               fontSize={10}
@@ -182,40 +216,64 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
           </g>
 
           <g>
-            {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
-              const x = cx - barW / 2;
-              const v = p.averageNetUsd;
-              const yTop = yAt(v);
-              const yBot = zeroY;
-              const top = Math.min(yTop, yBot);
-              const h = Math.max(Math.abs(yBot - yTop), 2);
-              const fill = v >= 0 ? `url(#${gradId})` : `url(#${gradId}-neg)`;
-              const tip = `${p.year}: ${formatMoneyAmount(v, "USD")} (avg of ${p.monthCount} month${p.monthCount === 1 ? "" : "s"})`;
-
+            {segments.map((segment, si) => {
+              const areaPath = buildAreaPath(segment, zeroY);
+              const linePath = segment
+                .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+                .join(" ");
               return (
-                <g key={p.year}>
-                  <rect
-                    x={x}
-                    y={top}
-                    width={barW}
-                    height={h}
-                    rx={4}
-                    className="monthly-balances-net-chart-bar"
-                    fill={fill}
-                  >
-                    <title>{tip}</title>
-                  </rect>
+                <g key={si}>
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId})`}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={areaPath}
+                    fill={`url(#${gradId}-neg)`}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-area"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${posClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--pos"
+                  />
+                  <path
+                    d={linePath}
+                    clipPath={`url(#${negClipId})`}
+                    className="monthly-balances-net-chart-line monthly-balances-net-chart-line--neg"
+                  />
                 </g>
+              );
+            })}
+          </g>
+
+          <g>
+            {points.map((p, i) => {
+              const cx = PAD_L + i * slotW + slotW / 2;
+              const v = p.averageNetUsd;
+              const tip = `${p.year}: ${formatMoneyAmount(v, "USD")} (avg of ${p.monthCount} month${p.monthCount === 1 ? "" : "s"})`;
+              return (
+                <circle
+                  key={p.year}
+                  cx={cx}
+                  cy={yAt(v)}
+                  r={pointR}
+                  className={`monthly-balances-net-chart-point ${v >= 0 ? "monthly-balances-net-chart-point--pos" : "monthly-balances-net-chart-point--neg"}`}
+                >
+                  <title>{tip}</title>
+                </circle>
               );
             })}
           </g>
 
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
-              const cx = padL + i * slotW + slotW / 2;
-              const mo =
-                p.monthCount === 1 ? "1 mo." : `${p.monthCount} mo.`;
+              if (i !== n - 1 && i % labelStep !== 0) return null;
+              const cx = PAD_L + i * slotW + slotW / 2;
+              const mo = p.monthCount === 1 ? "1 mo." : `${p.monthCount} mo.`;
               return (
                 <text
                   key={p.year}
@@ -239,7 +297,8 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
       {showScrollHint ? (
         <p className="small text-secondary mb-0 mt-2 monthly-balances-net-chart-scroll-hint">
           <i className="bi bi-arrow-left-right me-1" aria-hidden />
-          Scroll sideways to see every year; hover a bar for the average amount and month count.
+          Scroll sideways to see every year, or use “Fit to screen” — hover a point for the average
+          amount and month count.
         </p>
       ) : null}
     </figure>

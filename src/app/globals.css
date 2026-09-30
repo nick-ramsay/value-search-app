@@ -6323,6 +6323,27 @@ a:hover {
   margin: 0;
 }
 
+.monthly-balances-net-chart-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+}
+
+.monthly-balances-net-chart-fit-toggle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+}
+
+.monthly-balances-net-chart-fit-toggle:hover {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
+
 .monthly-balances-net-chart-svg-wrap {
   width: 100%;
   max-width: 100%;
@@ -6378,13 +6399,33 @@ a:hover {
   font-size: 11px;
 }
 
-.monthly-balances-net-chart-placeholder-bar {
-  fill: color-mix(in srgb, var(--text-tertiary) 48%, var(--glass-bg-subtle));
+.monthly-balances-net-chart-placeholder-point {
+  fill: var(--glass-bg-subtle);
+  stroke: color-mix(in srgb, var(--text-tertiary) 48%, var(--glass-bg-subtle));
+  stroke-width: 1.5;
 }
 
-.monthly-balances-net-chart-bar {
-  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--text-primary) 12%, transparent));
+.monthly-balances-net-chart-area {
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--text-primary) 10%, transparent));
 }
+
+.monthly-balances-net-chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.monthly-balances-net-chart-line--pos { stroke: var(--success); }
+.monthly-balances-net-chart-line--neg { stroke: var(--danger); }
+
+.monthly-balances-net-chart-point {
+  stroke: var(--glass-bg);
+  stroke-width: 1.5;
+}
+
+.monthly-balances-net-chart-point--pos { fill: var(--success); }
+.monthly-balances-net-chart-point--neg { fill: var(--danger); }
 
 [data-theme="light"] .monthly-balances-net-chart-section {
   background: rgba(255, 255, 255, 0.72);
@@ -6392,12 +6433,13 @@ a:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
-[data-theme="light"] .monthly-balances-net-chart-placeholder-bar {
-  fill: color-mix(in srgb, var(--text-tertiary) 38%, rgba(255, 255, 255, 0.65));
+[data-theme="light"] .monthly-balances-net-chart-placeholder-point {
+  fill: rgba(255, 255, 255, 0.65);
+  stroke: color-mix(in srgb, var(--text-tertiary) 38%, rgba(255, 255, 255, 0.65));
 }
 
-[data-theme="light"] .monthly-balances-net-chart-bar {
-  filter: drop-shadow(0 1px 2px rgba(60, 60, 67, 0.14));
+[data-theme="light"] .monthly-balances-net-chart-area {
+  filter: drop-shadow(0 1px 2px rgba(60, 60, 67, 0.12));
 }
 
 /* Projections – year table (accordion under bar chart) */

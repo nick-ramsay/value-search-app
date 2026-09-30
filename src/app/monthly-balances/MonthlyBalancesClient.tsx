@@ -1709,7 +1709,7 @@ export default function MonthlyBalancesClient() {
               <div
                 className="btn-group monthly-balances-view-toggle flex-wrap"
                 role="group"
-                aria-label="Monthly sheet, year averages, or projections"
+                aria-label="Monthly Sheet, Year Averages, or Projections"
               >
                 <button
                   type="button"
@@ -1718,7 +1718,7 @@ export default function MonthlyBalancesClient() {
                   onClick={() => setTableViewPersisted("sheet")}
                 >
                   <i className="bi bi-table me-1" aria-hidden />
-                  Monthly sheet
+                  Monthly Sheet
                 </button>
                 <button
                   type="button"
@@ -1727,7 +1727,7 @@ export default function MonthlyBalancesClient() {
                   onClick={() => setTableViewPersisted("yearly")}
                 >
                   <i className="bi bi-calendar3 me-1" aria-hidden />
-                  Year averages
+                  Year Averages
                 </button>
                 <button
                   type="button"
