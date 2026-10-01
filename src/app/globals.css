@@ -4684,7 +4684,7 @@ a:hover {
   .liquid-navbar .search-input-glass {
     padding: 0.2rem 0.5rem;
     font-size: 0.8125rem;
-    border-radius: 8px;
+    border-radius: 999px;
     min-height: 1.75rem;
   }
 }
