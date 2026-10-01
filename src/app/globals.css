@@ -36,6 +36,14 @@
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 12px -6px rgba(196, 32, 44, 0.4);
 
+  /* Unified text-input fill/border — deliberately NOT --glass-bg-subtle: that
+     token is a translucent wash of the page's own tone (white-on-near-white
+     here), so it barely separates from whatever's behind it. A flat
+     mid-slate tint at moderate opacity reads as a clearly distinct field
+     against the near-white page in both default and forced light. */
+  --input-bg: rgba(132, 140, 158, 0.18);
+  --input-border: rgba(60, 60, 76, 0.22);
+
   /* Signature gradient – electric teal → violet, used sparingly for the one bold moment */
   --gradient-start: #00A87C;
   --gradient-end: #6C4CE0;
@@ -99,6 +107,12 @@
     --input-focus-border-danger: var(--danger-clear);
     --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
+    /* Lighter than the page (page is near-black navy), not just a translucent
+       wash of the same dark tone — --glass-bg-subtle here was nearly the
+       exact page color at 52% opacity, which barely separates visually. */
+    --input-bg: rgba(255, 255, 255, 0.12);
+    --input-border: rgba(255, 255, 255, 0.20);
+
     --gradient-start: #00D9A3;
     --gradient-end: #9C87FF;
     --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
@@ -150,6 +164,12 @@
   --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
+
+  /* Lighter than the page (page is near-black navy), not just a translucent
+     wash of the same dark tone — --glass-bg-subtle here was nearly the
+     exact page color at 52% opacity, which barely separates visually. */
+  --input-bg: rgba(255, 255, 255, 0.12);
+  --input-border: rgba(255, 255, 255, 0.20);
 
   --gradient-start: #00D9A3;
   --gradient-end: #9C87FF;
@@ -2347,8 +2367,8 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   display: inline-flex;
   align-items: center;
   flex: 1 1 auto;
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
   overflow: hidden;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -2775,11 +2795,6 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   border-color: rgba(60, 60, 67, 0.18);
 }
 
-[data-theme="light"] .stock-card__target-input-wrap {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(60, 60, 67, 0.18);
-}
-
 [data-theme="light"] .stock-card__target-input-prefix {
   background: rgba(248, 250, 252, 0.95);
   border-right-color: rgba(60, 60, 67, 0.12);
@@ -2810,10 +2825,10 @@ textarea.form-control:focus {
      ever applied to the non-search inputs sharing this class. */
   -webkit-appearance: none;
   appearance: none;
-  background: var(--glass-bg) !important;
+  background: var(--input-bg) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border-subtle) !important;
+  border: 1px solid var(--input-border) !important;
   border-radius: 999px;
   padding: 12px 16px;
   color: var(--text-primary) !important;
@@ -2838,23 +2853,10 @@ textarea.form-control:focus {
 }
 
 .search-input-glass:focus {
-  background: var(--glass-bg) !important;
+  background: var(--input-bg) !important;
   border-color: var(--input-focus-border) !important;
   box-shadow: var(--input-focus-ring);
   outline: none;
-}
-
-/* Light theme: filled input field */
-[data-theme="light"] .search-input-glass {
-  background: rgba(118, 118, 128, 0.12) !important;
-  border-color: transparent !important;
-  box-shadow: none;
-}
-
-[data-theme="light"] .search-input-glass:focus {
-  background: #ffffff !important;
-  border-color: var(--input-focus-border) !important;
-  box-shadow: var(--input-focus-ring);
 }
 
 /* Suggestions dropdown – taskboard-style glass */
@@ -3745,9 +3747,9 @@ textarea.form-control:focus {
 /* Form controls inside glass */
 .form-select.glass-select,
 .form-control.glass-select {
-  background: var(--glass-bg-subtle) !important;
+  background: var(--input-bg) !important;
   backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
   color: var(--text-primary);
   padding: 0.3rem 2rem 0.3rem 0.65rem;
@@ -3760,13 +3762,6 @@ textarea.form-control:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glass);
   outline: none;
-}
-
-[data-theme="light"] .form-select.glass-select,
-[data-theme="light"] .form-control.glass-select {
-  background: rgba(118, 118, 128, 0.1) !important;
-  border-color: rgba(60, 60, 67, 0.14);
-  box-shadow: none;
 }
 
 /* Multi-select checkbox dropdown (Sector/Industry/Country filters) — trigger
@@ -3841,8 +3836,8 @@ textarea.form-control:focus {
   padding: 0.4rem 0.6rem 0.4rem 2rem;
   font-size: 0.82rem;
   color: var(--text-primary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
 }
 
@@ -4618,8 +4613,8 @@ a:hover {
 
 /* Non-modal login page: glass-style form inputs to match the panel */
 .glass-panel .form-control {
-  background: var(--glass-bg-subtle) !important;
-  border: 1px solid var(--glass-border-subtle) !important;
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
   border-radius: 999px;
   color: var(--text-primary) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -4630,20 +4625,10 @@ a:hover {
 }
 
 .glass-panel .form-control:focus {
-  background: var(--glass-bg) !important;
+  background: var(--input-bg) !important;
   border-color: var(--input-focus-border) !important;
   box-shadow: var(--input-focus-ring) !important;
   outline: none;
-}
-
-[data-theme="light"] .glass-panel .form-control {
-  background: rgba(118, 118, 128, 0.1) !important;
-  border-color: transparent !important;
-}
-
-[data-theme="light"] .glass-panel .form-control:focus {
-  background: #ffffff !important;
-  border-color: var(--input-focus-border) !important;
 }
 
 /* Login page: back link to home */
@@ -4757,8 +4742,8 @@ a:hover {
 }
 
 .login-modal .form-control {
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
   color: var(--text-primary);
 }
@@ -4769,25 +4754,13 @@ a:hover {
   outline: none;
 }
 
-/* Light theme: login modal inputs need solid fill + visible border */
+/* Light theme: login modal panel needs a solid fill + visible border (the
+   input itself now shares the unified --input-bg/--input-border above). */
 [data-theme="light"] .login-modal .modal-content,
 [data-theme="light"] .login-modal .modal-header,
 [data-theme="light"] .login-modal .modal-body {
   background: rgba(255, 255, 255, 0.96);
   border-color: rgba(60, 60, 67, 0.1);
-}
-
-[data-theme="light"] .login-modal .form-control {
-  background: #f5f5f7 !important;
-  border-color: rgba(60, 60, 67, 0.2) !important;
-  box-shadow: none;
-  color: var(--text-primary);
-}
-
-[data-theme="light"] .login-modal .form-control:focus {
-  border-color: var(--input-focus-border) !important;
-  box-shadow: var(--input-focus-ring);
-  background: #ffffff !important;
 }
 
 [data-theme="light"] .login-modal .form-control::placeholder {
@@ -6699,8 +6672,8 @@ a:hover {
   font-size: 0.875rem;
   font-family: var(--font-plex-mono), ui-monospace, monospace;
   color: var(--text-primary);
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 999px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -6763,11 +6736,6 @@ a:hover {
 [data-theme="light"] .note-delete-dialog {
   background: rgba(255, 255, 255, 0.97);
   border-color: rgba(255, 255, 255, 0.65);
-}
-
-[data-theme="light"] .note-delete-dialog__input {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(60, 60, 67, 0.2);
 }
 
 /* ── Back-to-top floating button ─────────────────────────────────────────── */
