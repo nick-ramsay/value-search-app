@@ -2804,6 +2804,12 @@ textarea.form-control:focus {
 
 /* Search input – taskboard-style glass */
 .search-input-glass {
+  /* type="search" gets native OS-level search-field chrome in Safari/WebKit
+     (and some Chrome builds) that ignores custom border-radius entirely
+     unless appearance is reset — without this, the pill shape above only
+     ever applied to the non-search inputs sharing this class. */
+  -webkit-appearance: none;
+  appearance: none;
   background: var(--glass-bg) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
