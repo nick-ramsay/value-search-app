@@ -2349,7 +2349,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   flex: 1 1 auto;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border-subtle);
-  border-radius: 10px;
+  border-radius: 999px;
   overflow: hidden;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -2808,7 +2808,7 @@ textarea.form-control:focus {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border-subtle) !important;
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 12px 16px;
   color: var(--text-primary) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -2818,7 +2818,7 @@ textarea.form-control:focus {
 .liquid-navbar .search-input-glass {
   padding: 0.35rem 0.75rem;
   font-size: 0.875rem;
-  border-radius: 10px;
+  border-radius: 999px;
   min-height: 2rem;
 }
 
@@ -3742,7 +3742,7 @@ textarea.form-control:focus {
   background: var(--glass-bg-subtle) !important;
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border-subtle);
-  border-radius: 10px;
+  border-radius: 999px;
   color: var(--text-primary);
   padding: 0.3rem 2rem 0.3rem 0.65rem;
   font-size: 0.85rem;
@@ -3837,7 +3837,7 @@ textarea.form-control:focus {
   color: var(--text-primary);
   background: var(--glass-bg-subtle);
   border: 1px solid var(--glass-border-subtle);
-  border-radius: 10px;
+  border-radius: 999px;
 }
 
 .multi-select-dropdown__search-input:focus {
@@ -4614,7 +4614,7 @@ a:hover {
 .glass-panel .form-control {
   background: var(--glass-bg-subtle) !important;
   border: 1px solid var(--glass-border-subtle) !important;
-  border-radius: 10px;
+  border-radius: 999px;
   color: var(--text-primary) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -4753,7 +4753,7 @@ a:hover {
 .login-modal .form-control {
   background: var(--glass-bg-subtle);
   border: 1px solid var(--glass-border-subtle);
-  border-radius: 10px;
+  border-radius: 999px;
   color: var(--text-primary);
 }
 
@@ -5611,7 +5611,7 @@ a:hover {
 .monthly-balances-action-panel .form-control.search-input-glass {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-  border-radius: 10px;
+  border-radius: 999px;
 }
 
 [data-theme="light"] .monthly-balances-action-btn {
@@ -6695,7 +6695,7 @@ a:hover {
   color: var(--text-primary);
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 999px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
