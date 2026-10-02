@@ -2826,27 +2826,19 @@ textarea.form-control:focus {
   -webkit-appearance: none;
   appearance: none;
   background: var(--input-bg) !important;
-  /* Same frosted-glass recipe as the app's other floating surfaces (e.g.
-     .note-delete-dialog): a strong blur plus saturate() boosts the vividness
-     of whatever's blurred behind it (Apple's "vibrancy" effect), and the
-     floating shadow lifts it off the page — together, the Safari-address-bar
-     look, rather than a flat tinted box. */
-  backdrop-filter: blur(var(--glass-blur-strong)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(180%);
+  /* No backdrop-filter/box-shadow of its own: every container this sits in
+     (.liquid-navbar, .glass-panel, .login-modal, .monthly-balances-action-panel)
+     already blurs+saturates+shadows itself as the floating/frosted layer.
+     Re-blurring here just re-blurs an already-blurred backdrop and stacks a
+     second, competing elevation on top of the container's — a flat tinted
+     pill is what actually reads as "part of" the glass it's embedded in,
+     the same way .theme-switcher-btn (its neighbor in the navbar) has no
+     blur/shadow of its own either. */
   border: 1px solid var(--input-border) !important;
   border-radius: 999px;
-  box-shadow: var(--glass-shadow-floating);
   padding: 12px 16px;
   color: var(--text-primary) !important;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-/* Navbar: match search input height to theme/dropdown buttons */
-.liquid-navbar .search-input-glass {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.875rem;
-  border-radius: 999px;
-  min-height: 2rem;
 }
 
 .search-input-glass--skeleton {
@@ -2861,10 +2853,75 @@ textarea.form-control:focus {
 .search-input-glass:focus {
   background: var(--input-bg) !important;
   border-color: var(--input-focus-border) !important;
-  /* Keep the floating elevation on focus — the ring layers on top rather
-     than replacing it, so the bar doesn't visually "sink" while active. */
-  box-shadow: var(--glass-shadow-floating), var(--input-focus-ring);
+  box-shadow: var(--input-focus-ring);
   outline: none;
+}
+
+/* Primary stock-symbol search (navbar) — a dedicated icon+pill treatment
+   rather than a bare text box, same wrap+prefix pattern already used for
+   .stock-card__target-input-wrap: the WRAP carries the pill fill/border/
+   focus ring, the icon and input sit flush inside it with no styling of
+   their own. No independent blur/shadow — .liquid-navbar already provides
+   the floating/frosted context (see the note on .search-input-glass above). */
+.symbol-search-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.35rem 0.9rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.symbol-search-wrap:focus-within {
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
+}
+
+.symbol-search-icon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+/* A small, deliberate touch of the brand accent — the icon "wakes up" on
+   focus rather than the whole bar changing color, echoing the restrained
+   way the signature gradient is used elsewhere (sparingly, for one moment). */
+.symbol-search-wrap:focus-within .symbol-search-icon {
+  color: var(--accent);
+}
+
+.symbol-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  /* Same native-search-chrome reset .search-input-glass needs (see above) —
+     this is also type="search". */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.symbol-search-input:focus {
+  outline: none;
+}
+
+.symbol-search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.symbol-search-wrap--skeleton {
+  animation: navbarSkeletonPulse 1.4s ease-in-out infinite;
 }
 
 /* Suggestions dropdown – taskboard-style glass */
@@ -4672,13 +4729,16 @@ a:hover {
   font-size: 0.8125rem;
 }
 
-/* Mobile + tablet: compact search input */
+/* Mobile + tablet: compact search bar */
 @media (max-width: 767.98px) {
-  .liquid-navbar .search-input-glass {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.8125rem;
-    border-radius: 999px;
+  .symbol-search-wrap {
+    padding: 0.2rem 0.65rem;
+    gap: 0.4rem;
     min-height: 1.75rem;
+  }
+
+  .symbol-search-input {
+    font-size: 0.8125rem;
   }
 }
 

@@ -232,64 +232,67 @@ export default function SearchBar({
         submitCurrentSelection();
       }}
     >
-      <input
-        ref={inputRef}
-        className="form-control flex-grow-1 search-input-glass"
-        type="search"
-        name="q"
-        placeholder="Search symbol or name"
-        aria-label="Search symbol or name"
-        value={query}
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-autocomplete="list"
-        aria-controls="search-suggestions-listbox"
-        aria-activedescendant={
-          isOpen && highlightedIndex >= 0 ? `search-suggestion-${highlightedIndex}` : undefined
-        }
-        onChange={(event) => setQuery(event.target.value)}
-        onInput={() => {
-          setIsSelectedMatch(false);
-        }}
-        onFocus={() => {
-          if (filteredSuggestions.length > 0) {
-            setIsOpen(true);
+      <div className="symbol-search-wrap flex-grow-1">
+        <i className="bi bi-search symbol-search-icon" aria-hidden />
+        <input
+          ref={inputRef}
+          className="symbol-search-input"
+          type="search"
+          name="q"
+          placeholder="Search symbol or name"
+          aria-label="Search symbol or name"
+          value={query}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-autocomplete="list"
+          aria-controls="search-suggestions-listbox"
+          aria-activedescendant={
+            isOpen && highlightedIndex >= 0 ? `search-suggestion-${highlightedIndex}` : undefined
           }
-        }}
-        onBlur={() => {
-          window.setTimeout(() => setIsOpen(false), 100);
-        }}
-        onKeyDown={(event) => {
-          if (!isOpen || filteredSuggestions.length === 0) {
-            if (event.key === "Escape") {
-              setIsOpen(false);
+          onChange={(event) => setQuery(event.target.value)}
+          onInput={() => {
+            setIsSelectedMatch(false);
+          }}
+          onFocus={() => {
+            if (filteredSuggestions.length > 0) {
+              setIsOpen(true);
             }
-            return;
-          }
+          }}
+          onBlur={() => {
+            window.setTimeout(() => setIsOpen(false), 100);
+          }}
+          onKeyDown={(event) => {
+            if (!isOpen || filteredSuggestions.length === 0) {
+              if (event.key === "Escape") {
+                setIsOpen(false);
+              }
+              return;
+            }
 
-          switch (event.key) {
-            case "ArrowDown":
-              event.preventDefault();
-              setHighlightedIndex((current) => (current + 1) % filteredSuggestions.length);
-              break;
-            case "ArrowUp":
-              event.preventDefault();
-              setHighlightedIndex((current) =>
-                current <= 0 ? filteredSuggestions.length - 1 : current - 1,
-              );
-              break;
-            case "Escape":
-              setIsOpen(false);
-              setHighlightedIndex(-1);
-              break;
-            // Enter is handled by the form's onSubmit (submitCurrentSelection
-            // already reads highlightedIndex), so no case needed here — just
-            // don't fall through to anything else.
-            default:
-              break;
-          }
-        }}
-      />
+            switch (event.key) {
+              case "ArrowDown":
+                event.preventDefault();
+                setHighlightedIndex((current) => (current + 1) % filteredSuggestions.length);
+                break;
+              case "ArrowUp":
+                event.preventDefault();
+                setHighlightedIndex((current) =>
+                  current <= 0 ? filteredSuggestions.length - 1 : current - 1,
+                );
+                break;
+              case "Escape":
+                setIsOpen(false);
+                setHighlightedIndex(-1);
+                break;
+              // Enter is handled by the form's onSubmit (submitCurrentSelection
+              // already reads highlightedIndex), so no case needed here — just
+              // don't fall through to anything else.
+              default:
+                break;
+            }
+          }}
+        />
+      </div>
       {isOpen || isLoading ? (
         <div
           id="search-suggestions-listbox"

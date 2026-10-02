@@ -201,7 +201,7 @@ export default function AppNavbar({
             {/* Search — always visible when applicable */}
             {!hideNavbarSearch ? (
               <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
-                <Suspense fallback={<div className="search-input-glass search-input-glass--skeleton" aria-hidden="true" />}>
+                <Suspense fallback={<div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />}>
                   <SearchBar
                     initialQuery={searchSelected ? "" : searchInitialQuery}
                     formAction={formAction}

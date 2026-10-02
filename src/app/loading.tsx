@@ -115,7 +115,7 @@ function PageLoadingFallback() {
               style={{ minWidth: 0 }}
             >
               <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
-                <div className="search-input-glass search-input-glass--skeleton" aria-hidden="true" />
+                <div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />
               </div>
               <ThemeSwitcher />
             </div>
