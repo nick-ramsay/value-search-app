@@ -301,17 +301,50 @@ main {
   font-size: 0.95rem;
 }
 
-/* Compact navbar condition — shared by the logo/wordmark swap below, the
-   grid centering, and .symbol-search-wrap's compact sizing further down
-   (search "compact navbar breakpoint" there), so all three always flip
-   together. Plain max-width alone isn't enough: many phones' LANDSCAPE
-   width exceeds 767.98px (standard iPhones ~844px, Pro Max ~930px) while
-   still being far too narrow for the full desktop layout to look right, so
-   rotating would otherwise land in an awkward in-between state — neither
-   the compact mobile treatment nor genuinely spacious desktop. The
-   landscape clause catches that case without pulling in actual
-   tablets/desktops, whose landscape width is comfortably higher still
-   (iPad landscape is 1024px+).
+/* Three-column header (brand | search | menu) at every viewport size, so
+   the search bar always centers in the space between the brand and the
+   menu button instead of sitting flush against the menu the way a plain
+   flex row with the brand on the left and an ms-auto right-group would.
+   .app-navbar-right-group becomes `display: contents` so its two children
+   (search slot, menu slot) are promoted to direct grid items of
+   .app-navbar-row instead of being sized as a sub-group — explicit
+   grid-column placement keeps the menu pinned to the last column even on
+   pages where the search bar is hidden entirely. */
+.app-navbar-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+.app-navbar-brand {
+  grid-column: 1;
+}
+
+.app-navbar-right-group {
+  display: contents;
+}
+
+.app-navbar-search-slot {
+  grid-column: 2;
+  justify-self: stretch;
+}
+
+.app-navbar-menu-slot {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Compact navbar condition — shared by the logo/wordmark swap below and
+   .symbol-search-wrap's compact sizing further down (search "compact
+   navbar breakpoint" there), so both always flip together. Plain max-width
+   alone isn't enough: many phones' LANDSCAPE width exceeds 767.98px
+   (standard iPhones ~844px, Pro Max ~930px) while still being far too
+   narrow for the full desktop layout to look right, so rotating would
+   otherwise land in an awkward in-between state — neither the compact
+   mobile treatment nor genuinely spacious desktop. The landscape clause
+   catches that case without pulling in actual tablets/desktops, whose
+   landscape width is comfortably higher still (iPad landscape is
+   1024px+).
 
    The full "valuesearch.app" wordmark doesn't reliably fit alongside the
    search bar and menu button in this condition — swaps to just the logo
@@ -331,43 +364,6 @@ main {
 
   .navbar-brand-wordmark {
     display: none;
-  }
-
-  /* Swap the two-group layout (brand | [search, menu]) for a true 3-column
-     header (logo | search | menu), so the search bar centers in the space
-     between the logo and the menu button rather than sitting flush against
-     the menu the way it does outside this condition.
-     .app-navbar-right-group becomes `display: contents` so its two children
-     (search slot, menu slot) are promoted to direct grid items of
-     .app-navbar-row instead of being sized as a sub-group — explicit
-     grid-column placement keeps the menu pinned to the last column even on
-     pages where the search bar is hidden entirely. */
-  .app-navbar-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-  }
-
-  .app-navbar-brand {
-    grid-column: 1;
-  }
-
-  .app-navbar-right-group {
-    display: contents;
-  }
-
-  .app-navbar-search-slot {
-    grid-column: 2;
-    justify-self: stretch;
-    /* The 460px inline max-width (an inline style, so it'd win over a plain
-       CSS override anyway) is moot here — this condition's viewports are
-       already narrower than that, so this column's own width is always the
-       binding constraint. */
-  }
-
-  .app-navbar-menu-slot {
-    grid-column: 3;
-    justify-self: end;
   }
 }
 
