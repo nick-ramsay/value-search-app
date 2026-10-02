@@ -115,9 +115,9 @@ function PageLoadingFallback() {
                   width={28}
                   height={28}
                   priority
-                  className="navbar-brand-logo d-md-none"
+                  className="navbar-brand-logo"
                 />
-                <span className="d-none d-md-inline">valuesearch.app</span>
+                <span className="navbar-brand-wordmark">valuesearch.app</span>
               </Link>
             </span>
             <div
