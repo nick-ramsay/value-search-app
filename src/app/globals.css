@@ -301,23 +301,31 @@ main {
   font-size: 0.95rem;
 }
 
-/* Three-column header (brand | search | menu) at every viewport size, so
-   the search bar always centers in the space between the brand and the
-   menu button instead of sitting flush against the menu the way a plain
-   flex row with the brand on the left and an ms-auto right-group would.
+/* Three-column header (brand | search | menu) at every viewport size, with
+   the outer two columns given equal FIXED widths (not auto/content-sized)
+   so the middle column — and the search bar inside it — is always exactly
+   centered on the page, regardless of how wide the brand or menu content
+   actually is. Content-sized (auto) outer columns would make the middle
+   column's midpoint drift off-center by half the brand/menu width
+   difference, which is exactly the bug this replaces.
    .app-navbar-right-group becomes `display: contents` so its two children
    (search slot, menu slot) are promoted to direct grid items of
    .app-navbar-row instead of being sized as a sub-group — explicit
    grid-column placement keeps the menu pinned to the last column even on
-   pages where the search bar is hidden entirely. */
+   pages where the search bar is hidden entirely.
+   220px comfortably fits the widest edge content at this (non-compact)
+   tier: the "valuesearch.app" wordmark (~150px) on the left, and an
+   avatar + truncated username (max 120px) + dropdown caret (~190px) on
+   the right. */
 .app-navbar-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 220px 1fr 220px;
   align-items: center;
 }
 
 .app-navbar-brand {
   grid-column: 1;
+  justify-self: start;
 }
 
 .app-navbar-right-group {
@@ -334,27 +342,40 @@ main {
   justify-self: end;
 }
 
-/* Compact navbar condition — shared by the logo/wordmark swap below and
-   .symbol-search-wrap's compact sizing further down (search "compact
-   navbar breakpoint" there), so both always flip together. Plain max-width
-   alone isn't enough: many phones' LANDSCAPE width exceeds 767.98px
-   (standard iPhones ~844px, Pro Max ~930px) while still being far too
-   narrow for the full desktop layout to look right, so rotating would
-   otherwise land in an awkward in-between state — neither the compact
-   mobile treatment nor genuinely spacious desktop. The landscape clause
-   catches that case without pulling in actual tablets/desktops, whose
-   landscape width is comfortably higher still (iPad landscape is
-   1024px+).
+/* Compact navbar condition — shared by the logo/wordmark swap, the menu
+   username hide, and .symbol-search-wrap's compact sizing further down
+   (search "compact navbar breakpoint" there), so all of these always flip
+   together. Plain max-width alone isn't enough: many phones' LANDSCAPE
+   width exceeds 767.98px (standard iPhones ~844px, Pro Max ~930px) while
+   still being far too narrow for the full desktop layout to look right, so
+   rotating would otherwise land in an awkward in-between state — neither
+   the compact mobile treatment nor genuinely spacious desktop. The
+   landscape clause catches that case without pulling in actual
+   tablets/desktops, whose landscape width is comfortably higher still
+   (iPad landscape is 1024px+).
 
    The full "valuesearch.app" wordmark doesn't reliably fit alongside the
    search bar and menu button in this condition — swaps to just the logo
    mark. Sized to match the search bar's compact mobile height and
    the menu avatar circle (both ~28px) so the row reads as one consistent
-   height, not odd-one-out. */
+   height, not odd-one-out. The menu's username label is hidden for the
+   same reason, and because leaving it tied to Bootstrap's separate 576px
+   `sm` breakpoint would let the menu column grow past the compact edge
+   width below (576-960px is inside this compact condition but outside
+   `sm`'s cutoff). */
 .navbar-brand-logo {
   display: none;
   height: 1.75rem;
   width: auto;
+}
+
+.navbar-menu-username,
+.navbar-menu-username-skeleton {
+  display: inline;
+}
+
+.navbar-menu-username-skeleton {
+  display: block;
 }
 
 @media (max-width: 767.98px), (max-width: 960px) and (orientation: landscape) {
@@ -364,6 +385,17 @@ main {
 
   .navbar-brand-wordmark {
     display: none;
+  }
+
+  .navbar-menu-username,
+  .navbar-menu-username-skeleton {
+    display: none;
+  }
+
+  /* Edge columns only need to fit a ~28px logo mark on the left and an
+     avatar + caret, no username, on the right at this tier. */
+  .app-navbar-row {
+    grid-template-columns: 70px 1fr 70px;
   }
 }
 

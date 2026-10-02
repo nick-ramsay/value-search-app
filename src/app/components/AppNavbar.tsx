@@ -229,7 +229,7 @@ export default function AppNavbar({
                 aria-hidden="true"
               >
                 <div className="navbar-auth-skeleton__avatar" />
-                <div className="navbar-auth-skeleton__name d-none d-sm-block" />
+                <div className="navbar-auth-skeleton__name navbar-menu-username-skeleton" />
               </div>
             ) : (
               <div className="dropdown d-flex app-navbar-menu-slot">
@@ -253,7 +253,7 @@ export default function AppNavbar({
                       >
                         {userLabel.charAt(0).toUpperCase()}
                       </span>
-                      <span className="d-none d-sm-inline text-truncate" style={{ maxWidth: "120px" }}>
+                      <span className="navbar-menu-username text-truncate" style={{ maxWidth: "120px" }}>
                         {userLabel}
                       </span>
                     </>
