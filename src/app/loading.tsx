@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -98,26 +99,37 @@ function PageLoadingFallback() {
         style={{ padding: "0.5rem 0" }}
       >
         <div className="container-fluid px-3">
-          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
+          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap app-navbar-row">
             <span
-              className="navbar-brand mb-0 h1 text-truncate"
+              className="navbar-brand mb-0 h1 text-truncate app-navbar-brand"
               style={{ minWidth: 0, fontWeight: 600 }}
             >
               <Link
                 href="/"
+                className="d-flex align-items-center"
                 style={{ color: "var(--text-primary)", textDecoration: "none" }}
               >
-                valuesearch.app
+                <Image
+                  src="/logo.png"
+                  alt="valuesearch.app"
+                  width={28}
+                  height={28}
+                  priority
+                  className="navbar-brand-logo d-md-none"
+                />
+                <span className="d-none d-md-inline">valuesearch.app</span>
               </Link>
             </span>
             <div
-              className="ms-auto d-flex align-items-center gap-2"
+              className="ms-auto d-flex align-items-center gap-2 app-navbar-right-group"
               style={{ minWidth: 0 }}
             >
-              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
+              <div className="flex-grow-1 app-navbar-search-slot" style={{ maxWidth: "460px" }}>
                 <div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />
               </div>
-              <ThemeSwitcher />
+              <div className="app-navbar-menu-slot">
+                <ThemeSwitcher />
+              </div>
             </div>
           </div>
         </div>

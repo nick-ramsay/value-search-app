@@ -301,6 +301,55 @@ main {
   font-size: 0.95rem;
 }
 
+/* Below md, the full "valuesearch.app" wordmark doesn't reliably fit
+   alongside the search bar and menu button — .navbar-brand-link swaps to
+   just the logo mark (d-md-none/d-none d-md-inline in the markup). Sized to
+   match the search bar's compact mobile height and the menu avatar circle
+   (both ~28px) so the row reads as one consistent height, not odd-one-out. */
+.navbar-brand-logo {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+}
+
+/* Below md: swap the two-group layout (brand | [search, menu]) for a true
+   3-column header (logo | search | menu), so the search bar centers in the
+   space between the logo and the menu button rather than sitting flush
+   against the menu the way it does at md+. .app-navbar-right-group becomes
+   `display: contents` so its two children (search slot, menu slot) are
+   promoted to direct grid items of .app-navbar-row instead of being sized
+   as a sub-group — explicit grid-column placement keeps the menu pinned to
+   the last column even on pages where the search bar is hidden entirely. */
+@media (max-width: 767.98px) {
+  .app-navbar-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .app-navbar-brand {
+    grid-column: 1;
+  }
+
+  .app-navbar-right-group {
+    display: contents;
+  }
+
+  .app-navbar-search-slot {
+    grid-column: 2;
+    justify-self: stretch;
+    /* The 460px inline max-width (an inline style, so it'd win over a plain
+       CSS override anyway) is moot here — mobile viewports are already
+       narrower than that, so this column's own width is always the binding
+       constraint. */
+  }
+
+  .app-navbar-menu-slot {
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+
 /* Accordion – taskboard-style glass */
 .ai-accordion-button {
   padding: 0.5rem 0.75rem;

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -186,21 +187,32 @@ export default function AppNavbar({
       style={{ padding: "0.5rem 0" }}
     >
       <div className="container-fluid px-3">
-        <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
+        <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap app-navbar-row">
 
-          {/* Brand */}
-          <span className="navbar-brand mb-0 h1 text-truncate" style={{ minWidth: 0 }}>
-            <Link href={headerHref} className="navbar-brand-link">
-              valuesearch.app
+          {/* Brand — full wordmark at md+; below that it doesn't reliably fit
+              alongside the search bar and menu, so it's replaced with just
+              the logo mark (see .navbar-brand-logo / .app-navbar-row media
+              query below, which also centers the search bar at that size). */}
+          <span className="navbar-brand mb-0 h1 text-truncate app-navbar-brand" style={{ minWidth: 0 }}>
+            <Link href={headerHref} className="navbar-brand-link d-flex align-items-center">
+              <Image
+                src="/logo.png"
+                alt="valuesearch.app"
+                width={28}
+                height={28}
+                priority
+                className="navbar-brand-logo d-md-none"
+              />
+              <span className="d-none d-md-inline">valuesearch.app</span>
             </Link>
           </span>
 
           {/* Right group */}
-          <div className="ms-auto d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+          <div className="ms-auto d-flex align-items-center gap-2 app-navbar-right-group" style={{ minWidth: 0 }}>
 
             {/* Search — always visible when applicable */}
             {!hideNavbarSearch ? (
-              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
+              <div className="flex-grow-1 app-navbar-search-slot" style={{ maxWidth: "460px" }}>
                 <Suspense fallback={<div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />}>
                   <SearchBar
                     initialQuery={searchSelected ? "" : searchInitialQuery}
@@ -213,14 +225,14 @@ export default function AppNavbar({
             {/* ── Nav menu — every item except search lives in this single dropdown, at every breakpoint ── */}
             {status === "loading" ? (
               <div
-                className="btn btn-sm theme-switcher-btn dropdown-toggle d-flex align-items-center gap-2"
+                className="btn btn-sm theme-switcher-btn dropdown-toggle d-flex align-items-center gap-2 app-navbar-menu-slot"
                 aria-hidden="true"
               >
                 <div className="navbar-auth-skeleton__avatar" />
                 <div className="navbar-auth-skeleton__name d-none d-sm-block" />
               </div>
             ) : (
-              <div className="dropdown d-flex">
+              <div className="dropdown d-flex app-navbar-menu-slot">
                 <button
                   type="button"
                   className="btn btn-sm theme-switcher-btn dropdown-toggle d-flex align-items-center gap-2"
