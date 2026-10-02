@@ -111,7 +111,10 @@ export default function PortfolioStatusTabs() {
   }, [activeStatus]);
 
   return (
-    <section className="portfolio-tabs-glass mt-2" aria-label="Portfolio by status">
+    <section
+      className={`portfolio-tabs-glass mt-2${loading ? " flex-grow-1 d-flex flex-column" : ""}`}
+      aria-label="Portfolio by status"
+    >
       <div className="portfolio-tabs-nav" role="tablist">
         {STATUSES.map((status) => (
           <button
@@ -135,12 +138,16 @@ export default function PortfolioStatusTabs() {
         ))}
       </div>
       <div
-        className="portfolio-tabpanel"
+        className={`portfolio-tabpanel${loading ? " flex-grow-1 d-flex flex-column" : ""}`}
         role="tabpanel"
         aria-label={`${activeStatus} stocks`}
       >
         {loading ? (
-          <div className="d-flex justify-content-center py-3" role="status" aria-live="polite">
+          <div
+            className="flex-grow-1 d-flex align-items-center justify-content-center py-3"
+            role="status"
+            aria-live="polite"
+          >
             <span className="spinner-border" aria-hidden />
             <span className="visually-hidden">Loading…</span>
           </div>

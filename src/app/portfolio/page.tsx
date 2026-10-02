@@ -22,15 +22,15 @@ export default async function PortfolioPage({
   const stock = symbol ? await getValueBySymbol(symbol) : null;
 
   return (
-    <div className="min-vh-100">
+    <div className="min-vh-100 d-flex flex-column">
       <AppNavbar
         searchInitialQuery={query}
         searchSelected={isSelected}
       />
-      <main className="container pt-5 mt-4 portfolio-page">
+      <main className="container pt-5 mt-4 portfolio-page flex-grow-1 d-flex flex-column">
         <ScoreExplanationModal />
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
+        <div className="row justify-content-center flex-grow-1">
+          <div className="col-lg-8 d-flex flex-column">
             <section
               className="card glass-card monthly-balances-page-heading portfolio-page__title"
               aria-label="Portfolio"
