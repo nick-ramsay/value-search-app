@@ -99,7 +99,7 @@ function PageLoadingFallback() {
         style={{ padding: "0.5rem 0" }}
       >
         <div className="container-fluid px-3">
-          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap app-navbar-row">
+          <div className="align-items-center gap-2 w-100 app-navbar-row">
             <span
               className="navbar-brand mb-0 h1 text-truncate app-navbar-brand"
               style={{ minWidth: 0, fontWeight: 600 }}
@@ -121,10 +121,10 @@ function PageLoadingFallback() {
               </Link>
             </span>
             <div
-              className="ms-auto d-flex align-items-center gap-2 app-navbar-right-group"
+              className="app-navbar-right-group"
               style={{ minWidth: 0 }}
             >
-              <div className="flex-grow-1 app-navbar-search-slot" style={{ maxWidth: "460px" }}>
+              <div className="app-navbar-search-slot" style={{ maxWidth: "460px" }}>
                 <div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />
               </div>
               <div className="app-navbar-menu-slot">

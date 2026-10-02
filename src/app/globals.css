@@ -334,7 +334,16 @@ main {
 
 .app-navbar-search-slot {
   grid-column: 2;
-  justify-self: stretch;
+  /* Not justify-self: stretch — this item's own max-width (460px, inline
+     style) clamps its rendered width well below the column's width on
+     anything wider than a phone, and a stretched item that's clamped
+     smaller than its track falls back to start-alignment per the CSS Box
+     Alignment spec (hugs the column's left edge instead of centering).
+     width: 100% + auto margins sidesteps that: auto margins always win
+     over alignment, so the clamped box is reliably centered in the
+     column regardless of how much wider the column is. */
+  width: 100%;
+  margin: 0 auto;
 }
 
 .app-navbar-menu-slot {

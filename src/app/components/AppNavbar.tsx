@@ -187,7 +187,7 @@ export default function AppNavbar({
       style={{ padding: "0.5rem 0" }}
     >
       <div className="container-fluid px-3">
-        <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap app-navbar-row">
+        <div className="align-items-center gap-2 w-100 app-navbar-row">
 
           {/* Brand — full wordmark at md+; below that it doesn't reliably fit
               alongside the search bar and menu, so it's replaced with just
@@ -208,11 +208,11 @@ export default function AppNavbar({
           </span>
 
           {/* Right group */}
-          <div className="ms-auto d-flex align-items-center gap-2 app-navbar-right-group" style={{ minWidth: 0 }}>
+          <div className="app-navbar-right-group" style={{ minWidth: 0 }}>
 
             {/* Search — always visible when applicable */}
             {!hideNavbarSearch ? (
-              <div className="flex-grow-1 app-navbar-search-slot" style={{ maxWidth: "460px" }}>
+              <div className="app-navbar-search-slot" style={{ maxWidth: "460px" }}>
                 <Suspense fallback={<div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />}>
                   <SearchBar
                     initialQuery={searchSelected ? "" : searchInitialQuery}
