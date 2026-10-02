@@ -112,7 +112,7 @@ export default function PortfolioStatusTabs() {
 
   return (
     <section
-      className={`portfolio-tabs-glass mt-2${loading ? " flex-grow-1 d-flex flex-column" : ""}`}
+      className={`portfolio-tabs-glass mt-2${loading ? " flex-grow-1 d-flex flex-column mb-4" : ""}`}
       aria-label="Portfolio by status"
     >
       <div className="portfolio-tabs-nav" role="tablist">
