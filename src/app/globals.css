@@ -6523,6 +6523,10 @@ a:hover {
   color: var(--text-primary);
 }
 
+.monthly-balances-net-chart-section__title--regular {
+  font-weight: 400;
+}
+
 .monthly-balances-net-chart-section .small {
   color: var(--text-secondary);
   line-height: 1.45;

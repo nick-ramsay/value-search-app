@@ -67,7 +67,7 @@ const MIN_PLOT_W = BASE_CHART_W - PAD_L - PAD_R;
 const MIN_FIT_PLOT_W = 160;
 
 /**
- * Area/line chart of Net (USD) by month (chronological left → right).
+ * Area/line chart of net worth (USD) by month (chronological left → right).
  * Defaults to a natural width that scrolls horizontally once there are many
  * months; "Fit to screen" compresses the whole series into the available
  * width instead, thinning x-axis labels (never data points) so they don't
@@ -130,7 +130,7 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
   if (points.length === 0) {
     return (
       <p className="small text-secondary mb-0">
-        Add month rows to see your Net (USD) trend.
+        Add month rows to see your net worth (USD) trend.
       </p>
     );
   }
@@ -138,7 +138,7 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
   if (okVals.length === 0) {
     return (
       <p className="small text-secondary mb-0">
-        The Net (USD) line appears when at least one month has a computable total (entered
+        The net worth (USD) line appears when at least one month has a computable total (entered
         balances and valid FX rates).
       </p>
     );
@@ -201,7 +201,7 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="xMinYMid meet"
           role="img"
-          aria-label={`Net in US dollars by month. ${ariaSummary}`}
+          aria-label={`Net worth in US dollars by month. ${ariaSummary}`}
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -363,18 +363,24 @@ export default function MonthlyNetUsdBarChart({ points }: MonthlyNetUsdBarChartP
             })}
           </g>
 
-          {/* Stacked month / year — thinned to labelStep so labels never collide when compressed. */}
+          {/* Stacked month / year — thinned to labelStep so labels never collide when compressed.
+              First/last labels anchor toward the inside of the plot (start/end rather than
+              middle) so they grow away from the edge instead of overflowing past it when the
+              slot is too narrow for half the label's width. */}
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
               if (i !== n - 1 && i % labelStep !== 0) return null;
               const cx = PAD_L + i * slotW + slotW / 2;
+              const isFirst = i === 0;
+              const isLast = i === n - 1;
+              const anchor = isFirst ? "start" : isLast ? "end" : "middle";
               const { month, year } = monthAxisTwoLines(p.monthKey);
               return (
                 <text
                   key={p.monthKey}
                   x={cx}
                   y={monthBaselineY}
-                  textAnchor="middle"
+                  textAnchor={anchor}
                   className="monthly-balances-net-chart-x-label"
                 >
                   <tspan className="monthly-balances-net-chart-x-month" x={cx}>

@@ -269,17 +269,23 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
             })}
           </g>
 
+          {/* First/last labels anchor toward the inside of the plot (start/end rather than
+              middle) so they grow away from the edge instead of overflowing past it when the
+              slot is too narrow for half the label's width. */}
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
               if (i !== n - 1 && i % labelStep !== 0) return null;
               const cx = PAD_L + i * slotW + slotW / 2;
+              const isFirst = i === 0;
+              const isLast = i === n - 1;
+              const anchor = isFirst ? "start" : isLast ? "end" : "middle";
               const mo = p.monthCount === 1 ? "1 mo." : `${p.monthCount} mo.`;
               return (
                 <text
                   key={p.year}
                   x={cx}
                   y={xBaselineY}
-                  textAnchor="middle"
+                  textAnchor={anchor}
                   className="monthly-balances-net-chart-x-label"
                 >
                   <tspan className="monthly-balances-net-chart-x-month" x={cx}>
