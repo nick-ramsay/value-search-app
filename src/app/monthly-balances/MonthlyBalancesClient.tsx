@@ -310,6 +310,7 @@ export default function MonthlyBalancesClient() {
   const [actionsPanel, setActionsPanel] = useState<"account" | "month" | null>(
     null,
   );
+  const [dataToolsOpen, setDataToolsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Account | null>(null);
   const [archiveConfirmInput, setArchiveConfirmInput] = useState("");
@@ -1942,52 +1943,67 @@ export default function MonthlyBalancesClient() {
                 </div>
                 <div className="col-12 col-lg-7 col-xl-8">
                   <div className="monthly-balances-toolbar-cluster monthly-balances-toolbar-cluster--end">
-                    <span className="monthly-balances-toolbar-cluster-label">
+                    <button
+                      type="button"
+                      className="monthly-balances-toolbar-cluster-label monthly-balances-toolbar-cluster-toggle"
+                      onClick={() => setDataToolsOpen((v) => !v)}
+                      aria-expanded={dataToolsOpen}
+                      aria-controls="mb-data-tools-panel"
+                    >
                       Data
-                    </span>
-                    <div className="monthly-balances-toolbar-data-btns d-flex flex-wrap gap-2 align-items-center">
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        disabled={loading || monthRows.length === 0}
-                        onClick={handleExportMonthlyBalancesCsv}
-                        title="Download totals by month and by account type and currency"
-                      >
-                        <i
-                          className="bi bi-file-earmark-arrow-down me-1"
-                          aria-hidden
-                        />
-                        Export CSV
-                      </button>
-                      <Link
-                        href="/monthly-balances/upload"
-                        className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
-                      >
-                        <i
-                          className="bi bi-file-earmark-arrow-up me-1"
-                          aria-hidden
-                        />
-                        Upload from CSV
-                      </Link>
-                      {accounts.length > 0 ? (
+                      <i
+                        className={`bi ${dataToolsOpen ? "bi-chevron-up" : "bi-chevron-down"} monthly-balances-toolbar-cluster-toggle__chevron`}
+                        aria-hidden
+                      />
+                    </button>
+                    <div
+                      id="mb-data-tools-panel"
+                      className={`collapse monthly-balances-toolbar-data-collapse ${dataToolsOpen ? "show" : ""}`}
+                    >
+                      <div className="monthly-balances-toolbar-data-btns d-flex flex-wrap gap-2 align-items-center">
                         <button
                           type="button"
                           className="btn btn-outline-secondary btn-sm"
-                          onClick={() => openColumnsModal()}
-                          title="Show or hide account columns in the sheet"
+                          disabled={loading || monthRows.length === 0}
+                          onClick={handleExportMonthlyBalancesCsv}
+                          title="Download totals by month and by account type and currency"
                         >
                           <i
-                            className="bi bi-layout-three-columns me-1"
+                            className="bi bi-file-earmark-arrow-down me-1"
                             aria-hidden
                           />
-                          Columns
-                          {hiddenAccountColumnCount > 0 ? (
-                            <span className="badge text-bg-secondary ms-1">
-                              {hiddenAccountColumnCount}
-                            </span>
-                          ) : null}
+                          Export CSV
                         </button>
-                      ) : null}
+                        <Link
+                          href="/monthly-balances/upload"
+                          className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
+                        >
+                          <i
+                            className="bi bi-file-earmark-arrow-up me-1"
+                            aria-hidden
+                          />
+                          Upload from CSV
+                        </Link>
+                        {accounts.length > 0 ? (
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => openColumnsModal()}
+                            title="Show or hide account columns in the sheet"
+                          >
+                            <i
+                              className="bi bi-layout-three-columns me-1"
+                              aria-hidden
+                            />
+                            Columns
+                            {hiddenAccountColumnCount > 0 ? (
+                              <span className="badge text-bg-secondary ms-1">
+                                {hiddenAccountColumnCount}
+                              </span>
+                            ) : null}
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>

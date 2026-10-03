@@ -5607,6 +5607,38 @@ a:hover {
   margin-bottom: 0.3rem;
 }
 
+/* "Data" label doubles as the accordion toggle for the export/upload/columns
+   tools -- reset button chrome, keep the shared label typography above. */
+.monthly-balances-toolbar-cluster-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.monthly-balances-toolbar-cluster-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.monthly-balances-toolbar-cluster-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.monthly-balances-toolbar-cluster-toggle__chevron {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.monthly-balances-toolbar-data-collapse.show {
+  margin-top: 0.1rem;
+}
+
 /* Only when a panel is open — keeps Cells/Data tight to the card bottom when both are closed */
 .monthly-balances-toolbar-expand
   .monthly-balances-action-panel.collapse.show {
