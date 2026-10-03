@@ -949,6 +949,12 @@ export default function MonthlyBalancesClient() {
       } catch {
         /* ignore */
       }
+      if (next) {
+        // Locking also hides the Add account/month buttons below -- close
+        // any panel that was left open so it doesn't reappear already
+        // expanded the next time the sheet is unlocked.
+        setActionsPanel(null);
+      }
       return next;
     });
   }, []);
@@ -1672,7 +1678,7 @@ export default function MonthlyBalancesClient() {
 
       {loading ? (
         <div
-          className="monthly-balances-sheet-loading card glass-card d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary mb-4"
+          className="monthly-balances-sheet-loading card glass-card d-flex flex-column align-items-center justify-content-center gap-3 py-5 px-3 text-secondary mb-4 flex-grow-1"
           role="status"
           aria-live="polite"
           aria-busy="true"
@@ -1866,54 +1872,56 @@ export default function MonthlyBalancesClient() {
             aria-label="Balance table tools"
           >
             <div className="monthly-balances-toolbar-inner">
-              <div className="mb-3">
-                <div
-                  className="monthly-balances-actions-bar"
-                  role="tablist"
-                  aria-label="Add account or month"
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={actionsPanel === "account"}
-                    aria-controls="mb-panel-add-account"
-                    id="mb-tab-add-account"
-                    className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
-                    onClick={() =>
-                      setActionsPanel((p) =>
-                        p === "account" ? null : "account",
-                      )
-                    }
+              {!balanceCellsLocked ? (
+                <div className="mb-3">
+                  <div
+                    className="monthly-balances-actions-bar"
+                    role="tablist"
+                    aria-label="Add account or month"
                   >
-                    <i
-                      className="bi bi-wallet2 monthly-balances-action-btn__icon"
-                      aria-hidden
-                    />
-                    <span className="monthly-balances-action-btn__label">
-                      Add new account
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={actionsPanel === "month"}
-                    aria-controls="mb-panel-add-month"
-                    id="mb-tab-add-month"
-                    className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
-                    onClick={() =>
-                      setActionsPanel((p) => (p === "month" ? null : "month"))
-                    }
-                  >
-                    <i
-                      className="bi bi-calendar-plus monthly-balances-action-btn__icon"
-                      aria-hidden
-                    />
-                    <span className="monthly-balances-action-btn__label">
-                      Add new month
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={actionsPanel === "account"}
+                      aria-controls="mb-panel-add-account"
+                      id="mb-tab-add-account"
+                      className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
+                      onClick={() =>
+                        setActionsPanel((p) =>
+                          p === "account" ? null : "account",
+                        )
+                      }
+                    >
+                      <i
+                        className="bi bi-wallet2 monthly-balances-action-btn__icon"
+                        aria-hidden
+                      />
+                      <span className="monthly-balances-action-btn__label">
+                        Add new account
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={actionsPanel === "month"}
+                      aria-controls="mb-panel-add-month"
+                      id="mb-tab-add-month"
+                      className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
+                      onClick={() =>
+                        setActionsPanel((p) => (p === "month" ? null : "month"))
+                      }
+                    >
+                      <i
+                        className="bi bi-calendar-plus monthly-balances-action-btn__icon"
+                        aria-hidden
+                      />
+                      <span className="monthly-balances-action-btn__label">
+                        Add new month
+                      </span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               <div className="monthly-balances-toolbar-quick d-flex align-items-center gap-2 mb-0">
                 <button

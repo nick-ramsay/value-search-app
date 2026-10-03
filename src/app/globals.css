@@ -5891,6 +5891,10 @@ a:hover {
   min-width: 2.5rem;
   padding-left: 0.65rem !important;
   padding-right: 0.65rem !important;
+  /* The card has border-radius + overflow:hidden, and this button sits
+     flush against its right edge -- without an inset, the card's rounded
+     corner clips straight through the button's own (square) red border. */
+  margin: 0.3rem 0.35rem 0.3rem 0;
 }
 
 .monthly-balances-month-card__toggle {
