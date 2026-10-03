@@ -310,6 +310,8 @@ export default function MonthlyBalancesClient() {
   const [actionsPanel, setActionsPanel] = useState<"account" | "month" | null>(
     null,
   );
+  const [showMonthlyChartInfo, setShowMonthlyChartInfo] = useState(false);
+  const [showYearlyChartInfo, setShowYearlyChartInfo] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Account | null>(null);
   const [archiveConfirmInput, setArchiveConfirmInput] = useState("");
@@ -1772,15 +1774,33 @@ export default function MonthlyBalancesClient() {
                       className="monthly-balances-net-chart-section mb-3"
                       aria-labelledby="mb-net-usd-chart-heading"
                     >
-                      <h2
-                        id="mb-net-usd-chart-heading"
-                        className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-                      >
-                        Net (USD) by month
-                      </h2>
-                      <p className="small mb-2 mb-md-3">
-                        Monthly Net (USD) trend, earliest on the left.
-                      </p>
+                      <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                        <h2
+                          id="mb-net-usd-chart-heading"
+                          className="mb-0 monthly-balances-net-chart-section__title"
+                        >
+                          Net (USD) by Month
+                        </h2>
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 monthly-balances-account-info-btn"
+                          onClick={() => setShowMonthlyChartInfo((v) => !v)}
+                          aria-expanded={showMonthlyChartInfo}
+                          aria-controls="mb-net-usd-chart-caption"
+                          aria-label="About this chart"
+                          title="About this chart"
+                        >
+                          <i className="bi bi-info-circle" aria-hidden />
+                        </button>
+                      </div>
+                      {showMonthlyChartInfo ? (
+                        <p
+                          id="mb-net-usd-chart-caption"
+                          className="small mb-2 mb-md-3"
+                        >
+                          Monthly Net (USD) trend, earliest on the left.
+                        </p>
+                      ) : null}
                       <MonthlyNetUsdBarChart points={netUsdBarChartPoints} />
                     </section>
                   ) : null}
@@ -1791,16 +1811,35 @@ export default function MonthlyBalancesClient() {
               className="monthly-balances-net-chart-section mb-4"
               aria-labelledby="mb-yearly-averages-heading"
             >
-              <h2
-                id="mb-yearly-averages-heading"
-                className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-              >
-                Average monthly Net (USD) by year
-              </h2>
-              <p className="small text-secondary mb-3 mb-lg-4">
-                Mean of monthly Net (USD) for each calendar year. Uses the same
-                Net rules as the monthly sheet (visible columns, exemptions, FX).
-              </p>
+              <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <h2
+                  id="mb-yearly-averages-heading"
+                  className="mb-0 monthly-balances-net-chart-section__title"
+                >
+                  Average Monthly Net (USD) by Year
+                </h2>
+                <button
+                  type="button"
+                  className="btn btn-link p-0 monthly-balances-account-info-btn"
+                  onClick={() => setShowYearlyChartInfo((v) => !v)}
+                  aria-expanded={showYearlyChartInfo}
+                  aria-controls="mb-yearly-averages-caption"
+                  aria-label="About this chart"
+                  title="About this chart"
+                >
+                  <i className="bi bi-info-circle" aria-hidden />
+                </button>
+              </div>
+              {showYearlyChartInfo ? (
+                <p
+                  id="mb-yearly-averages-caption"
+                  className="small text-secondary mb-3 mb-lg-4"
+                >
+                  Mean of monthly Net (USD) for each calendar year. Uses the same
+                  Net rules as the monthly sheet (exemptions, FX) — column
+                  visibility does not affect Net (USD).
+                </p>
+              ) : null}
               {yearlyLoading ? (
                 <div
                   className="d-flex flex-column align-items-center justify-content-center gap-2 py-5 text-secondary"
@@ -1827,7 +1866,7 @@ export default function MonthlyBalancesClient() {
               {yearlyRows.length > 0 && !yearlyLoading && !yearlyError ? (
                 <p className="small text-secondary monthly-balances-footnote mb-0 mt-3">
                   <i className="bi bi-info-circle me-1" aria-hidden />
-                  Each bar is the mean monthly Net (USD) for that year; the sub-label shows how many months were included.
+                  Each point is the mean monthly Net (USD) for that year; the sub-label shows how many months were included.
                 </p>
               ) : null}
             </section>
@@ -1840,7 +1879,7 @@ export default function MonthlyBalancesClient() {
                 id="mb-projections-heading"
                 className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
               >
-                Net worth projections
+                Net Worth Projections
               </h2>
               {yearlyLoading ? (
                 <div
@@ -1872,58 +1911,9 @@ export default function MonthlyBalancesClient() {
             aria-label="Balance table tools"
           >
             <div className="monthly-balances-toolbar-inner">
-              {!balanceCellsLocked ? (
-                <div className="mb-3">
-                  <div
-                    className="monthly-balances-actions-bar"
-                    role="tablist"
-                    aria-label="Add account or month"
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={actionsPanel === "account"}
-                      aria-controls="mb-panel-add-account"
-                      id="mb-tab-add-account"
-                      className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
-                      onClick={() =>
-                        setActionsPanel((p) =>
-                          p === "account" ? null : "account",
-                        )
-                      }
-                    >
-                      <i
-                        className="bi bi-wallet2 monthly-balances-action-btn__icon"
-                        aria-hidden
-                      />
-                      <span className="monthly-balances-action-btn__label">
-                        Add new account
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={actionsPanel === "month"}
-                      aria-controls="mb-panel-add-month"
-                      id="mb-tab-add-month"
-                      className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
-                      onClick={() =>
-                        setActionsPanel((p) => (p === "month" ? null : "month"))
-                      }
-                    >
-                      <i
-                        className="bi bi-calendar-plus monthly-balances-action-btn__icon"
-                        aria-hidden
-                      />
-                      <span className="monthly-balances-action-btn__label">
-                        Add new month
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="monthly-balances-toolbar-quick d-flex align-items-center gap-2 mb-0">
+              <div
+                className={`monthly-balances-toolbar-quick d-flex align-items-center gap-2 ${balanceCellsLocked ? "mb-0" : "mb-3"}`}
+              >
                 <button
                   type="button"
                   className={`btn btn-sm ${balanceCellsLocked ? "btn-danger" : "btn-success"} monthly-balances-lock-btn`}
@@ -2003,6 +1993,57 @@ export default function MonthlyBalancesClient() {
                   </ul>
                 </div>
               </div>
+
+              {!balanceCellsLocked ? (
+                <div className="mb-3">
+                  <div
+                    className="monthly-balances-actions-bar"
+                    role="tablist"
+                    aria-label="Add account or month"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={actionsPanel === "account"}
+                      aria-controls="mb-panel-add-account"
+                      id="mb-tab-add-account"
+                      className={`monthly-balances-action-btn ${actionsPanel === "account" ? "monthly-balances-action-btn--active" : ""}`}
+                      onClick={() =>
+                        setActionsPanel((p) =>
+                          p === "account" ? null : "account",
+                        )
+                      }
+                    >
+                      <i
+                        className="bi bi-wallet2 monthly-balances-action-btn__icon"
+                        aria-hidden
+                      />
+                      <span className="monthly-balances-action-btn__label">
+                        Add new account
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={actionsPanel === "month"}
+                      aria-controls="mb-panel-add-month"
+                      id="mb-tab-add-month"
+                      className={`monthly-balances-action-btn ${actionsPanel === "month" ? "monthly-balances-action-btn--active" : ""}`}
+                      onClick={() =>
+                        setActionsPanel((p) => (p === "month" ? null : "month"))
+                      }
+                    >
+                      <i
+                        className="bi bi-calendar-plus monthly-balances-action-btn__icon"
+                        aria-hidden
+                      />
+                      <span className="monthly-balances-action-btn__label">
+                        Add new month
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="monthly-balances-toolbar-expand">
                 <div className="mb-0">

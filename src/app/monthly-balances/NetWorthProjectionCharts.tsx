@@ -367,6 +367,7 @@ export default function NetWorthProjectionCharts({
 }: NetWorthProjectionChartsProps) {
   const useMonteCarlo =
     Array.isArray(monteCarloYearSummaries) && monteCarloYearSummaries.length > 0;
+  const [showInfo, setShowInfo] = useState(false);
 
   const nwPoints = useMemo<ScalarPoint[]>(() => {
     if (useMonteCarlo) {
@@ -395,19 +396,34 @@ export default function NetWorthProjectionCharts({
 
   return (
     <div className="net-worth-projection-charts">
-      <h3
-        className="h6 fw-semibold mb-2 monthly-balances-net-chart-section__title"
-        id="mb-projection-nw-heading"
-      >
-        {useMonteCarlo
-          ? "Most likely total Net (USD) by year (Monte Carlo)"
-          : "Projected total Net (USD) by year"}
-      </h3>
-      <p className="small text-secondary mb-2">
-        {useMonteCarlo
-          ? "Median (p50) across simulated paths. Illustrative only."
-          : "Compounded from your baseline using your historical CAGR. Illustrative only."}
-      </p>
+      <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+        <h3
+          className="mb-0 monthly-balances-net-chart-section__title"
+          id="mb-projection-nw-heading"
+        >
+          {useMonteCarlo
+            ? "Most Likely Total Net (USD) by Year (Monte Carlo)"
+            : "Projected Total Net (USD) by Year"}
+        </h3>
+        <button
+          type="button"
+          className="btn btn-link p-0 monthly-balances-account-info-btn"
+          onClick={() => setShowInfo((v) => !v)}
+          aria-expanded={showInfo}
+          aria-controls="mb-projection-nw-caption"
+          aria-label="About this chart"
+          title="About this chart"
+        >
+          <i className="bi bi-info-circle" aria-hidden />
+        </button>
+      </div>
+      {showInfo ? (
+        <p id="mb-projection-nw-caption" className="small text-secondary mb-2">
+          {useMonteCarlo
+            ? "Median (p50) across simulated paths. Illustrative only."
+            : "Compounded from your baseline using your historical CAGR. Illustrative only."}
+        </p>
+      ) : null}
       <ScalarUsdAreaChart
         points={nwPoints}
         ariaSummaryPrefix={
