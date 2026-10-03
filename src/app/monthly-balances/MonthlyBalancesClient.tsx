@@ -310,7 +310,6 @@ export default function MonthlyBalancesClient() {
   const [actionsPanel, setActionsPanel] = useState<"account" | "month" | null>(
     null,
   );
-  const [dataToolsOpen, setDataToolsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Account | null>(null);
   const [archiveConfirmInput, setArchiveConfirmInput] = useState("");
@@ -1916,96 +1915,84 @@ export default function MonthlyBalancesClient() {
                 </div>
               </div>
 
-              <div className="monthly-balances-toolbar-quick row g-2 g-lg-3 align-items-lg-center mb-0">
-                <div className="col-12 col-lg-5 col-xl-4">
-                  <div className="monthly-balances-toolbar-cluster">
-                    <span className="monthly-balances-toolbar-cluster-label">
-                      Cells
-                    </span>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${balanceCellsLocked ? "btn-danger" : "btn-success"} monthly-balances-lock-btn monthly-balances-toolbar-btn-wide`}
-                      onClick={handleToggleBalanceCellsLocked}
-                      aria-pressed={balanceCellsLocked}
-                      title={
-                        balanceCellsLocked
-                          ? "Unlock balance cells for editing"
-                          : "Lock balance cells (read-only)"
-                      }
-                    >
-                      <i
-                        className={`bi ${balanceCellsLocked ? "bi-lock-fill" : "bi-unlock"} me-1`}
-                        aria-hidden
-                      />
-                      {balanceCellsLocked ? "Locked" : "Edit"}
-                    </button>
-                  </div>
-                </div>
-                <div className="col-12 col-lg-7 col-xl-8">
-                  <div className="monthly-balances-toolbar-cluster monthly-balances-toolbar-cluster--end">
-                    <button
-                      type="button"
-                      className="monthly-balances-toolbar-cluster-label monthly-balances-toolbar-cluster-toggle"
-                      onClick={() => setDataToolsOpen((v) => !v)}
-                      aria-expanded={dataToolsOpen}
-                      aria-controls="mb-data-tools-panel"
-                    >
-                      Data
-                      <i
-                        className={`bi ${dataToolsOpen ? "bi-chevron-up" : "bi-chevron-down"} monthly-balances-toolbar-cluster-toggle__chevron`}
-                        aria-hidden
-                      />
-                    </button>
-                    <div
-                      id="mb-data-tools-panel"
-                      className={`collapse monthly-balances-toolbar-data-collapse ${dataToolsOpen ? "show" : ""}`}
-                    >
-                      <div className="monthly-balances-toolbar-data-btns d-flex flex-wrap gap-2 align-items-center">
+              <div className="monthly-balances-toolbar-quick d-flex align-items-center gap-2 mb-0">
+                <button
+                  type="button"
+                  className={`btn btn-sm ${balanceCellsLocked ? "btn-danger" : "btn-success"} monthly-balances-lock-btn`}
+                  onClick={handleToggleBalanceCellsLocked}
+                  aria-pressed={balanceCellsLocked}
+                  title={
+                    balanceCellsLocked
+                      ? "Unlock balance cells for editing"
+                      : "Lock balance cells (read-only)"
+                  }
+                >
+                  <i
+                    className={`bi ${balanceCellsLocked ? "bi-lock-fill" : "bi-unlock"} me-1`}
+                    aria-hidden
+                  />
+                  {balanceCellsLocked ? "Locked" : "Edit"}
+                </button>
+
+                <div className="dropdown monthly-balances-data-dropdown">
+                  <button
+                    type="button"
+                    className="monthly-balances-data-more-btn"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-label="Data tools"
+                    title="Export, upload, or manage columns"
+                  >
+                    <i className="bi bi-three-dots" aria-hidden />
+                  </button>
+                  <ul className="dropdown-menu monthly-balances-data-dropdown-menu">
+                    <li>
+                      <button
+                        type="button"
+                        className="dropdown-item d-flex align-items-center gap-2"
+                        disabled={loading || monthRows.length === 0}
+                        onClick={handleExportMonthlyBalancesCsv}
+                      >
+                        <i
+                          className="bi bi-file-earmark-arrow-down"
+                          aria-hidden
+                        />
+                        Export CSV
+                      </button>
+                    </li>
+                    <li>
+                      <Link
+                        href="/monthly-balances/upload"
+                        className="dropdown-item d-flex align-items-center gap-2"
+                      >
+                        <i
+                          className="bi bi-file-earmark-arrow-up"
+                          aria-hidden
+                        />
+                        Upload from CSV
+                      </Link>
+                    </li>
+                    {accounts.length > 0 ? (
+                      <li>
                         <button
                           type="button"
-                          className="btn btn-outline-secondary btn-sm"
-                          disabled={loading || monthRows.length === 0}
-                          onClick={handleExportMonthlyBalancesCsv}
-                          title="Download totals by month and by account type and currency"
+                          className="dropdown-item d-flex align-items-center gap-2"
+                          onClick={() => openColumnsModal()}
                         >
                           <i
-                            className="bi bi-file-earmark-arrow-down me-1"
+                            className="bi bi-layout-three-columns"
                             aria-hidden
                           />
-                          Export CSV
+                          Columns
+                          {hiddenAccountColumnCount > 0 ? (
+                            <span className="badge text-bg-secondary ms-auto">
+                              {hiddenAccountColumnCount}
+                            </span>
+                          ) : null}
                         </button>
-                        <Link
-                          href="/monthly-balances/upload"
-                          className="btn btn-outline-secondary btn-sm monthly-balances-upload-btn"
-                        >
-                          <i
-                            className="bi bi-file-earmark-arrow-up me-1"
-                            aria-hidden
-                          />
-                          Upload from CSV
-                        </Link>
-                        {accounts.length > 0 ? (
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => openColumnsModal()}
-                            title="Show or hide account columns in the sheet"
-                          >
-                            <i
-                              className="bi bi-layout-three-columns me-1"
-                              aria-hidden
-                            />
-                            Columns
-                            {hiddenAccountColumnCount > 0 ? (
-                              <span className="badge text-bg-secondary ms-1">
-                                {hiddenAccountColumnCount}
-                              </span>
-                            ) : null}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
+                      </li>
+                    ) : null}
+                  </ul>
                 </div>
               </div>
 
