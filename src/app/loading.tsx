@@ -1,11 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import SearchBar from "./components/SearchBar";
-import ThemeSwitcher from "./components/ThemeSwitcher";
+import AppNavbar from "./components/AppNavbar";
 import SkeletonStockCard from "./components/SkeletonStockCard";
 
 function PageLoadingContent() {
@@ -15,35 +12,7 @@ function PageLoadingContent() {
 
   return (
     <div className="min-vh-100 d-flex flex-column">
-      <nav
-        className="navbar navbar-expand-lg fixed-top w-100 liquid-navbar"
-        style={{ padding: "0.5rem 0" }}
-      >
-        <div className="container-fluid px-3">
-          <div className="d-flex flex-row align-items-center gap-2 w-100 flex-nowrap">
-            <span
-              className="navbar-brand mb-0 h1 text-truncate"
-              style={{ minWidth: 0, fontWeight: 600 }}
-            >
-              <Link
-                href="/"
-                style={{ color: "var(--text-primary)", textDecoration: "none" }}
-              >
-                valuesearch.app
-              </Link>
-            </span>
-            <div
-              className="ms-auto d-flex align-items-center gap-2"
-              style={{ minWidth: 0 }}
-            >
-              <div className="flex-grow-1" style={{ maxWidth: "460px" }}>
-                <SearchBar initialQuery="" />
-              </div>
-              <ThemeSwitcher />
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar />
       <main className="container pt-5 mt-4 page-loading-main flex-grow-1 d-flex flex-column">
         <div className="row justify-content-center flex-grow-1">
           <div className="col-lg-8 d-flex flex-column">
@@ -94,46 +63,7 @@ function PageLoadingContent() {
 function PageLoadingFallback() {
   return (
     <div className="min-vh-100 d-flex flex-column">
-      <nav
-        className="navbar navbar-expand-lg fixed-top w-100 liquid-navbar"
-        style={{ padding: "0.5rem 0" }}
-      >
-        <div className="container-fluid px-3">
-          <div className="align-items-center gap-2 w-100 app-navbar-row">
-            <span
-              className="navbar-brand mb-0 h1 text-truncate app-navbar-brand"
-              style={{ minWidth: 0, fontWeight: 600 }}
-            >
-              <Link
-                href="/"
-                className="d-flex align-items-center"
-                style={{ color: "var(--text-primary)", textDecoration: "none" }}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="valuesearch.app"
-                  width={28}
-                  height={28}
-                  priority
-                  className="navbar-brand-logo"
-                />
-                <span className="navbar-brand-wordmark">valuesearch.app</span>
-              </Link>
-            </span>
-            <div
-              className="app-navbar-right-group"
-              style={{ minWidth: 0 }}
-            >
-              <div className="app-navbar-search-slot" style={{ maxWidth: "460px" }}>
-                <div className="symbol-search-wrap symbol-search-wrap--skeleton" aria-hidden="true" />
-              </div>
-              <div className="app-navbar-menu-slot">
-                <ThemeSwitcher />
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar />
       <main className="container pt-5 mt-4 page-loading-main flex-grow-1 d-flex flex-column">
         <div className="row justify-content-center flex-grow-1">
           <div className="col-lg-8 d-flex flex-column">
