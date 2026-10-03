@@ -1009,7 +1009,7 @@ export function HistoryChartsPanel({
               onClick={() => setActiveView("score")}
             >
               <i className="bi bi-graph-up me-1" aria-hidden />
-              Score history
+              Score History
             </button>
             <button
               type="button"
@@ -1017,7 +1017,7 @@ export function HistoryChartsPanel({
               onClick={() => setActiveView("rating")}
             >
               <i className="bi bi-stars me-1" aria-hidden />
-              AI rating history
+              AI Rating History
             </button>
             <button
               type="button"
@@ -1025,7 +1025,7 @@ export function HistoryChartsPanel({
               onClick={() => setActiveView("price")}
             >
               <i className="bi bi-currency-dollar me-1" aria-hidden />
-              Price history
+              Price History
             </button>
           </div>
         </div>
@@ -1056,7 +1056,7 @@ export function HistoryChartsPanel({
               )}
             {activeView === "score" ? (
               <div className="w-100">
-                <h6 className="fw-semibold mb-3">Value score over time</h6>
+                <h6 className="fw-semibold mb-3">Value Score Over Time</h6>
                 <ValueScoreHistoryChart
                   data={state.data.scoreHistory}
                   gradientId={`${collapseId}-score-gradient`}
@@ -1064,7 +1064,7 @@ export function HistoryChartsPanel({
               </div>
             ) : activeView === "rating" ? (
               <div className="w-100">
-                <h6 className="fw-semibold mb-3">AI rating over time</h6>
+                <h6 className="fw-semibold mb-3">AI Rating Over Time</h6>
                 <AiRatingHistoryChart
                   data={state.data.ratingHistory}
                   gradientId={`${collapseId}-ai-rating-line`}
@@ -1072,7 +1072,7 @@ export function HistoryChartsPanel({
               </div>
             ) : (
               <div className="w-100">
-                <h6 className="fw-semibold mb-3">Price history</h6>
+                <h6 className="fw-semibold mb-3">Price History</h6>
                 <PriceHistoryChart
                   data={state.data.priceHistory}
                   priceTrend={state.data.priceTrend}

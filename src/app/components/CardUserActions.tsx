@@ -356,12 +356,12 @@ export default function CardUserActions({
     <div
       id={userActionsCollapseId}
       className="collapse stock-card__panel stock-card__panel--portfolio"
-      aria-label="Your position"
+      aria-label="Your Position"
       data-bs-parent={accordionParentId}
     >
       <div className="stock-card__panel-inner">
         <div className="stock-card__close-all-inline-wrap">
-          <span className="stock-card__panel-heading">Your position</span>
+          <span className="stock-card__panel-heading">Your Position</span>
           {showInlineCloseAll && onCloseThisPanel && (
             <button
               type="button"
