@@ -5568,6 +5568,14 @@ a:hover {
   }
 }
 
+/* Visually separates the "add new account/month" actions above from the
+   Cells/Data tools below, instead of reading as one undifferentiated stack
+   of buttons -- most noticeable on mobile's single-column layout. */
+.monthly-balances-toolbar-quick {
+  border-top: 1px solid var(--glass-border-subtle);
+  padding-top: 0.75rem;
+}
+
 .monthly-balances-toolbar-cluster {
   display: flex;
   flex-direction: column;
@@ -5590,7 +5598,13 @@ a:hover {
 }
 
 .monthly-balances-toolbar-cluster-label {
-  display: none;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 0.3rem;
 }
 
 /* Only when a panel is open — keeps Cells/Data tight to the card bottom when both are closed */
@@ -5855,6 +5869,11 @@ a:hover {
 
 .monthly-balances-month-delete-btn {
   align-self: stretch;
+  /* Widen beyond the bare btn-sm + px-2 default so the trash button is a
+     comfortable tap target next to the full-width month toggle. */
+  min-width: 2.5rem;
+  padding-left: 0.65rem !important;
+  padding-right: 0.65rem !important;
 }
 
 .monthly-balances-month-card__toggle {
@@ -5893,7 +5912,7 @@ a:hover {
 }
 
 .monthly-balances-month-card__net-label {
-  font-size: 0.58rem;
+  font-size: 0.64rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -5960,10 +5979,10 @@ a:hover {
 }
 
 .monthly-balances-mobile-currency-pill {
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.18rem 0.45rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-glass) 55%, transparent);
   color: var(--accent);
@@ -6223,6 +6242,12 @@ a:hover {
   line-height: 1;
   opacity: 0.9;
   text-decoration: none !important;
+  /* btn-link p-0 alone sizes this to the glyph; widen the tap target for mobile. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
 }
 
 .monthly-balances-account-info-btn:hover {
@@ -6438,8 +6463,8 @@ a:hover {
 
 .monthly-balances-view-toggle .btn.active,
 .monthly-balances-view-toggle .btn[aria-pressed="true"] {
-  background: var(--glass-bg-strong) !important;
-  color: var(--text-primary) !important;
+  background: var(--accent-glass) !important;
+  color: var(--accent) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14), 0 0.5px 1px rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -6448,7 +6473,7 @@ a:hover {
 }
 
 [data-theme="light"] .monthly-balances-view-toggle .btn.active {
-  background: #ffffff !important;
+  background: var(--accent-glass) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
 }
 
@@ -6462,6 +6487,12 @@ a:hover {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--glass-shadow);
   color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .monthly-balances-net-chart-section {
+    padding: 1rem 1.35rem 1.35rem;
+  }
 }
 
 .monthly-balances-net-chart-section__title {
@@ -6668,6 +6699,7 @@ a:hover {
   border-collapse: collapse;
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 .mb-projection-values-table thead th {
