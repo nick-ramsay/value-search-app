@@ -1779,7 +1779,7 @@ export default function MonthlyBalancesClient() {
                           id="mb-net-usd-chart-heading"
                           className="mb-0 monthly-balances-net-chart-section__title"
                         >
-                          Net (USD) by Month
+                          Net Worth (USD) by Month
                         </h2>
                         <button
                           type="button"
@@ -1798,7 +1798,7 @@ export default function MonthlyBalancesClient() {
                           id="mb-net-usd-chart-caption"
                           className="small mb-2 mb-md-3"
                         >
-                          Monthly Net (USD) trend, earliest on the left.
+                          Monthly net worth (USD) trend, earliest on the left.
                         </p>
                       ) : null}
                       <MonthlyNetUsdBarChart points={netUsdBarChartPoints} />
@@ -2915,7 +2915,7 @@ export default function MonthlyBalancesClient() {
                               <button
                                 type="button"
                                 className="btn btn-sm filter-apply-button text-nowrap"
-                                disabled={restoringArchived}
+                                disabled={restoringArchived || balanceCellsLocked}
                                 onClick={() =>
                                   void handleRestoreArchivedAccount(
                                     accountDetailsArchivedConflict.id,
@@ -2958,7 +2958,7 @@ export default function MonthlyBalancesClient() {
                                 }}
                                 maxLength={120}
                                 autoComplete="off"
-                                disabled={savingAccountDetails}
+                                disabled={savingAccountDetails || balanceCellsLocked}
                               />
                             </div>
                             <div className="col-12 col-sm-6">
@@ -3011,7 +3011,7 @@ export default function MonthlyBalancesClient() {
                                     };
                                   });
                                 }}
-                                disabled={savingAccountDetails}
+                                disabled={savingAccountDetails || balanceCellsLocked}
                               >
                                 <option value="Asset">Asset</option>
                                 <option value="Debt">Debt</option>
@@ -3053,7 +3053,7 @@ export default function MonthlyBalancesClient() {
                                     };
                                   });
                                 }}
-                                disabled={savingAccountDetails}
+                                disabled={savingAccountDetails || balanceCellsLocked}
                               >
                                 {accountDetailsTypeOptions.map((t) => (
                                   <option key={t} value={t}>
@@ -3088,7 +3088,7 @@ export default function MonthlyBalancesClient() {
                                         : prev,
                                     );
                                   }}
-                                  disabled={savingAccountDetails}
+                                  disabled={savingAccountDetails || balanceCellsLocked}
                                 />
                               </div>
                             ) : null}
@@ -3123,7 +3123,7 @@ export default function MonthlyBalancesClient() {
                                         : prev,
                                     );
                                   }}
-                                  disabled={savingAccountDetails}
+                                  disabled={savingAccountDetails || balanceCellsLocked}
                                 />
                               </div>
                             ) : null}
@@ -3137,7 +3137,7 @@ export default function MonthlyBalancesClient() {
                                     prev ? { ...prev, currency: c } : prev,
                                   );
                                 }}
-                                disabled={savingAccountDetails}
+                                disabled={savingAccountDetails || balanceCellsLocked}
                               />
                             </div>
                           </div>
@@ -3163,7 +3163,7 @@ export default function MonthlyBalancesClient() {
                                         : prev,
                                     );
                                   }}
-                                  disabled={savingAccountDetails}
+                                  disabled={savingAccountDetails || balanceCellsLocked}
                                 />
                                 <label
                                   className="form-check-label small fw-semibold mb-0"
@@ -3194,7 +3194,7 @@ export default function MonthlyBalancesClient() {
                                       !e.target.checked,
                                     )
                                   }
-                                  disabled={savingAccountDetails}
+                                  disabled={savingAccountDetails || balanceCellsLocked}
                                 />
                                 <label
                                   className="form-check-label small fw-semibold mb-0"
@@ -3224,7 +3224,11 @@ export default function MonthlyBalancesClient() {
                       <button
                         type="button"
                         className="btn btn-sm filter-clear-button"
-                        disabled={!accountDetailsTarget || savingAccountDetails}
+                        disabled={
+                          !accountDetailsTarget ||
+                          savingAccountDetails ||
+                          balanceCellsLocked
+                        }
                         aria-label="Archive account"
                         onClick={() => {
                           handleArchiveFromAccountDetails();
@@ -3240,6 +3244,7 @@ export default function MonthlyBalancesClient() {
                             className="btn glass-btn glass-btn-primary"
                             disabled={
                               savingAccountDetails ||
+                              balanceCellsLocked ||
                               !accountDetailsForm?.name.trim() ||
                               (accountDetailsForm != null &&
                                 isUnvestedRsuAsset(
