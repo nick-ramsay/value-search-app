@@ -1304,7 +1304,7 @@ button.accordion-button.ai-accordion-button:focus-visible {
   }
 
   .stock-card--compact .stock-card__signals .stock-card__label-pill {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     line-height: 1;
     padding: calc(0.18rem - 1px) 0.35rem;
   }
@@ -1771,7 +1771,10 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 
 .stock-card__panel-inner {
   padding: 0.5rem var(--stock-card-side-padding) 0.5rem;
-  background: var(--glass-bg-subtle);
+  /* Matches the card's own background (--glass-bg) rather than the lighter
+     --glass-bg-subtle, so opened panels (About, Trends, AI Assessment, Your
+     Position, Comments) read as the same surface as the rest of the card. */
+  background: var(--glass-bg);
   min-width: 0;
 }
 
@@ -2498,7 +2501,9 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: var(--text-tertiary);
 }
 
-/* Label pills – distinct from accordion buttons (grey/glass); use teal tint so they read as tags */
+/* Label pills – distinct from accordion buttons (grey/glass); use teal tint so they read as tags.
+   font-size matches .stock-card__target-pill (the Buy/Sell market-order pill shown in the same
+   row) so both read as the same size, not just visually close. */
 .stock-card__label-pill {
   display: inline-flex;
   align-items: center;
@@ -2509,7 +2514,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   border: 1px solid rgba(34, 140, 132, 0.35);
   background: rgba(34, 140, 132, 0.18);
   color: var(--text-secondary);
-  font-size: 0.7rem;
+  font-size: 0.6875rem;
   cursor: default;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
