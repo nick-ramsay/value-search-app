@@ -299,6 +299,7 @@ main {
   font-weight: 500;
   letter-spacing: -0.02em;
   font-size: 0.95rem;
+  gap: 0.5rem;
 }
 
 /* Three-column header (brand | search | menu) at every viewport size, with
@@ -364,16 +365,17 @@ main {
    (iPad landscape is 1024px+).
 
    The full "valuesearch.app" wordmark doesn't reliably fit alongside the
-   search bar and menu button in this condition — swaps to just the logo
-   mark. Sized to match the search bar's compact mobile height and
-   the menu avatar circle (both ~28px) so the row reads as one consistent
-   height, not odd-one-out. The menu's username label is hidden for the
-   same reason, and because leaving it tied to Bootstrap's separate 576px
-   `sm` breakpoint would let the menu column grow past the compact edge
-   width below (576-960px is inside this compact condition but outside
-   `sm`'s cutoff). */
+   logo, search bar, and menu button in this condition — hides, leaving
+   just the logo mark (always visible at every viewport, see below). Sized
+   to match the search bar's compact mobile height and the menu avatar
+   circle (both ~28px) so the row reads as one consistent height, not
+   odd-one-out. The menu's username label is hidden for the same reason,
+   and because leaving it tied to Bootstrap's separate 576px `sm`
+   breakpoint would let the menu column grow past the compact edge width
+   below (576-960px is inside this compact condition but outside `sm`'s
+   cutoff). */
 .navbar-brand-logo {
-  display: none;
+  display: block;
   height: 1.75rem;
   width: auto;
 }
@@ -388,10 +390,6 @@ main {
 }
 
 @media (max-width: 767.98px), (max-width: 960px) and (orientation: landscape) {
-  .navbar-brand-logo {
-    display: block;
-  }
-
   .navbar-brand-wordmark {
     display: none;
   }
