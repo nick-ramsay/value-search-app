@@ -1929,7 +1929,7 @@ export default function MonthlyBalancesClient() {
                     className={`bi ${balanceCellsLocked ? "bi-lock-fill" : "bi-unlock"} me-1`}
                     aria-hidden
                   />
-                  {balanceCellsLocked ? "Locked" : "Edit"}
+                  {balanceCellsLocked ? "Locked" : "Unlocked"}
                 </button>
 
                 <div className="dropdown monthly-balances-data-dropdown">

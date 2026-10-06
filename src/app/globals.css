@@ -5552,6 +5552,15 @@ a:hover {
 
 /* Toolbar above chart/table — glass rail, grouped controls */
 .monthly-balances-toolbar {
+  /* backdrop-filter alone creates a stacking context for this card's
+     contents (the "..." dropdown menu included), but without an explicit
+     position + z-index here, the card still paints in plain DOM order among
+     its siblings -- so the table section below it, coming later in the DOM,
+     painted on top of the dropdown. position: relative lets the z-index
+     below take effect, placing the whole card (dropdown included) above
+     the table section that follows it. */
+  position: relative;
+  z-index: 2;
   border-radius: 16px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
