@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, useState } from "react";
 import { formatMoneyAmount } from "@/lib/iso4217-currencies";
-import { buildAreaPath, computeLabelStep, toLineSegments } from "./areaLineChartMath";
+import { buildAreaPath, computeLabelStep, shouldShowLabel, toLineSegments } from "./areaLineChartMath";
 import { useContainerWidth } from "./useContainerWidth";
 import FitToScreenToggle from "./FitToScreenToggle";
 
@@ -274,7 +274,7 @@ export default function YearlyNetUsdBarChart({ rows }: YearlyNetUsdBarChartProps
               slot is too narrow for half the label's width. */}
           <g className="monthly-balances-net-chart-x-labels" pointerEvents="none">
             {points.map((p, i) => {
-              if (i !== n - 1 && i % labelStep !== 0) return null;
+              if (!shouldShowLabel(i, n, labelStep)) return null;
               const cx = PAD_L + i * slotW + slotW / 2;
               const isFirst = i === 0;
               const isLast = i === n - 1;
