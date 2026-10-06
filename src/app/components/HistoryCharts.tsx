@@ -1005,11 +1005,11 @@ export function HistoryChartsPanel({
           <div className="stock-card__trends-view-toggle btn-group btn-group-sm" role="group" aria-label="History view">
             <button
               type="button"
-              className={`btn ${activeView === "score" ? "btn-primary" : "btn-outline-primary"}`}
-              onClick={() => setActiveView("score")}
+              className={`btn ${activeView === "price" ? "btn-primary" : "btn-outline-primary"}`}
+              onClick={() => setActiveView("price")}
             >
-              <i className="bi bi-graph-up me-1" aria-hidden />
-              Score History
+              <i className="bi bi-currency-dollar me-1" aria-hidden />
+              Price History
             </button>
             <button
               type="button"
@@ -1021,11 +1021,11 @@ export function HistoryChartsPanel({
             </button>
             <button
               type="button"
-              className={`btn ${activeView === "price" ? "btn-primary" : "btn-outline-primary"}`}
-              onClick={() => setActiveView("price")}
+              className={`btn ${activeView === "score" ? "btn-primary" : "btn-outline-primary"}`}
+              onClick={() => setActiveView("score")}
             >
-              <i className="bi bi-currency-dollar me-1" aria-hidden />
-              Price History
+              <i className="bi bi-graph-up me-1" aria-hidden />
+              Score History
             </button>
           </div>
         </div>
