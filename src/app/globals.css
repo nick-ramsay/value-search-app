@@ -6067,6 +6067,14 @@ a:hover {
   border-radius: 0;
   background: transparent;
   box-sizing: border-box;
+  /* Without its own stacking context, this element's sticky header/column
+     z-index values (up to 8, for the frozen row + columns) aren't
+     contained -- they escape upward and compete directly against sibling
+     elements like .monthly-balances-toolbar's dropdown in whatever outer
+     context actually contains both, regardless of the toolbar's own
+     z-index. isolation: isolate scopes them to this element alone, the
+     same way position + z-index would, without needing either. */
+  isolation: isolate;
 }
 
 @media (min-width: 768px) {
