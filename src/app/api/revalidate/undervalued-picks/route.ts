@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 /**
- * Actively forces the ISR cache for /economy-assessment to refresh, so that
+ * Actively forces the ISR cache for /undervalued-picks to refresh, so that
  * page's `revalidate = 86400` is a real daily *guarantee* rather than "at
  * most daily, but only if a visitor happens to request it after the window
  * elapses" (passive ISR can otherwise go far longer than a day stale on a
- * quiet page — see the comment in that page's source for the incident this
- * followed).
+ * quiet page — see /api/revalidate/economy-assessment, which this mirrors,
+ * for the incident that taught us this).
  *
  * Invoked once a day by the Vercel Cron Job defined in /vercel.json (the
  * most frequent this plan allows), which is what supplies the wall-clock
@@ -30,6 +30,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  revalidatePath("/economy-assessment");
-  return NextResponse.json({ revalidated: true, path: "/economy-assessment" });
+  revalidatePath("/undervalued-picks");
+  return NextResponse.json({ revalidated: true, path: "/undervalued-picks" });
 }

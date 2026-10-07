@@ -12,16 +12,20 @@ const COLLECTION = "stock-economy-assessment";
 // assessment_claude.py later writes to Mongo.
 //
 // Passive ISR alone (revalidate on the next request after the window
-// elapses) only bounds staleness to an hour when traffic actually arrives —
-// a quiet page can go far longer than an hour with nobody there to trigger
-// the refresh, which is exactly what happened here (~2 weeks stale). The
-// hourly bound is instead guaranteed by an ACTIVE trigger: a Vercel Cron Job
-// (see /vercel.json) hits GET /api/revalidate/economy-assessment every hour
-// on the wall clock regardless of visitor traffic, which calls
-// revalidatePath("/economy-assessment") to force regeneration. revalidate
-// here is a passive backstop on top of that (e.g. covers the case where the
-// cron itself misfires) — the cron is what actually delivers the guarantee.
-export const revalidate = 3600;
+// elapses) only bounds staleness when traffic actually arrives — a quiet
+// page can go far longer than the window with nobody there to trigger the
+// refresh, which is exactly what happened here (~2 weeks stale) before this
+// existed. The real guarantee comes from an ACTIVE trigger instead: a
+// Vercel Cron Job (see /vercel.json) hits GET /api/revalidate/economy-assessment
+// once a day (the most frequent Vercel allows on this plan) regardless of
+// visitor traffic, calling revalidatePath("/economy-assessment") to force
+// regeneration. The underlying data only changes weekly anyway (see
+// generate_economy_assessment_claude.py's schedule), so daily is already
+// far more often than needed — revalidate here just matches that same daily
+// cadence as a passive backstop (e.g. covers the cron itself misfiring),
+// rather than sitting at an hour and causing extra same-data reruns on any
+// traffic in between cron firings.
+export const revalidate = 86400;
 
 type EconomySection = {
   number: string;
