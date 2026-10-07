@@ -196,11 +196,19 @@ export default function AppNavbar({
           <span className="navbar-brand mb-0 h1 text-truncate app-navbar-brand" style={{ minWidth: 0 }}>
             <Link href={headerHref} className="navbar-brand-link d-flex align-items-center">
               <Image
-                src="/logo.png"
+                // Pre-sized (64x64, ~3KB) specifically for this fixed 28px
+                // navbar display, rather than the 1024x1024 (~80KB) master
+                // in /logo.png -- combined with `unoptimized` below, this
+                // skips Vercel's Image Optimization (sharp resize/encode)
+                // pipeline entirely (which this icon never benefits from,
+                // being a single fixed size on every page) without pushing
+                // a full-resolution download onto every page load instead.
+                src="/logo-navbar.png"
                 alt="valuesearch.app"
                 width={28}
                 height={28}
                 priority
+                unoptimized
                 className="navbar-brand-logo"
               />
               <span className="navbar-brand-wordmark">valuesearch.app</span>
