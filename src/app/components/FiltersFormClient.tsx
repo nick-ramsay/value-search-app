@@ -252,7 +252,7 @@ export default function FiltersFormClient({
             />
             <label htmlFor="bottoming" className="filter-toggle-label">
               <span className="filter-toggle-slider" aria-hidden />
-              <span className="filter-toggle-label__text">Recently bottomed</span>
+              <span className="filter-toggle-label__text">Recently Bottomed</span>
             </label>
           </div>
           <div className="filter-toggle">

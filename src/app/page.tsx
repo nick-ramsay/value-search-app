@@ -388,16 +388,27 @@ async function buildValueFilterConditions({
     conditions.push({ country: { $in: countries } });
   }
 
+  // Bottoming/toppingChop/momentum are inclusive of each other: ticking more
+  // than one should widen the result set (match ANY of them), not narrow it
+  // to stocks exhibiting all of them simultaneously — the three sub-clauses
+  // are $or'd together here, then that single combined clause joins the
+  // other filters (industry/sector/country/price) via the outer $and as usual.
+  const priceTrendClauses: Record<string, unknown>[] = [];
   if (bottoming) {
-    conditions.push({ "priceTrend.bottoming.isBottoming": true });
+    priceTrendClauses.push({ "priceTrend.bottoming.isBottoming": true });
   }
-
   if (toppingChop) {
-    conditions.push({ "priceTrend.toppingChop.isToppingChop": true });
+    priceTrendClauses.push({ "priceTrend.toppingChop.isToppingChop": true });
   }
-
   if (momentum) {
-    conditions.push({ "priceTrend.momentum.isMomentum": true });
+    priceTrendClauses.push({ "priceTrend.momentum.isMomentum": true });
+  }
+  if (priceTrendClauses.length > 0) {
+    conditions.push(
+      priceTrendClauses.length === 1
+        ? priceTrendClauses[0]
+        : { $or: priceTrendClauses },
+    );
   }
 
   if (minPrice !== undefined) {
@@ -706,7 +717,7 @@ async function ResultsCard({
     })) : []),
     ...(!isFiltered && bottomingEnabled ? [{
       id: "bottoming",
-      label: "Recently bottomed",
+      label: "Recently Bottomed",
       removeHref: buildHref({ bottoming: false }),
       ariaLabel: "Remove recently bottomed filter",
     }] : []),
@@ -841,7 +852,7 @@ function ResultsLoadingFallback({
                 ))}
                 {bottomingEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
-                    Recently bottomed
+                    Recently Bottomed
                     <i className="bi bi-x" />
                   </span>
                 )}
