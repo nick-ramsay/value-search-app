@@ -333,10 +333,7 @@ export default function CardUserActions({
       ) : (
           <>
             {status ? (
-              <span
-                className={`badge stock-card__status-badge stock-card__status-badge--${status.toLowerCase()}`}
-                aria-hidden
-              >
+              <span className="stock-card__action-label" aria-hidden>
                 {statusLabel}
               </span>
             ) : (

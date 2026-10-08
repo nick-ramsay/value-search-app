@@ -743,11 +743,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
   gap: 0.2rem;
 }
 
-.stock-card--compact .stock-card__user-pill .stock-card__status-badge {
-  font-size: 0.625rem !important;
-  padding: 0.12rem 0.3rem !important;
-}
-
 .stock-card--compact .stock-card__user-pill-trigger .stock-card__action-chevron {
   font-size: 0.75rem;
 }
@@ -1382,11 +1377,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
     min-height: 2rem;
   }
 
-  .stock-card__actions .stock-card__user-pill .stock-card__status-badge {
-    font-size: 0.6rem !important;
-    padding: 0.05rem 0.2rem !important;
-  }
-
   .stock-card__actions .stock-card__user-pill-trigger .stock-card__action-chevron {
     font-size: 0.65rem;
   }
@@ -1626,13 +1616,6 @@ button.stock-card__user-pill-trigger:disabled {
 button.stock-card__user-pill-trigger .stock-card__action-chevron {
   font-size: 0.7rem;
   margin-left: 0.25rem;
-}
-
-.stock-card__user-pill .stock-card__status-badge {
-  margin: 0;
-  font-size: 0.625rem !important;
-  line-height: 1.2 !important;
-  padding: 0.1rem 0.28rem !important;
 }
 
 .stock-card__user-pill .stock-card__status-loading {
@@ -2249,6 +2232,67 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 :root:not([data-theme="light"]) .stock-card__status-badge--hold {
   background: rgba(123, 144, 255, 0.20) !important;
   color: #7B90FF !important;
+}
+
+/* Status button: the whole Edit/status trigger is colored to match the
+   current status (no nested pill). The extra `button...--status` class
+   combo and the light+expanded variant are needed to out-specificity the
+   neutral `.stock-card__user-pill` / `[aria-expanded="true"]` !important
+   rules above, which would otherwise win on specificity ties. */
+button.stock-card__user-pill-trigger.stock-card__user-pill--avoid,
+[data-theme="light"] button.stock-card__user-pill-trigger.stock-card__user-pill--avoid[aria-expanded="true"] {
+  background: var(--danger-glass) !important;
+  color: var(--danger) !important;
+  border-color: transparent !important;
+}
+
+button.stock-card__user-pill-trigger.stock-card__user-pill--watch,
+[data-theme="light"] button.stock-card__user-pill-trigger.stock-card__user-pill--watch[aria-expanded="true"] {
+  background: rgba(168, 96, 0, 0.12) !important;
+  color: #A86000 !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--watch,
+:root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--watch {
+  background: rgba(253, 180, 75, 0.18) !important;
+  color: #FDB44B !important;
+  border-color: transparent !important;
+}
+
+button.stock-card__user-pill-trigger.stock-card__user-pill--queued,
+[data-theme="light"] button.stock-card__user-pill-trigger.stock-card__user-pill--queued[aria-expanded="true"] {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #7c3aed !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--queued,
+:root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--queued {
+  background: rgba(167, 139, 250, 0.2) !important;
+  color: #c4b5fd !important;
+  border-color: transparent !important;
+}
+
+button.stock-card__user-pill-trigger.stock-card__user-pill--own,
+[data-theme="light"] button.stock-card__user-pill-trigger.stock-card__user-pill--own[aria-expanded="true"] {
+  background: var(--success-glass) !important;
+  color: var(--success) !important;
+  border-color: transparent !important;
+}
+
+button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
+[data-theme="light"] button.stock-card__user-pill-trigger.stock-card__user-pill--hold[aria-expanded="true"] {
+  background: rgba(45, 69, 184, 0.12) !important;
+  color: #2D45B8 !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
+:root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--hold {
+  background: rgba(123, 144, 255, 0.20) !important;
+  color: #7B90FF !important;
+  border-color: transparent !important;
 }
 
 .stock-card__user-form {
