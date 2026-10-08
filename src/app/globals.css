@@ -7085,16 +7085,71 @@ a:hover {
 /* Research page */
 
 .research-page__body {
-  gap: 1rem;
+  gap: 1.25rem;
   padding-bottom: 2rem;
 }
 
-.research-prompt-input {
+.research-prompt-form .card-body {
+  padding: 1rem 1.1rem;
+}
+
+/* Composer — a single unified input box (textarea + action row share one
+   border), mirroring the house pattern .symbol-search-wrap already
+   establishes for the navbar search: the WRAPPER owns the border/background/
+   focus ring, the control inside it is borderless and transparent. Earlier
+   this reused .glass-select (a 999px-radius *pill*, sized and padded for a
+   single-line select/input with room reserved for a dropdown chevron) on a
+   3-row textarea, which is what produced the reported "oval, cuts off text"
+   look — a pill shape stretched to a multi-line box, with 2rem of dead
+   padding on the right eating into the usable text width.
+*/
+.research-composer {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 18px;
+  padding: 0.85rem 1rem 0.65rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.research-composer:focus-within {
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
+}
+
+.research-composer__input {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   resize: vertical;
 }
 
+.research-composer__input:focus {
+  outline: none;
+}
+
+.research-composer__input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.research-composer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--glass-border-subtle);
+}
+
 .research-prompt-hint {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-tertiary);
 }
 
@@ -7110,9 +7165,19 @@ a:hover {
 }
 
 .research-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--text-tertiary);
   text-align: center;
-  padding: 2rem 0;
+  padding: 2.5rem 0;
+}
+
+.research-empty-state__icon {
+  font-size: 1.5rem;
+  color: var(--accent);
+  opacity: 0.6;
 }
 
 .research-query-card__head {
@@ -7124,17 +7189,38 @@ a:hover {
 
 .research-query-card__prompt {
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.45;
   white-space: pre-wrap;
+}
+
+.research-query-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+.research-query-card__timestamp {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .research-query-card__result {
   white-space: pre-wrap;
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--glass-border-subtle);
   color: var(--text-secondary);
+  line-height: 1.6;
 }
 
 .research-query-card__error {
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--glass-border-subtle);
   color: var(--danger);
 }
 
@@ -7185,12 +7271,30 @@ a:hover {
 
 .research-stock-link:hover {
   background: var(--accent-glass);
-  border-color: rgba(30, 138, 114, 0.38);
+  border-color: var(--accent);
   color: var(--accent);
 }
 
 .research-stock-link--all {
   background: var(--accent-glass);
-  border-color: rgba(30, 138, 114, 0.38);
+  border-color: var(--accent);
+}
+
+@media (max-width: 576px) {
+  .research-query-card__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .research-composer__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .research-composer__footer .research-prompt-hint {
+    text-align: center;
+  }
 }
 

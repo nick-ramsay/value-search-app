@@ -22,6 +22,23 @@ function symbolHref(symbols: string[]): string {
   return `/?${params.toString()}`;
 }
 
+function formatRelative(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diffSec < 60) return "just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDays = Math.floor(diffHr / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
 function StatusPill({ status }: { status: ResearchQueryStatus }) {
   if (status === "complete") return null;
   if (status === "error") {
@@ -130,32 +147,31 @@ export default function ResearchClient() {
     <div className="research-page__body d-flex flex-column">
       <form onSubmit={handleSubmit} className="research-prompt-form card glass-card">
         <div className="card-body">
-          <label htmlFor="research-prompt" className="form-label filter-form-label mb-2">
-            Ask a research question
-          </label>
-          <textarea
-            id="research-prompt"
-            className="form-control glass-select research-prompt-input"
-            placeholder="e.g. What are some undervalued semiconductor stocks right now?"
-            rows={3}
-            maxLength={2000}
-            value={promptDraft}
-            onChange={(e) => setPromptDraft(e.target.value)}
-            disabled={submitting || hasInFlightNow}
-          />
-          <div className="d-flex align-items-center justify-content-between mt-2">
-            <span className="research-prompt-hint">
-              {hasInFlightNow
-                ? "Finish processing your current request before starting a new one."
-                : "Answers are grounded in valuesearch.app's own stock data."}
-            </span>
-            <button
-              type="submit"
-              className="btn btn-sm glass-btn glass-btn-primary"
-              disabled={submitting || hasInFlightNow || promptDraft.trim().length === 0}
-            >
-              {submitting ? "Submitting…" : "Research"}
-            </button>
+          <div className="research-composer">
+            <textarea
+              id="research-prompt"
+              className="research-composer__input"
+              placeholder="Ask a research question — e.g. What are some undervalued semiconductor stocks right now?"
+              rows={3}
+              maxLength={2000}
+              value={promptDraft}
+              onChange={(e) => setPromptDraft(e.target.value)}
+              disabled={submitting || hasInFlightNow}
+            />
+            <div className="research-composer__footer">
+              <span className="research-prompt-hint">
+                {hasInFlightNow
+                  ? "Finish processing your current request before starting a new one."
+                  : "Answers are grounded in valuesearch.app's own stock data."}
+              </span>
+              <button
+                type="submit"
+                className="btn btn-sm glass-btn glass-btn-primary"
+                disabled={submitting || hasInFlightNow || promptDraft.trim().length === 0}
+              >
+                {submitting ? "Submitting…" : "Research"}
+              </button>
+            </div>
           </div>
           {submitError ? <p className="research-prompt-error mb-0 mt-2">{submitError}</p> : null}
         </div>
@@ -165,14 +181,20 @@ export default function ResearchClient() {
         {loadingHistory ? (
           <p className="research-empty-state">Loading your research history…</p>
         ) : queries.length === 0 ? (
-          <p className="research-empty-state">No research queries yet — ask one above.</p>
+          <div className="research-empty-state">
+            <i className="bi bi-stars research-empty-state__icon" aria-hidden />
+            <p className="mb-0">No research queries yet — ask one above.</p>
+          </div>
         ) : (
           queries.map((q) => (
             <article key={q.id} className="research-query-card card glass-card">
               <div className="card-body">
                 <div className="research-query-card__head">
                   <p className="research-query-card__prompt mb-0">{q.prompt}</p>
-                  <StatusPill status={q.status} />
+                  <div className="research-query-card__meta">
+                    <StatusPill status={q.status} />
+                    <span className="research-query-card__timestamp">{formatRelative(q.createdAt)}</span>
+                  </div>
                 </div>
                 {q.status === "complete" && q.result ? (
                   <p className="research-query-card__result mb-0">{q.result}</p>
