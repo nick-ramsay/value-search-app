@@ -27,11 +27,13 @@ export default function AppNavbar({
   const isSectorAssessments = pathname === "/sector-assessments";
   const isEconomyAssessment = pathname === "/economy-assessment";
   const isUndervaluedPicks = pathname === "/undervalued-picks";
+  const isResearch = pathname === "/research";
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true ||
     isSectorAssessments ||
     isEconomyAssessment ||
-    isUndervaluedPicks;
+    isUndervaluedPicks ||
+    isResearch;
   const headerHref = isPortfolio ? "/portfolio" : "/";
 
   const handleLogout = async () => {
@@ -107,6 +109,13 @@ export default function AppNavbar({
         <li>
           <Link href="/undervalued-picks" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-gem" aria-hidden /> Undervalued Picks
+          </Link>
+        </li>
+      )}
+      {!isResearch && (
+        <li>
+          <Link href="/research" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-stars" aria-hidden /> Research
           </Link>
         </li>
       )}
