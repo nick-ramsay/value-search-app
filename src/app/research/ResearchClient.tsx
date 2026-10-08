@@ -56,13 +56,134 @@ function StatusPill({ status }: { status: ResearchQueryStatus }) {
   );
 }
 
+function ResearchQueryCard({
+  query: q,
+  onRequestDelete,
+}: {
+  query: ResearchQueryView;
+  onRequestDelete: (id: string, prompt: string) => void;
+}) {
+  const collapseId = `research-result-${q.id}`;
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onShown = () => setExpanded(true);
+    const onHidden = () => setExpanded(false);
+    el.addEventListener("shown.bs.collapse", onShown);
+    el.addEventListener("hidden.bs.collapse", onHidden);
+    return () => {
+      el.removeEventListener("shown.bs.collapse", onShown);
+      el.removeEventListener("hidden.bs.collapse", onHidden);
+    };
+  }, [collapseId]);
+
+  const hasResult = q.status === "complete" && Boolean(q.result);
+
+  return (
+    <article className="research-query-card card glass-card">
+      <div className="card-body">
+        <div className="research-query-card__head">
+          <p className="research-query-card__prompt mb-0">{q.prompt}</p>
+          <div className="research-query-card__meta">
+            <StatusPill status={q.status} />
+            <span className="research-query-card__timestamp">{formatRelative(q.createdAt)}</span>
+            {!hasResult ? (
+              <button
+                type="button"
+                className="research-query-card__delete-btn"
+                onClick={() => onRequestDelete(q.id, q.prompt)}
+                aria-label="Delete this research query"
+                title="Delete this research query"
+              >
+                <i className="bi bi-trash3" aria-hidden />
+                <span>Delete</span>
+              </button>
+            ) : null}
+            {hasResult ? (
+              <button
+                type="button"
+                className="research-query-card__chevron-btn"
+                data-bs-toggle="collapse"
+                data-bs-target={`#${collapseId}`}
+                aria-expanded={expanded}
+                aria-controls={collapseId}
+                aria-label={expanded ? "Hide answer" : "View answer"}
+                title={expanded ? "Hide answer" : "View answer"}
+              >
+                <i className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"}`} aria-hidden />
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {q.status === "error" ? (
+          <p className="research-query-card__error mb-0">
+            {q.errorMessage || "This research request failed."}
+          </p>
+        ) : null}
+
+        {hasResult ? (
+          <div id={collapseId} className="collapse">
+            <div className="research-query-card__panel">
+              <p className="research-query-card__result mb-0">{q.result}</p>
+              {q.mentionedStocks.length > 0 ? (
+                <div className="research-query-card__stocks">
+                  {q.mentionedStocks.map((symbol) => (
+                    <a
+                      key={symbol}
+                      href={symbolHref([symbol])}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="research-stock-link"
+                    >
+                      {symbol}
+                    </a>
+                  ))}
+                  <a
+                    href={symbolHref(q.mentionedStocks)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="research-stock-link research-stock-link--all"
+                  >
+                    View All Stocks
+                  </a>
+                </div>
+              ) : null}
+              <div className="research-query-card__panel-footer">
+                <button
+                  type="button"
+                  className="research-query-card__delete-btn"
+                  onClick={() => onRequestDelete(q.id, q.prompt)}
+                  aria-label="Delete this research query"
+                  title="Delete this research query"
+                >
+                  <i className="bi bi-trash3" aria-hidden />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+const DELETE_QUERY_MODAL_ID = "research-delete-query-modal";
+
 export default function ResearchClient() {
   const [queries, setQueries] = useState<ResearchQueryView[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [promptDraft, setPromptDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; prompt: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const deleteModalElRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +264,40 @@ export default function ResearchClient() {
       .finally(() => setSubmitting(false));
   };
 
+  const handleRequestDelete = (id: string, prompt: string) => {
+    setDeleteError(null);
+    setDeleteTarget({ id, prompt });
+    window.setTimeout(() => {
+      void import("bootstrap/js/dist/modal").then((mod) => {
+        const el = deleteModalElRef.current;
+        if (!el) return;
+        mod.default.getOrCreateInstance(el).show();
+      });
+    }, 0);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const r = await fetch(`/api/research/${deleteTarget.id}`, { method: "DELETE" });
+      if (!r.ok) {
+        const data = await r.json().catch(() => null);
+        throw new Error(data?.message || "Something went wrong.");
+      }
+      const deletedId = deleteTarget.id;
+      setQueries((current) => current.filter((q) => q.id !== deletedId));
+      const mod = await import("bootstrap/js/dist/modal");
+      const el = deleteModalElRef.current;
+      if (el) mod.default.getOrCreateInstance(el).hide();
+    } catch (err) {
+      setDeleteError((err as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="research-page__body d-flex flex-column">
       <form onSubmit={handleSubmit} className="research-prompt-form card glass-card">
@@ -187,50 +342,69 @@ export default function ResearchClient() {
           </div>
         ) : (
           queries.map((q) => (
-            <article key={q.id} className="research-query-card card glass-card">
-              <div className="card-body">
-                <div className="research-query-card__head">
-                  <p className="research-query-card__prompt mb-0">{q.prompt}</p>
-                  <div className="research-query-card__meta">
-                    <StatusPill status={q.status} />
-                    <span className="research-query-card__timestamp">{formatRelative(q.createdAt)}</span>
-                  </div>
-                </div>
-                {q.status === "complete" && q.result ? (
-                  <p className="research-query-card__result mb-0">{q.result}</p>
-                ) : null}
-                {q.status === "error" ? (
-                  <p className="research-query-card__error mb-0">
-                    {q.errorMessage || "This research request failed."}
-                  </p>
-                ) : null}
-                {q.status === "complete" && q.mentionedStocks.length > 0 ? (
-                  <div className="research-query-card__stocks">
-                    {q.mentionedStocks.map((symbol) => (
-                      <a
-                        key={symbol}
-                        href={symbolHref([symbol])}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="research-stock-link"
-                      >
-                        {symbol}
-                      </a>
-                    ))}
-                    <a
-                      href={symbolHref(q.mentionedStocks)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="research-stock-link research-stock-link--all"
-                    >
-                      View All Stocks
-                    </a>
-                  </div>
-                ) : null}
-              </div>
-            </article>
+            <ResearchQueryCard key={q.id} query={q} onRequestDelete={handleRequestDelete} />
           ))
         )}
+      </div>
+
+      <div
+        ref={deleteModalElRef}
+        className="modal fade"
+        id={DELETE_QUERY_MODAL_ID}
+        tabIndex={-1}
+        aria-labelledby={`${DELETE_QUERY_MODAL_ID}-label`}
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id={`${DELETE_QUERY_MODAL_ID}-label`}>
+                Delete this research query?
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+                disabled={deleting}
+              />
+            </div>
+            <div className="modal-body">
+              {deleteTarget ? (
+                <p className="mb-0">
+                  This permanently deletes <strong>&ldquo;{deleteTarget.prompt}&rdquo;</strong>{" "}
+                  and its result. This cannot be undone.
+                </p>
+              ) : null}
+              {deleteError ? <p className="research-prompt-error mb-0 mt-2">{deleteError}</p> : null}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn glass-btn glass-btn-secondary"
+                data-bs-dismiss="modal"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger research-delete-confirm-btn"
+                disabled={deleting}
+                onClick={() => void handleConfirmDelete()}
+              >
+                {deleting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" aria-hidden />
+                    Deleting…
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

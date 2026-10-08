@@ -7208,13 +7208,69 @@ a:hover {
   white-space: nowrap;
 }
 
-.research-query-card__result {
-  white-space: pre-wrap;
+.research-query-card__delete-btn,
+.research-query-card__chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.research-query-card__chevron-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+.research-query-card__delete-btn {
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--danger);
+  background: var(--danger-glass);
+  color: var(--danger);
+}
+
+.research-query-card__delete-btn:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.research-query-card__chevron-btn:hover {
+  color: var(--accent);
+  background: var(--accent-glass);
+}
+
+.research-query-card__panel {
   margin-top: 0.85rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--glass-border-subtle);
+}
+
+.research-query-card__result {
+  white-space: pre-wrap;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+.research-query-card__panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
+}
+
+/* .glass-btn-secondary (Cancel) is already pill-shaped via .glass-btn's
+   border-radius: 999px — plain .btn-danger isn't, so without this the two
+   footer buttons would visibly mismatch. */
+.research-delete-confirm-btn {
+  border-radius: 999px;
 }
 
 .research-query-card__error {
@@ -7297,4 +7353,5 @@ a:hover {
     text-align: center;
   }
 }
+
 

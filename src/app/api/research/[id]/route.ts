@@ -35,3 +35,23 @@ export async function GET(_request: Request, { params }: Params) {
     createdAt: doc.createdAt,
   });
 }
+
+/** Deletes one research query (the prompt + its result), ownership-checked. */
+export async function DELETE(_request: Request, { params }: Params) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  await connectDB();
+  let result;
+  try {
+    result = await ResearchQuery.deleteOne({ _id: id, userId: session.user.id });
+  } catch {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+  if (result.deletedCount === 0) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ deleted: true });
+}
