@@ -4,10 +4,20 @@ export type ResearchQueryStatus = "pending" | "processing" | "complete" | "error
 
 export interface IResearchQuery extends mongoose.Document {
   userId: string;
+  /** Set only on a follow-up row — the root query's own _id (as a string),
+   * never chained further (a follow-up to a follow-up still points at the
+   * original root), so fetching a whole thread is one flat query. */
+  rootId?: string | null;
   prompt: string;
   status: ResearchQueryStatus;
   result?: string | null;
   mentionedStocks: string[];
+  consideredStocks: string[];
+  /** symbol -> company name, for every stock considered in this turn (not
+   * just mentioned) — lets the UI render "Apple, Inc. ($AAPL)" instead of a
+   * bare ticker wherever a symbol is referenced. Pymongo writes this as a
+   * plain dict; Mongoose's Map type reads it back correctly either way. */
+  stockNames: Map<string, string>;
   errorMessage?: string | null;
   processingStartedAt?: Date | null;
   completedAt?: Date | null;
@@ -27,6 +37,7 @@ export interface IResearchQuery extends mongoose.Document {
 const ResearchQuerySchema = new mongoose.Schema<IResearchQuery>(
   {
     userId: { type: String, required: true, index: true },
+    rootId: { type: String, default: null, index: true },
     prompt: { type: String, required: true, trim: true, maxlength: 2000 },
     status: {
       type: String,
@@ -35,6 +46,8 @@ const ResearchQuerySchema = new mongoose.Schema<IResearchQuery>(
     },
     result: { type: String, default: null },
     mentionedStocks: { type: [String], default: [] },
+    consideredStocks: { type: [String], default: [] },
+    stockNames: { type: Map, of: String, default: {} },
     errorMessage: { type: String, default: null },
     processingStartedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },

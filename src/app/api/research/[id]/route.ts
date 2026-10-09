@@ -3,11 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
 import ResearchQuery from "@/models/ResearchQuery";
+import { serializeQuery } from "@/lib/research-serialize";
 
 type Params = { params: Promise<{ id: string }> };
 
-/** Polling endpoint for one research query's current status/result. Read-only —
- * only value-search-pyworker (writing to Mongo directly) ever changes a row. */
+/** Polling endpoint for one research query's current status/result (root or
+ * follow-up — the frontend polls whichever turn is currently in-flight).
+ * Read-only — only value-search-pyworker (writing to Mongo directly) ever
+ * changes a row. */
 export async function GET(_request: Request, { params }: Params) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -25,20 +28,12 @@ export async function GET(_request: Request, { params }: Params) {
   if (!doc) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
-  return NextResponse.json({
-    id: doc._id.toString(),
-    prompt: doc.prompt,
-    status: doc.status,
-    result: doc.result ?? null,
-    mentionedStocks: doc.mentionedStocks ?? [],
-    errorMessage: doc.errorMessage ?? null,
-    createdAt: doc.createdAt,
-    processingStartedAt: doc.processingStartedAt ?? null,
-    durationSeconds: doc.durationSeconds ?? null,
-  });
+  return NextResponse.json(serializeQuery(doc));
 }
 
-/** Deletes one research query (the prompt + its result), ownership-checked. */
+/** Deletes one research thread, ownership-checked. Deleting a root cascades
+ * to every follow-up in that thread — there's no meaningful way to keep a
+ * follow-up around once the question it followed up on is gone. */
 export async function DELETE(_request: Request, { params }: Params) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -48,7 +43,10 @@ export async function DELETE(_request: Request, { params }: Params) {
   await connectDB();
   let result;
   try {
-    result = await ResearchQuery.deleteOne({ _id: id, userId: session.user.id });
+    result = await ResearchQuery.deleteMany({
+      userId: session.user.id,
+      $or: [{ _id: id }, { rootId: id }],
+    });
   } catch {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }

@@ -2,32 +2,42 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
-import ResearchQuery from "@/models/ResearchQuery";
+import ResearchQuery, { type IResearchQuery } from "@/models/ResearchQuery";
+import { serializeQuery } from "@/lib/research-serialize";
 
 const MAX_PROMPT_LENGTH = 2000;
 const HISTORY_LIMIT = 50;
 
-/** List the signed-in user's research queries, newest first, for hydrating page history. */
+/** List the signed-in user's research threads, newest first, for hydrating page
+ * history. Only root queries are top-level; each carries its own follow-ups
+ * (oldest first, so they read top-to-bottom like a conversation) nested
+ * underneath — the frontend renders a whole thread inside one card. */
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
   await connectDB();
-  const docs = await ResearchQuery.find({ userId: session.user.id })
+  const roots = await ResearchQuery.find({ userId: session.user.id, rootId: null })
     .sort({ createdAt: -1 })
     .limit(HISTORY_LIMIT);
+  const rootIds = roots.map((d) => d._id.toString());
+  const followups = rootIds.length
+    ? await ResearchQuery.find({ userId: session.user.id, rootId: { $in: rootIds } }).sort({
+        createdAt: 1,
+      })
+    : [];
+  const followupsByRoot = new Map<string, IResearchQuery[]>();
+  for (const f of followups) {
+    const key = f.rootId as string;
+    if (!followupsByRoot.has(key)) followupsByRoot.set(key, []);
+    followupsByRoot.get(key)!.push(f);
+  }
+
   return NextResponse.json({
-    queries: docs.map((d) => ({
-      id: d._id.toString(),
-      prompt: d.prompt,
-      status: d.status,
-      result: d.result ?? null,
-      mentionedStocks: d.mentionedStocks ?? [],
-      errorMessage: d.errorMessage ?? null,
-      createdAt: d.createdAt,
-      processingStartedAt: d.processingStartedAt ?? null,
-      durationSeconds: d.durationSeconds ?? null,
+    queries: roots.map((d) => ({
+      ...serializeQuery(d),
+      followups: (followupsByRoot.get(d._id.toString()) ?? []).map(serializeQuery),
     })),
   });
 }
@@ -63,9 +73,9 @@ export async function POST(request: Request) {
 
   await connectDB();
 
-  // Only one in-flight request per user at a time — keeps load on the
-  // pyworker daemon predictable and means the frontend never has to poll
-  // more than one in-flight card.
+  // Only one in-flight request per user at a time (root or follow-up) — keeps
+  // load on the pyworker daemon predictable and means the frontend never has
+  // to poll more than one in-flight card.
   const existingInFlight = await ResearchQuery.findOne({
     userId: session.user.id,
     status: { $in: ["pending", "processing"] },
@@ -83,15 +93,5 @@ export async function POST(request: Request) {
     status: "pending",
   });
 
-  return NextResponse.json({
-    id: doc._id.toString(),
-    prompt: doc.prompt,
-    status: doc.status,
-    result: null,
-    mentionedStocks: [],
-    errorMessage: null,
-    createdAt: doc.createdAt,
-    processingStartedAt: null,
-    durationSeconds: null,
-  });
+  return NextResponse.json({ ...serializeQuery(doc), followups: [] });
 }

@@ -11,10 +11,16 @@ type ResearchQueryView = {
   status: ResearchQueryStatus;
   result: string | null;
   mentionedStocks: string[];
+  consideredStocks: string[];
+  stockNames: Record<string, string>;
   errorMessage: string | null;
   createdAt: string;
   processingStartedAt: string | null;
   durationSeconds: number | null;
+  /** Only ever populated on a root query (from GET /api/research's nesting) —
+   * a follow-up's own `followups` is always []; threads are two levels deep,
+   * not recursive. */
+  followups: ResearchQueryView[];
 };
 
 const POLL_INTERVAL_MS = 3000;
@@ -67,9 +73,11 @@ function LiveDuration({ startIso }: { startIso: string }) {
 }
 
 /** Renders result text with every validated $TICKER mention turned into a
- * link, in addition to the summary pill row below — reading the answer
- * shouldn't require scrolling down to click a ticker it already named. */
-function linkifyResult(text: string, symbols: string[]): React.ReactNode {
+ * link reading "Company Name ($TICKER)" (falling back to the bare ticker if
+ * no name is known), in addition to the summary pill row below — reading
+ * the answer shouldn't require scrolling down to click a ticker it already
+ * named, or guessing what a symbol stands for. */
+function linkifyResult(text: string, symbols: string[], stockNames: Record<string, string>): React.ReactNode {
   if (symbols.length === 0 || !text) return text;
   const escaped = symbols.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const pattern = new RegExp(`\\$(${escaped.join("|")})\\b`, "g");
@@ -80,6 +88,7 @@ function linkifyResult(text: string, symbols: string[]): React.ReactNode {
   while ((match = pattern.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
     const symbol = match[1];
+    const name = stockNames[symbol];
     parts.push(
       <a
         key={`inline-link-${key++}`}
@@ -88,7 +97,7 @@ function linkifyResult(text: string, symbols: string[]): React.ReactNode {
         rel="noopener noreferrer"
         className="research-inline-stock-link"
       >
-        ${symbol}
+        {name ? `${name} ($${symbol})` : `$${symbol}`}
       </a>,
     );
     lastIndex = pattern.lastIndex;
@@ -114,12 +123,75 @@ function StatusPill({ status }: { status: ResearchQueryStatus }) {
   );
 }
 
+/** One follow-up turn, rendered compactly within the root's already-open
+ * accordion — no chevron/delete of its own, since it's only ever visible
+ * when the user has already expanded the thread it belongs to. */
+function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
+  const hasResult = turn.status === "complete" && Boolean(turn.result);
+  const inProgress = turn.status === "pending" || turn.status === "processing";
+
+  return (
+    <div className="research-followup">
+      <div className="research-followup__head">
+        <p className="research-followup__prompt mb-0">{turn.prompt}</p>
+        <div className="research-query-card__meta">
+          <StatusPill status={turn.status} />
+          {inProgress ? (
+            <LiveDuration startIso={turn.processingStartedAt ?? turn.createdAt} />
+          ) : turn.durationSeconds != null ? (
+            <span className="research-query-card__duration">{formatDuration(turn.durationSeconds)}</span>
+          ) : null}
+        </div>
+      </div>
+      {turn.status === "error" ? (
+        <p className="research-query-card__error mb-0">
+          {turn.errorMessage || "This follow-up failed."}
+        </p>
+      ) : null}
+      {hasResult ? (
+        <>
+          <p className="research-followup__result mb-0">
+            {linkifyResult(turn.result as string, turn.mentionedStocks, turn.stockNames)}
+          </p>
+          {turn.mentionedStocks.length > 0 ? (
+            <div className="research-query-card__stocks">
+              {turn.mentionedStocks.map((symbol) => (
+                <a
+                  key={symbol}
+                  href={symbolHref([symbol])}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="research-stock-link"
+                >
+                  {symbol}
+                </a>
+              ))}
+              <a
+                href={symbolHref(turn.mentionedStocks)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="research-stock-link research-stock-link--all"
+              >
+                View All Stocks
+              </a>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function ResearchQueryCard({
   query: q,
   onRequestDangerAction,
+  onSubmitFollowup,
+  hasInFlightNow,
 }: {
   query: ResearchQueryView;
   onRequestDangerAction: (id: string, prompt: string, action: DangerAction) => void;
+  onSubmitFollowup: (rootId: string, prompt: string) => Promise<void>;
+  hasInFlightNow: boolean;
 }) {
   const collapseId = `research-result-${q.id}`;
   const [expanded, setExpanded] = useState(false);
@@ -137,8 +209,32 @@ function ResearchQueryCard({
     };
   }, [collapseId]);
 
+  const [followupDraft, setFollowupDraft] = useState("");
+  const [submittingFollowup, setSubmittingFollowup] = useState(false);
+  const [followupError, setFollowupError] = useState<string | null>(null);
+
   const hasResult = q.status === "complete" && Boolean(q.result);
   const inProgress = q.status === "pending" || q.status === "processing";
+  // The thread can only take a follow-up once its latest turn (the root
+  // itself, or the last follow-up if any) has actually finished.
+  const latestTurn = q.followups.length > 0 ? q.followups[q.followups.length - 1] : q;
+  const canFollowUp = latestTurn.status === "complete" && !hasInFlightNow;
+
+  const handleSubmitFollowup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = followupDraft.trim();
+    if (!text || submittingFollowup || !canFollowUp) return;
+    setSubmittingFollowup(true);
+    setFollowupError(null);
+    try {
+      await onSubmitFollowup(q.id, text);
+      setFollowupDraft("");
+    } catch (err) {
+      setFollowupError((err as Error).message);
+    } finally {
+      setSubmittingFollowup(false);
+    }
+  };
 
   return (
     <article className="research-query-card card glass-card">
@@ -204,7 +300,7 @@ function ResearchQueryCard({
           <div id={collapseId} className="collapse">
             <div className="research-query-card__panel">
               <p className="research-query-card__result mb-0">
-                {linkifyResult(q.result as string, q.mentionedStocks)}
+                {linkifyResult(q.result as string, q.mentionedStocks, q.stockNames)}
               </p>
               {q.mentionedStocks.length > 0 ? (
                 <div className="research-query-card__stocks">
@@ -229,6 +325,45 @@ function ResearchQueryCard({
                   </a>
                 </div>
               ) : null}
+              {q.consideredStocks.length > 0 ? (
+                <p className="research-query-card__considered mb-0">
+                  Considered: {q.consideredStocks.join(", ")}
+                </p>
+              ) : null}
+
+              {q.followups.map((turn) => (
+                <FollowupTurn key={turn.id} turn={turn} />
+              ))}
+
+              <form onSubmit={(e) => void handleSubmitFollowup(e)} className="research-followup-composer">
+                <textarea
+                  className="research-followup-composer__input"
+                  placeholder="Ask a follow-up…"
+                  rows={2}
+                  maxLength={2000}
+                  value={followupDraft}
+                  onChange={(e) => setFollowupDraft(e.target.value)}
+                  disabled={!canFollowUp || submittingFollowup}
+                />
+                <div className="research-followup-composer__footer">
+                  <span className="research-prompt-hint">
+                    {!canFollowUp && hasInFlightNow
+                      ? "Finish your current request before asking a follow-up."
+                      : !canFollowUp
+                        ? "Waiting for this thread's latest answer to finish."
+                        : ""}
+                  </span>
+                  <button
+                    type="submit"
+                    className="btn btn-sm glass-btn glass-btn-primary"
+                    disabled={!canFollowUp || submittingFollowup || followupDraft.trim().length === 0}
+                  >
+                    {submittingFollowup ? "Asking…" : "Ask follow-up"}
+                  </button>
+                </div>
+                {followupError ? <p className="research-prompt-error mb-0 mt-2">{followupError}</p> : null}
+              </form>
+
               <div className="research-query-card__panel-footer">
                 <button
                   type="button"
@@ -285,7 +420,13 @@ export default function ResearchClient() {
 
   const pollInFlight = useCallback(() => {
     setQueries((current) => {
-      const inFlightIds = current.filter((q) => q.status === "pending" || q.status === "processing").map((q) => q.id);
+      const inFlightIds: string[] = [];
+      for (const q of current) {
+        if (q.status === "pending" || q.status === "processing") inFlightIds.push(q.id);
+        for (const f of q.followups) {
+          if (f.status === "pending" || f.status === "processing") inFlightIds.push(f.id);
+        }
+      }
       if (inFlightIds.length === 0) return current;
       Promise.all(
         inFlightIds.map((id) =>
@@ -296,14 +437,31 @@ export default function ResearchClient() {
       ).then((results) => {
         const byId = new Map(results.filter(Boolean).map((r) => [r.id, r as ResearchQueryView]));
         if (byId.size === 0) return;
-        setQueries((latest) => latest.map((q) => byId.get(q.id) ?? q));
+        setQueries((latest) =>
+          latest.map((q) => {
+            const updatedRoot = byId.get(q.id);
+            const updatedFollowups = q.followups.map((f) => byId.get(f.id) ?? f);
+            // The single-row polling endpoint never returns a `followups`
+            // field — it only ever updates one turn's own status/result —
+            // so merge the root's own fields in without letting that spread
+            // clobber the (separately updated) followups array.
+            return updatedRoot
+              ? { ...q, ...updatedRoot, followups: updatedFollowups }
+              : { ...q, followups: updatedFollowups };
+          }),
+        );
       });
       return current;
     });
   }, []);
 
   useEffect(() => {
-    const hasInFlight = queries.some((q) => q.status === "pending" || q.status === "processing");
+    const hasInFlight = queries.some(
+      (q) =>
+        q.status === "pending" ||
+        q.status === "processing" ||
+        q.followups.some((f) => f.status === "pending" || f.status === "processing"),
+    );
     if (hasInFlight && pollRef.current === null) {
       pollRef.current = setInterval(pollInFlight, POLL_INTERVAL_MS);
     } else if (!hasInFlight && pollRef.current !== null) {
@@ -318,7 +476,12 @@ export default function ResearchClient() {
     };
   }, [queries, pollInFlight]);
 
-  const hasInFlightNow = queries.some((q) => q.status === "pending" || q.status === "processing");
+  const hasInFlightNow = queries.some(
+    (q) =>
+      q.status === "pending" ||
+      q.status === "processing" ||
+      q.followups.some((f) => f.status === "pending" || f.status === "processing"),
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,6 +505,19 @@ export default function ResearchClient() {
       })
       .catch((err: Error) => setSubmitError(err.message))
       .finally(() => setSubmitting(false));
+  };
+
+  const handleSubmitFollowup = async (rootId: string, prompt: string): Promise<void> => {
+    const r = await fetch(`/api/research/${rootId}/followup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data?.message || "Something went wrong.");
+    setQueries((current) =>
+      current.map((q) => (q.id === rootId ? { ...q, followups: [...q.followups, data] } : q)),
+    );
   };
 
   const handleRequestDangerAction = (id: string, prompt: string, action: DangerAction) => {
@@ -438,7 +614,13 @@ export default function ResearchClient() {
           </div>
         ) : (
           queries.map((q) => (
-            <ResearchQueryCard key={q.id} query={q} onRequestDangerAction={handleRequestDangerAction} />
+            <ResearchQueryCard
+              key={q.id}
+              query={q}
+              onRequestDangerAction={handleRequestDangerAction}
+              onSubmitFollowup={handleSubmitFollowup}
+              hasInFlightNow={hasInFlightNow}
+            />
           ))
         )}
       </div>
