@@ -284,6 +284,8 @@ function ResearchQueryCard({
               <button
                 type="button"
                 className="research-query-card__danger-btn"
+                data-bs-toggle="modal"
+                data-bs-target={`#${DANGER_MODAL_ID}`}
                 onClick={() => onRequestDangerAction(q.id, q.prompt, "stop")}
                 aria-label="Stop this research request"
                 title="Stop this research request"
@@ -296,6 +298,8 @@ function ResearchQueryCard({
               <button
                 type="button"
                 className="research-query-card__danger-btn"
+                data-bs-toggle="modal"
+                data-bs-target={`#${DANGER_MODAL_ID}`}
                 onClick={() => onRequestDangerAction(q.id, q.prompt, "delete")}
                 aria-label="Delete this research query"
                 title="Delete this research query"
@@ -405,6 +409,8 @@ function ResearchQueryCard({
                 <button
                   type="button"
                   className="research-query-card__danger-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target={`#${DANGER_MODAL_ID}`}
                   onClick={() => onRequestDangerAction(q.id, q.prompt, "delete")}
                   aria-label="Delete this research query"
                   title="Delete this research query"
@@ -435,7 +441,7 @@ export default function ResearchClient() {
   const [actingOnDanger, setActingOnDanger] = useState(false);
   const [dangerError, setDangerError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const dangerModalElRef = useRef<HTMLDivElement>(null);
+  const dangerCancelBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -557,26 +563,19 @@ export default function ResearchClient() {
     );
   };
 
+  // Opening is handled entirely by the trigger buttons' own
+  // data-bs-toggle="modal" / data-bs-target attributes below — Bootstrap's
+  // JS bundle (loaded globally once by BootstrapClient) already wires up
+  // that data-API on every page, the same mechanism that already handles
+  // this exact modal's own Cancel/X dismiss buttons and every collapse
+  // chevron elsewhere on this page. This handler's only job is recording
+  // *which* row/action the modal should describe; no Modal class reference,
+  // dynamic import, or timing assumption is involved at all, which removes
+  // the entire class of bug every previous round of fixes was chasing
+  // (duplicate Modal instances, aria-hidden fights, stale show() timing).
   const handleRequestDangerAction = (id: string, prompt: string, action: DangerAction) => {
     setDangerError(null);
     setDangerTarget({ id, prompt, action });
-    window.setTimeout(() => {
-      // Must be the same bundle entry point BootstrapClient (src/app/bootstrap-client.tsx)
-      // loads globally on mount, not the standalone "bootstrap/js/dist/modal"
-      // submodule — importing it separately pulls in a second, independent
-      // Modal class whose backdrop/body-lock bookkeeping the global bundle's
-      // own data-API (which is what handles the Cancel/X buttons' plain
-      // data-bs-dismiss="modal" attributes, and clicking the backdrop, and
-      // Escape) knows nothing about. That mismatch is exactly what left the
-      // backdrop and body scroll-lock stuck after closing, requiring a
-      // refresh — fixed by having every path (open here, close below, and
-      // the declarative dismiss buttons) share one Modal instance.
-      void import("bootstrap/dist/js/bootstrap.bundle.min.js").then((bootstrap) => {
-        const el = dangerModalElRef.current;
-        if (!el) return;
-        bootstrap.Modal.getOrCreateInstance(el).show();
-      });
-    }, 0);
   };
 
   const handleConfirmDangerAction = async () => {
@@ -595,9 +594,23 @@ export default function ResearchClient() {
       }
       const targetId = dangerTarget.id;
       setQueries((current) => current.filter((q) => q.id !== targetId));
-      const bootstrap = await import("bootstrap/dist/js/bootstrap.bundle.min.js");
-      const el = dangerModalElRef.current;
-      if (el) bootstrap.Modal.getOrCreateInstance(el).hide();
+      // Dismiss via the modal's own Cancel button rather than importing the
+      // Modal class and calling .hide() on an instance — a synthetic click
+      // on a real data-bs-dismiss="modal" button runs the exact same code
+      // path a real user's Cancel click does, so there's no second way for
+      // this modal to close that could ever fall out of sync with the first.
+      // The button is still showing disabled={actingOnDanger} from this
+      // render (React hasn't re-rendered with the finally block's
+      // setActingOnDanger(false) yet), and a disabled button's .click()
+      // is a browser-enforced no-op even when called programmatically — so
+      // clear the DOM property directly first. React reconciles it back to
+      // the same "false" value on the next render anyway, once
+      // actingOnDanger actually is false, so this never fights React.
+      const cancelBtn = dangerCancelBtnRef.current;
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+        cancelBtn.click();
+      }
     } catch (err) {
       setDangerError((err as Error).message);
     } finally {
@@ -663,7 +676,6 @@ export default function ResearchClient() {
       </div>
 
       <div
-        ref={dangerModalElRef}
         className="modal fade"
         id={DANGER_MODAL_ID}
         tabIndex={-1}
@@ -710,6 +722,7 @@ export default function ResearchClient() {
             </div>
             <div className="modal-footer">
               <button
+                ref={dangerCancelBtnRef}
                 type="button"
                 className="btn glass-btn glass-btn-secondary"
                 data-bs-dismiss="modal"
