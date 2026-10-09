@@ -167,13 +167,13 @@ export default function SearchBar({
   };
 
   /**
-   * Resolves what Enter (or any other submit trigger) should do, in order:
-   * the arrow-key/hover-highlighted suggestion, else the top suggestion in
-   * an open dropdown (so typing an exact match and hitting Enter without
-   * arrowing down still picks the right thing instead of submitting the
-   * raw text as a literal symbol — which silently fails to find anything
-   * whenever the query was a company name rather than its ticker), else
-   * fall back to the raw typed text (e.g. the query matched nothing at all).
+   * Resolves what Enter (or any other submit trigger) should do: the
+   * arrow-key/hover-highlighted suggestion if the user explicitly picked
+   * one, otherwise the exact text they typed, verbatim — never silently
+   * substituted for the top suggestion in an open dropdown. An open
+   * dropdown is just a hint of what's available; it isn't a selection, and
+   * loading a different symbol than what was actually typed (and hit
+   * Enter on) is surprising, not helpful.
    */
   const submitCurrentSelection = () => {
     const value = trimmedQuery;
@@ -184,9 +184,7 @@ export default function SearchBar({
     const resolved =
       highlightedIndex >= 0 && highlightedIndex < filteredSuggestions.length
         ? filteredSuggestions[highlightedIndex]
-        : filteredSuggestions.length > 0
-          ? filteredSuggestions[0]
-          : null;
+        : null;
 
     if (resolved) {
       handleSelect(resolved);

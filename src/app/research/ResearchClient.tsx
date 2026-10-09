@@ -348,10 +348,20 @@ export default function ResearchClient() {
     setDangerError(null);
     setDangerTarget({ id, prompt, action });
     window.setTimeout(() => {
-      void import("bootstrap/js/dist/modal").then((mod) => {
+      // Must be the same bundle entry point BootstrapClient (src/app/bootstrap-client.tsx)
+      // loads globally on mount, not the standalone "bootstrap/js/dist/modal"
+      // submodule — importing it separately pulls in a second, independent
+      // Modal class whose backdrop/body-lock bookkeeping the global bundle's
+      // own data-API (which is what handles the Cancel/X buttons' plain
+      // data-bs-dismiss="modal" attributes, and clicking the backdrop, and
+      // Escape) knows nothing about. That mismatch is exactly what left the
+      // backdrop and body scroll-lock stuck after closing, requiring a
+      // refresh — fixed by having every path (open here, close below, and
+      // the declarative dismiss buttons) share one Modal instance.
+      void import("bootstrap/dist/js/bootstrap.bundle.min.js").then((bootstrap) => {
         const el = dangerModalElRef.current;
         if (!el) return;
-        mod.default.getOrCreateInstance(el).show();
+        bootstrap.Modal.getOrCreateInstance(el).show();
       });
     }, 0);
   };
@@ -372,9 +382,9 @@ export default function ResearchClient() {
       }
       const targetId = dangerTarget.id;
       setQueries((current) => current.filter((q) => q.id !== targetId));
-      const mod = await import("bootstrap/js/dist/modal");
+      const bootstrap = await import("bootstrap/dist/js/bootstrap.bundle.min.js");
       const el = dangerModalElRef.current;
-      if (el) mod.default.getOrCreateInstance(el).hide();
+      if (el) bootstrap.Modal.getOrCreateInstance(el).hide();
     } catch (err) {
       setDangerError((err as Error).message);
     } finally {
