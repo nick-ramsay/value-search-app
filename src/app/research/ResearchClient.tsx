@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type ResearchQueryStatus = "pending" | "processing" | "complete" | "error";
+type DangerAction = "stop" | "delete";
 
 type ResearchQueryView = {
   id: string;
@@ -12,6 +13,8 @@ type ResearchQueryView = {
   mentionedStocks: string[];
   errorMessage: string | null;
   createdAt: string;
+  processingStartedAt: string | null;
+  durationSeconds: number | null;
 };
 
 const POLL_INTERVAL_MS = 3000;
@@ -39,6 +42,61 @@ function formatRelative(iso: string): string {
   }
 }
 
+function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return m === 0 ? `${rem}s` : `${m}m ${rem}s`;
+}
+
+/** Ticks its own state every second rather than lifting this into the parent's
+ * poll-driven state, so a live timer doesn't force a re-render of the whole
+ * query list every second — only this one small span re-renders. */
+function LiveDuration({ startIso }: { startIso: string }) {
+  const [elapsedSec, setElapsedSec] = useState(() => (Date.now() - new Date(startIso).getTime()) / 1000);
+
+  useEffect(() => {
+    const startMs = new Date(startIso).getTime();
+    const tick = () => setElapsedSec((Date.now() - startMs) / 1000);
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [startIso]);
+
+  return <span className="research-query-card__duration">{formatDuration(elapsedSec)}</span>;
+}
+
+/** Renders result text with every validated $TICKER mention turned into a
+ * link, in addition to the summary pill row below — reading the answer
+ * shouldn't require scrolling down to click a ticker it already named. */
+function linkifyResult(text: string, symbols: string[]): React.ReactNode {
+  if (symbols.length === 0 || !text) return text;
+  const escaped = symbols.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp(`\\$(${escaped.join("|")})\\b`, "g");
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    const symbol = match[1];
+    parts.push(
+      <a
+        key={`inline-link-${key++}`}
+        href={symbolHref([symbol])}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="research-inline-stock-link"
+      >
+        ${symbol}
+      </a>,
+    );
+    lastIndex = pattern.lastIndex;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
+
 function StatusPill({ status }: { status: ResearchQueryStatus }) {
   if (status === "complete") return null;
   if (status === "error") {
@@ -58,10 +116,10 @@ function StatusPill({ status }: { status: ResearchQueryStatus }) {
 
 function ResearchQueryCard({
   query: q,
-  onRequestDelete,
+  onRequestDangerAction,
 }: {
   query: ResearchQueryView;
-  onRequestDelete: (id: string, prompt: string) => void;
+  onRequestDangerAction: (id: string, prompt: string, action: DangerAction) => void;
 }) {
   const collapseId = `research-result-${q.id}`;
   const [expanded, setExpanded] = useState(false);
@@ -80,6 +138,7 @@ function ResearchQueryCard({
   }, [collapseId]);
 
   const hasResult = q.status === "complete" && Boolean(q.result);
+  const inProgress = q.status === "pending" || q.status === "processing";
 
   return (
     <article className="research-query-card card glass-card">
@@ -88,12 +147,29 @@ function ResearchQueryCard({
           <p className="research-query-card__prompt mb-0">{q.prompt}</p>
           <div className="research-query-card__meta">
             <StatusPill status={q.status} />
+            {inProgress ? (
+              <LiveDuration startIso={q.processingStartedAt ?? q.createdAt} />
+            ) : q.durationSeconds != null ? (
+              <span className="research-query-card__duration">{formatDuration(q.durationSeconds)}</span>
+            ) : null}
             <span className="research-query-card__timestamp">{formatRelative(q.createdAt)}</span>
-            {!hasResult ? (
+            {inProgress ? (
               <button
                 type="button"
-                className="research-query-card__delete-btn"
-                onClick={() => onRequestDelete(q.id, q.prompt)}
+                className="research-query-card__danger-btn"
+                onClick={() => onRequestDangerAction(q.id, q.prompt, "stop")}
+                aria-label="Stop this research request"
+                title="Stop this research request"
+              >
+                <i className="bi bi-stop-circle" aria-hidden />
+                <span>Stop</span>
+              </button>
+            ) : null}
+            {q.status === "error" ? (
+              <button
+                type="button"
+                className="research-query-card__danger-btn"
+                onClick={() => onRequestDangerAction(q.id, q.prompt, "delete")}
                 aria-label="Delete this research query"
                 title="Delete this research query"
               >
@@ -127,7 +203,9 @@ function ResearchQueryCard({
         {hasResult ? (
           <div id={collapseId} className="collapse">
             <div className="research-query-card__panel">
-              <p className="research-query-card__result mb-0">{q.result}</p>
+              <p className="research-query-card__result mb-0">
+                {linkifyResult(q.result as string, q.mentionedStocks)}
+              </p>
               {q.mentionedStocks.length > 0 ? (
                 <div className="research-query-card__stocks">
                   {q.mentionedStocks.map((symbol) => (
@@ -154,8 +232,8 @@ function ResearchQueryCard({
               <div className="research-query-card__panel-footer">
                 <button
                   type="button"
-                  className="research-query-card__delete-btn"
-                  onClick={() => onRequestDelete(q.id, q.prompt)}
+                  className="research-query-card__danger-btn"
+                  onClick={() => onRequestDangerAction(q.id, q.prompt, "delete")}
                   aria-label="Delete this research query"
                   title="Delete this research query"
                 >
@@ -171,7 +249,7 @@ function ResearchQueryCard({
   );
 }
 
-const DELETE_QUERY_MODAL_ID = "research-delete-query-modal";
+const DANGER_MODAL_ID = "research-danger-action-modal";
 
 export default function ResearchClient() {
   const [queries, setQueries] = useState<ResearchQueryView[]>([]);
@@ -179,11 +257,13 @@ export default function ResearchClient() {
   const [promptDraft, setPromptDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; prompt: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [dangerTarget, setDangerTarget] = useState<{ id: string; prompt: string; action: DangerAction } | null>(
+    null,
+  );
+  const [actingOnDanger, setActingOnDanger] = useState(false);
+  const [dangerError, setDangerError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const deleteModalElRef = useRef<HTMLDivElement>(null);
+  const dangerModalElRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -264,39 +344,45 @@ export default function ResearchClient() {
       .finally(() => setSubmitting(false));
   };
 
-  const handleRequestDelete = (id: string, prompt: string) => {
-    setDeleteError(null);
-    setDeleteTarget({ id, prompt });
+  const handleRequestDangerAction = (id: string, prompt: string, action: DangerAction) => {
+    setDangerError(null);
+    setDangerTarget({ id, prompt, action });
     window.setTimeout(() => {
       void import("bootstrap/js/dist/modal").then((mod) => {
-        const el = deleteModalElRef.current;
+        const el = dangerModalElRef.current;
         if (!el) return;
         mod.default.getOrCreateInstance(el).show();
       });
     }, 0);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setDeleteError(null);
+  const handleConfirmDangerAction = async () => {
+    if (!dangerTarget) return;
+    setActingOnDanger(true);
+    setDangerError(null);
     try {
-      const r = await fetch(`/api/research/${deleteTarget.id}`, { method: "DELETE" });
+      // Stopping and deleting are the same backend operation: removing the
+      // row. For an in-flight row this also frees up the "one in-flight
+      // request" slot. If the pyworker daemon is mid-call on it, its
+      // eventual write just finds no matching _id and silently no-ops.
+      const r = await fetch(`/api/research/${dangerTarget.id}`, { method: "DELETE" });
       if (!r.ok) {
         const data = await r.json().catch(() => null);
         throw new Error(data?.message || "Something went wrong.");
       }
-      const deletedId = deleteTarget.id;
-      setQueries((current) => current.filter((q) => q.id !== deletedId));
+      const targetId = dangerTarget.id;
+      setQueries((current) => current.filter((q) => q.id !== targetId));
       const mod = await import("bootstrap/js/dist/modal");
-      const el = deleteModalElRef.current;
+      const el = dangerModalElRef.current;
       if (el) mod.default.getOrCreateInstance(el).hide();
     } catch (err) {
-      setDeleteError((err as Error).message);
+      setDangerError((err as Error).message);
     } finally {
-      setDeleting(false);
+      setActingOnDanger(false);
     }
   };
+
+  const isStop = dangerTarget?.action === "stop";
 
   return (
     <div className="research-page__body d-flex flex-column">
@@ -342,62 +428,69 @@ export default function ResearchClient() {
           </div>
         ) : (
           queries.map((q) => (
-            <ResearchQueryCard key={q.id} query={q} onRequestDelete={handleRequestDelete} />
+            <ResearchQueryCard key={q.id} query={q} onRequestDangerAction={handleRequestDangerAction} />
           ))
         )}
       </div>
 
       <div
-        ref={deleteModalElRef}
+        ref={dangerModalElRef}
         className="modal fade"
-        id={DELETE_QUERY_MODAL_ID}
+        id={DANGER_MODAL_ID}
         tabIndex={-1}
-        aria-labelledby={`${DELETE_QUERY_MODAL_ID}-label`}
+        aria-labelledby={`${DANGER_MODAL_ID}-label`}
         aria-hidden="true"
       >
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title" id={`${DELETE_QUERY_MODAL_ID}-label`}>
-                Delete this research query?
+              <h5 className="modal-title" id={`${DANGER_MODAL_ID}-label`}>
+                {isStop ? "Stop this research request?" : "Delete this research query?"}
               </h5>
               <button
                 type="button"
                 className="btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
-                disabled={deleting}
+                disabled={actingOnDanger}
               />
             </div>
             <div className="modal-body">
-              {deleteTarget ? (
+              {dangerTarget ? (
                 <p className="mb-0">
-                  This permanently deletes <strong>&ldquo;{deleteTarget.prompt}&rdquo;</strong>{" "}
-                  and its result. This cannot be undone.
+                  {isStop
+                    ? "This stops "
+                    : "This permanently deletes "}
+                  <strong>&ldquo;{dangerTarget.prompt}&rdquo;</strong>
+                  {isStop
+                    ? " and discards its progress. You can ask again afterward."
+                    : " and its result. This cannot be undone."}
                 </p>
               ) : null}
-              {deleteError ? <p className="research-prompt-error mb-0 mt-2">{deleteError}</p> : null}
+              {dangerError ? <p className="research-prompt-error mb-0 mt-2">{dangerError}</p> : null}
             </div>
             <div className="modal-footer">
               <button
                 type="button"
                 className="btn glass-btn glass-btn-secondary"
                 data-bs-dismiss="modal"
-                disabled={deleting}
+                disabled={actingOnDanger}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 className="btn btn-danger research-delete-confirm-btn"
-                disabled={deleting}
-                onClick={() => void handleConfirmDelete()}
+                disabled={actingOnDanger}
+                onClick={() => void handleConfirmDangerAction()}
               >
-                {deleting ? (
+                {actingOnDanger ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" aria-hidden />
-                    Deleting…
+                    {isStop ? "Stopping…" : "Deleting…"}
                   </>
+                ) : isStop ? (
+                  "Stop"
                 ) : (
                   "Delete"
                 )}

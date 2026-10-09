@@ -9,7 +9,9 @@ export interface IResearchQuery extends mongoose.Document {
   result?: string | null;
   mentionedStocks: string[];
   errorMessage?: string | null;
+  processingStartedAt?: Date | null;
   completedAt?: Date | null;
+  durationSeconds?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,7 +36,9 @@ const ResearchQuerySchema = new mongoose.Schema<IResearchQuery>(
     result: { type: String, default: null },
     mentionedStocks: { type: [String], default: [] },
     errorMessage: { type: String, default: null },
+    processingStartedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
+    durationSeconds: { type: Number, default: null },
   },
   { timestamps: true },
 );

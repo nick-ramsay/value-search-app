@@ -33,6 +33,8 @@ export async function GET(_request: Request, { params }: Params) {
     mentionedStocks: doc.mentionedStocks ?? [],
     errorMessage: doc.errorMessage ?? null,
     createdAt: doc.createdAt,
+    processingStartedAt: doc.processingStartedAt ?? null,
+    durationSeconds: doc.durationSeconds ?? null,
   });
 }
 

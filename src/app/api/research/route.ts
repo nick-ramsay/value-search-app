@@ -26,6 +26,8 @@ export async function GET() {
       mentionedStocks: d.mentionedStocks ?? [],
       errorMessage: d.errorMessage ?? null,
       createdAt: d.createdAt,
+      processingStartedAt: d.processingStartedAt ?? null,
+      durationSeconds: d.durationSeconds ?? null,
     })),
   });
 }
@@ -89,5 +91,7 @@ export async function POST(request: Request) {
     mentionedStocks: [],
     errorMessage: null,
     createdAt: doc.createdAt,
+    processingStartedAt: null,
+    durationSeconds: null,
   });
 }

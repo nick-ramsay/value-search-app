@@ -7208,7 +7208,17 @@ a:hover {
   white-space: nowrap;
 }
 
-.research-query-card__delete-btn,
+.research-query-card__duration {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* Shared by the Stop button (pending/processing cards) and the Delete
+   button (error cards, and complete cards once expanded) — mutually
+   exclusive per card, same red-pill treatment either way. */
+.research-query-card__danger-btn,
 .research-query-card__chevron-btn {
   display: inline-flex;
   align-items: center;
@@ -7228,7 +7238,7 @@ a:hover {
   font-size: 0.8rem;
 }
 
-.research-query-card__delete-btn {
+.research-query-card__danger-btn {
   gap: 0.3rem;
   padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
@@ -7238,7 +7248,7 @@ a:hover {
   color: var(--danger);
 }
 
-.research-query-card__delete-btn:hover {
+.research-query-card__danger-btn:hover {
   background: var(--danger);
   color: #fff;
 }
@@ -7258,6 +7268,18 @@ a:hover {
   white-space: pre-wrap;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+.research-inline-stock-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-glass);
+  text-underline-offset: 2px;
+}
+
+.research-inline-stock-link:hover {
+  text-decoration-color: var(--accent);
 }
 
 .research-query-card__panel-footer {
