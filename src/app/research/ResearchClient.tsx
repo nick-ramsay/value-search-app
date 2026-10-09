@@ -123,10 +123,27 @@ function StatusPill({ status }: { status: ResearchQueryStatus }) {
   );
 }
 
-/** One follow-up turn, rendered compactly within the root's already-open
- * accordion — no chevron/delete of its own, since it's only ever visible
- * when the user has already expanded the thread it belongs to. */
+/** One follow-up turn, rendered within the root's already-open accordion.
+ * Its own answer is collapsed behind its own chevron — same pattern as the
+ * root's — so a thread with several follow-ups doesn't dump a wall of text;
+ * each turn's prompt stays visible, its answer opens on demand. */
 function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
+  const collapseId = `research-followup-result-${turn.id}`;
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const el = document.getElementById(collapseId);
+    if (!el) return;
+    const onShown = () => setExpanded(true);
+    const onHidden = () => setExpanded(false);
+    el.addEventListener("shown.bs.collapse", onShown);
+    el.addEventListener("hidden.bs.collapse", onHidden);
+    return () => {
+      el.removeEventListener("shown.bs.collapse", onShown);
+      el.removeEventListener("hidden.bs.collapse", onHidden);
+    };
+  }, [collapseId]);
+
   const hasResult = turn.status === "complete" && Boolean(turn.result);
   const inProgress = turn.status === "pending" || turn.status === "processing";
 
@@ -141,6 +158,20 @@ function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
           ) : turn.durationSeconds != null ? (
             <span className="research-query-card__duration">{formatDuration(turn.durationSeconds)}</span>
           ) : null}
+          {hasResult ? (
+            <button
+              type="button"
+              className="research-query-card__chevron-btn"
+              data-bs-toggle="collapse"
+              data-bs-target={`#${collapseId}`}
+              aria-expanded={expanded}
+              aria-controls={collapseId}
+              aria-label={expanded ? "Hide answer" : "View answer"}
+              title={expanded ? "Hide answer" : "View answer"}
+            >
+              <i className={`bi ${expanded ? "bi-chevron-up" : "bi-chevron-down"}`} aria-hidden />
+            </button>
+          ) : null}
         </div>
       </div>
       {turn.status === "error" ? (
@@ -149,7 +180,7 @@ function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
         </p>
       ) : null}
       {hasResult ? (
-        <>
+        <div id={collapseId} className="collapse">
           <p className="research-followup__result mb-0">
             {linkifyResult(turn.result as string, turn.mentionedStocks, turn.stockNames)}
           </p>
@@ -176,7 +207,7 @@ function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
               </a>
             </div>
           ) : null}
-        </>
+        </div>
       ) : null}
     </div>
   );
@@ -355,10 +386,16 @@ function ResearchQueryCard({
                   </span>
                   <button
                     type="submit"
-                    className="btn btn-sm glass-btn glass-btn-primary"
+                    className="btn btn-sm glass-btn glass-btn-primary research-followup-send-btn"
                     disabled={!canFollowUp || submittingFollowup || followupDraft.trim().length === 0}
+                    aria-label="Ask follow-up"
+                    title="Ask follow-up"
                   >
-                    {submittingFollowup ? "Asking…" : "Ask follow-up"}
+                    {submittingFollowup ? (
+                      <span className="spinner-border spinner-border-sm" aria-hidden />
+                    ) : (
+                      <i className="bi bi-send-fill" aria-hidden />
+                    )}
                   </button>
                 </div>
                 {followupError ? <p className="research-prompt-error mb-0 mt-2">{followupError}</p> : null}

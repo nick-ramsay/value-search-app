@@ -480,11 +480,17 @@ button.accordion-button.ai-accordion-button:focus-visible {
   overflow: hidden;
 }
 
-/* Modal backdrop – taskboard-style */
+/* Modal backdrop. Deliberately a plain dim overlay, no backdrop-filter blur:
+   a blurred backdrop sitting on top of a page already full of .glass-card
+   elements (each independently blurring with their own backdrop-filter —
+   e.g. a long Research page card list) hits a well-documented iOS Safari
+   bug where stacked/nested backdrop-filter compositing gets corrupted —
+   smeared, ghosted rendering, and critically, the hit-testing layer can
+   desync from what's actually painted, making the modal's own buttons
+   stop responding to taps entirely. A solid dim overlay has none of this
+   risk and is a perfectly normal modal pattern on its own. */
 .modal-backdrop.show {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  background-color: rgba(0, 0, 0, 0.35);
+  background-color: rgba(0, 0, 0, 0.45);
 }
 
 /* Modal header – transparent over the glass content, hairline divider */
@@ -7415,6 +7421,18 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.research-followup-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .research-stock-link {
