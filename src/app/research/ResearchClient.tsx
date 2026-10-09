@@ -668,7 +668,17 @@ export default function ResearchClient() {
         id={DANGER_MODAL_ID}
         tabIndex={-1}
         aria-labelledby={`${DANGER_MODAL_ID}-label`}
-        aria-hidden="true"
+        // No aria-hidden here — Bootstrap's own JS toggles it on this exact
+        // element when the modal opens/closes. A hardcoded "true" in JSX
+        // means React reasserts it on every re-render of this component,
+        // including the poll loop firing every 3s whenever any card is
+        // in-flight — fighting Bootstrap's own state out from under it
+        // while the modal is still visually open. Mobile Safari enforces
+        // aria-hidden="true" strictly enough to suppress taps on the
+        // subtree, and the reflow from React's re-render can also disturb
+        // Bootstrap's own centering/position calculation — this is a
+        // documented class of bug wherever React and Bootstrap's modal JS
+        // both try to own the same DOM attribute.
       >
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
