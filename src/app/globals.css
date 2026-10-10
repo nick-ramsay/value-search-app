@@ -265,15 +265,31 @@ body {
   box-shadow: var(--glass-shadow);
 }
 
-/* Page fade-in animation */
+/* Page fade-in animation. Opacity-only, deliberately: an animation (or
+   transition) targeting `transform` — even animating to `translateY(0)`,
+   which is visually a no-op — leaves `transform` as a non-"none" computed
+   value on `main` for as long as `animation-fill-mode: forwards` keeps it
+   applied, i.e. for the entire time any page is displayed, not just during
+   the 0.28s animation. Per the CSS spec, that makes `main` a containing
+   block for every `position: fixed` descendant on every page — including
+   Bootstrap's modal, which is `position: fixed` and, unlike its backdrop
+   (appended straight to <body> by Bootstrap's own JS), stays exactly where
+   React rendered it in the tree, nested under this `main`. The modal then
+   positions and hit-tests relative to `main`'s box instead of the
+   viewport — on a short page the two can coincidentally nearly line up
+   (which is exactly how this stayed hidden through CDP testing: a
+   synthetic `element.click()` call dispatches straight to the DOM node and
+   never depends on where it's actually rendered, so it can't catch a
+   purely-positional mismatch the way a real coordinate-based tap would),
+   but on a taller/scrolled page the mismatch is enough to make a real tap
+   land somewhere other than where the modal visually sits — read by a real
+   user as the modal simply not responding. */
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

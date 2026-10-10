@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ResearchQueryStatus = "pending" | "processing" | "complete" | "error";
 type DangerAction = "stop" | "delete";
@@ -442,6 +443,11 @@ export default function ResearchClient() {
   const [dangerError, setDangerError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dangerCancelBtnRef = useRef<HTMLButtonElement>(null);
+  // document.body doesn't exist during SSR — the portal below only renders
+  // once mounted on the client, same pattern every other modal in this app
+  // already uses (ScoreModalTrigger, DisclosureModal, etc.).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -620,6 +626,96 @@ export default function ResearchClient() {
 
   const isStop = dangerTarget?.action === "stop";
 
+  // Portaled to document.body (below) rather than rendered inline here —
+  // every other modal in this codebase already does this (ScoreModalTrigger,
+  // DisclosureModal, CardComments, etc.), and this one was the outlier that
+  // didn't, which turned out to be exactly why it was the one with a bug:
+  // Bootstrap's JS always appends .modal-backdrop as a direct child of
+  // <body>, but this modal, rendered inline, sat 6 DOM levels deep under
+  // <main>. Confirmed by direct reproduction (headless AND real Chrome, CDP
+  // coordinate-based taps plus the browser's own DOM.getNodeForLocation hit
+  // test, screenshots) that this depth mismatch alone breaks touch/click hit
+  // -testing: the modal paints correctly on top (visually indistinguishable
+  // from working), but the backdrop — despite its lower z-index — wins every
+  // pointer-event hit test, silently absorbing every tap. That matches
+  // "modal appears but frozen" exactly. Moving the modal to be a direct
+  // child of body (so it's a sibling of the backdrop, not an ancestor-deep
+  // descendant) fixed it immediately and completely in reproduction; z-index
+  // changes, DOM reordering, and wait time all had zero effect on their own.
+  const dangerModal = (
+    <div
+      className="modal fade"
+      id={DANGER_MODAL_ID}
+      tabIndex={-1}
+      aria-labelledby={`${DANGER_MODAL_ID}-label`}
+      // No aria-hidden here — Bootstrap's own JS toggles it on this exact
+      // element when the modal opens/closes. A hardcoded "true" in JSX
+      // means React reasserts it on every re-render of this component,
+      // including the poll loop firing every 3s whenever any card is
+      // in-flight — fighting Bootstrap's own state out from under it
+      // while the modal is still visually open.
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id={`${DANGER_MODAL_ID}-label`}>
+              {isStop ? "Stop this research request?" : "Delete this research query?"}
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              disabled={actingOnDanger}
+            />
+          </div>
+          <div className="modal-body">
+            {dangerTarget ? (
+              <p className="mb-0">
+                {isStop
+                  ? "This stops "
+                  : "This permanently deletes "}
+                <strong>&ldquo;{dangerTarget.prompt}&rdquo;</strong>
+                {isStop
+                  ? " and discards its progress. You can ask again afterward."
+                  : " and its result. This cannot be undone."}
+              </p>
+            ) : null}
+            {dangerError ? <p className="research-prompt-error mb-0 mt-2">{dangerError}</p> : null}
+          </div>
+          <div className="modal-footer">
+            <button
+              ref={dangerCancelBtnRef}
+              type="button"
+              className="btn glass-btn glass-btn-secondary"
+              data-bs-dismiss="modal"
+              disabled={actingOnDanger}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger research-delete-confirm-btn"
+              disabled={actingOnDanger}
+              onClick={() => void handleConfirmDangerAction()}
+            >
+              {actingOnDanger ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" aria-hidden />
+                  {isStop ? "Stopping…" : "Deleting…"}
+                </>
+              ) : isStop ? (
+                "Stop"
+              ) : (
+                "Delete"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="research-page__body d-flex flex-column">
       <form onSubmit={handleSubmit} className="research-prompt-form card glass-card">
@@ -675,82 +771,7 @@ export default function ResearchClient() {
         )}
       </div>
 
-      <div
-        className="modal fade"
-        id={DANGER_MODAL_ID}
-        tabIndex={-1}
-        aria-labelledby={`${DANGER_MODAL_ID}-label`}
-        // No aria-hidden here — Bootstrap's own JS toggles it on this exact
-        // element when the modal opens/closes. A hardcoded "true" in JSX
-        // means React reasserts it on every re-render of this component,
-        // including the poll loop firing every 3s whenever any card is
-        // in-flight — fighting Bootstrap's own state out from under it
-        // while the modal is still visually open. Mobile Safari enforces
-        // aria-hidden="true" strictly enough to suppress taps on the
-        // subtree, and the reflow from React's re-render can also disturb
-        // Bootstrap's own centering/position calculation — this is a
-        // documented class of bug wherever React and Bootstrap's modal JS
-        // both try to own the same DOM attribute.
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id={`${DANGER_MODAL_ID}-label`}>
-                {isStop ? "Stop this research request?" : "Delete this research query?"}
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-                disabled={actingOnDanger}
-              />
-            </div>
-            <div className="modal-body">
-              {dangerTarget ? (
-                <p className="mb-0">
-                  {isStop
-                    ? "This stops "
-                    : "This permanently deletes "}
-                  <strong>&ldquo;{dangerTarget.prompt}&rdquo;</strong>
-                  {isStop
-                    ? " and discards its progress. You can ask again afterward."
-                    : " and its result. This cannot be undone."}
-                </p>
-              ) : null}
-              {dangerError ? <p className="research-prompt-error mb-0 mt-2">{dangerError}</p> : null}
-            </div>
-            <div className="modal-footer">
-              <button
-                ref={dangerCancelBtnRef}
-                type="button"
-                className="btn glass-btn glass-btn-secondary"
-                data-bs-dismiss="modal"
-                disabled={actingOnDanger}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger research-delete-confirm-btn"
-                disabled={actingOnDanger}
-                onClick={() => void handleConfirmDangerAction()}
-              >
-                {actingOnDanger ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" aria-hidden />
-                    {isStop ? "Stopping…" : "Deleting…"}
-                  </>
-                ) : isStop ? (
-                  "Stop"
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {mounted ? createPortal(dangerModal, document.body) : null}
     </div>
   );
 }
