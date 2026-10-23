@@ -85,27 +85,28 @@
 /* System preference dark (when theme is "system" and OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glass-bg: rgba(22, 24, 32, 0.68);
-    --glass-bg-strong: rgba(30, 32, 42, 0.82);
-    --glass-bg-subtle: rgba(18, 20, 28, 0.52);
-    --glass-border: rgba(255, 255, 255, 0.10);
-    --glass-border-subtle: rgba(255, 255, 255, 0.06);
+    --glass-bg: rgba(8, 10, 18, 0.72);
+    --glass-bg-strong: rgba(12, 14, 24, 0.86);
+    --glass-bg-subtle: rgba(6, 8, 14, 0.56);
+    --glass-border: rgba(106, 196, 255, 0.16);
+    --glass-border-subtle: rgba(106, 196, 255, 0.09);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
     --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
     --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
-    --glass-highlight: rgba(255, 255, 255, 0.05);
+    --glass-highlight: rgba(106, 196, 255, 0.07);
     --skeleton-base: rgba(255, 255, 255, 0.09);
     --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-    --accent: #28BFA4;
-    --accent-hover: #33CEAE;
-    --accent-glass: rgba(40, 191, 164, 0.22);
-    --accent-soft: rgba(40, 191, 164, 0.22);
+    /* Accent – lightsaber blue */
+    --accent: #4CC9F0;
+    --accent-hover: #74D8FF;
+    --accent-glass: rgba(76, 201, 240, 0.22);
+    --accent-soft: rgba(76, 201, 240, 0.22);
 
     --input-focus-border: var(--accent);
-    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(76, 201, 240, 0.5);
     --input-focus-border-danger: var(--danger-clear);
-    --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
+    --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 59, 59, 0.45);
 
     /* Lighter than the page (page is near-black navy), not just a translucent
        wash of the same dark tone — --glass-bg-subtle here was nearly the
@@ -113,57 +114,60 @@
     --input-bg: rgba(255, 255, 255, 0.12);
     --input-border: rgba(255, 255, 255, 0.20);
 
-    --gradient-start: #00D9A3;
-    --gradient-end: #9C87FF;
+    /* Signature gradient – lightsaber blue → protocol-droid gold */
+    --gradient-start: #4CC9F0;
+    --gradient-end: #FFD60A;
     --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 
-    --danger: #FF4D55;
-    --danger-glass: rgba(255, 77, 85, 0.20);
-    --danger-soft: rgba(255, 77, 85, 0.20);
-    --danger-clear: #FF4D55;
-    --success: #3AD476;
-    --success-glass: rgba(58, 212, 118, 0.20);
+    --danger: #FF3B3B;
+    --danger-glass: rgba(255, 59, 59, 0.20);
+    --danger-soft: rgba(255, 59, 59, 0.20);
+    --danger-clear: #FF3B3B;
+    --success: #32D74B;
+    --success-glass: rgba(50, 215, 75, 0.20);
 
     --text-primary: rgba(232, 236, 242, 0.93);
     --text-secondary: rgba(232, 236, 242, 0.58);
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
-    --bg-start: #0E141F;
-    --bg-mid: #121826;
-    --bg-end: #161C2B;
-    --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
-    --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
+    /* Background – "Deep Space": void-black with distant starlight and a
+       faint, far-off Sith-red glow for depth */
+    --bg-start: #03040A;
+    --bg-mid: #070910;
+    --bg-end: #0A0C16;
+    --bg-glow-1: rgba(76, 201, 240, 0.15); /* lightsaber-blue starlight */
+    --bg-glow-2: rgba(255, 59, 59, 0.06); /* distant Sith-red glow */
 
-    --dropdown-bg: rgba(28, 30, 40, 0.98);
-    --dropdown-border: rgba(255, 255, 255, 0.09);
+    --dropdown-bg: rgba(10, 12, 20, 0.98);
+    --dropdown-border: rgba(106, 196, 255, 0.10);
   }
 }
 
 /* Forced dark theme */
 [data-theme="dark"] {
-  --glass-bg: rgba(22, 24, 32, 0.68);
-  --glass-bg-strong: rgba(30, 32, 42, 0.82);
-  --glass-bg-subtle: rgba(18, 20, 28, 0.52);
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-bg: rgba(8, 10, 18, 0.72);
+  --glass-bg-strong: rgba(12, 14, 24, 0.86);
+  --glass-bg-subtle: rgba(6, 8, 14, 0.56);
+  --glass-border: rgba(106, 196, 255, 0.16);
+  --glass-border-subtle: rgba(106, 196, 255, 0.09);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
   --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
   --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --glass-highlight: rgba(106, 196, 255, 0.07);
   --skeleton-base: rgba(255, 255, 255, 0.09);
   --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-  --accent: #28BFA4;
-  --accent-hover: #33CEAE;
-  --accent-glass: rgba(40, 191, 164, 0.22);
-  --accent-soft: rgba(40, 191, 164, 0.22);
+  /* Accent – lightsaber blue */
+  --accent: #4CC9F0;
+  --accent-hover: #74D8FF;
+  --accent-glass: rgba(76, 201, 240, 0.22);
+  --accent-soft: rgba(76, 201, 240, 0.22);
 
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(76, 201, 240, 0.5);
   --input-focus-border-danger: var(--danger-clear);
-  --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
+  --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 59, 59, 0.45);
 
   /* Lighter than the page (page is near-black navy), not just a translucent
      wash of the same dark tone — --glass-bg-subtle here was nearly the
@@ -171,31 +175,33 @@
   --input-bg: rgba(255, 255, 255, 0.12);
   --input-border: rgba(255, 255, 255, 0.20);
 
-  --gradient-start: #00D9A3;
-  --gradient-end: #9C87FF;
+  /* Signature gradient – lightsaber blue → protocol-droid gold */
+  --gradient-start: #4CC9F0;
+  --gradient-end: #FFD60A;
   --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 
-  --danger: #FF4D55;
-  --danger-glass: rgba(255, 77, 85, 0.20);
-  --danger-soft: rgba(255, 77, 85, 0.20);
-  --danger-clear: #FF4D55;
-  --success: #3AD476;
-  --success-glass: rgba(58, 212, 118, 0.20);
+  --danger: #FF3B3B;
+  --danger-glass: rgba(255, 59, 59, 0.20);
+  --danger-soft: rgba(255, 59, 59, 0.20);
+  --danger-clear: #FF3B3B;
+  --success: #32D74B;
+  --success-glass: rgba(50, 215, 75, 0.20);
 
   --text-primary: rgba(232, 236, 242, 0.93);
   --text-secondary: rgba(232, 236, 242, 0.58);
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
-  --bg-start: #0E141F;
-  --bg-mid: #121826;
-  --bg-end: #161C2B;
-  --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
-  --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
+  /* Background – "Deep Space": void-black with distant starlight and a
+     faint, far-off Sith-red glow for depth */
+  --bg-start: #03040A;
+  --bg-mid: #070910;
+  --bg-end: #0A0C16;
+  --bg-glow-1: rgba(76, 201, 240, 0.15); /* lightsaber-blue starlight */
+  --bg-glow-2: rgba(255, 59, 59, 0.06); /* distant Sith-red glow */
 
-  --dropdown-bg: rgba(28, 30, 40, 0.98);
-  --dropdown-border: rgba(255, 255, 255, 0.09);
+  --dropdown-bg: rgba(10, 12, 20, 0.98);
+  --dropdown-border: rgba(106, 196, 255, 0.10);
 }
 
 /* Navbar toggler icon visibility in dark mode (taskboard) */
@@ -1206,14 +1212,14 @@ button.accordion-button.ai-accordion-button:focus-visible {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #4ade80; }
-  :root:not([data-theme="light"]) .stock-card__price-trend-pill--topping { color: #fbbf24; }
-  :root:not([data-theme="light"]) .stock-card__price-trend-pill--momentum { color: #60a5fa; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #43E97B; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--topping { color: #FFD469; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--momentum { color: #7FD6FF; }
 }
 
-:root[data-theme="dark"] .stock-card__price-trend-pill--bottoming { color: #4ade80; }
-:root[data-theme="dark"] .stock-card__price-trend-pill--topping { color: #fbbf24; }
-:root[data-theme="dark"] .stock-card__price-trend-pill--momentum { color: #60a5fa; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--bottoming { color: #43E97B; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--topping { color: #FFD469; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--momentum { color: #7FD6FF; }
 
 /* ---- Value score progress bar (thin accent strip below signals) ---- */
 .stock-card__score-bar-wrap {
@@ -2226,7 +2232,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 [data-theme="dark"] .stock-card__status-badge--watch,
 :root:not([data-theme="light"]) .stock-card__status-badge--watch {
   background: rgba(253, 180, 75, 0.18) !important;
-  color: #FDB44B !important;
+  color: #FFD469 !important;
 }
 
 .stock-card__status-badge--queued {
@@ -2237,7 +2243,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 [data-theme="dark"] .stock-card__status-badge--queued,
 :root:not([data-theme="light"]) .stock-card__status-badge--queued {
   background: rgba(167, 139, 250, 0.2) !important;
-  color: #c4b5fd !important;
+  color: #C9A6FF !important;
 }
 
 .stock-card__status-badge--own {
@@ -2253,7 +2259,7 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 [data-theme="dark"] .stock-card__status-badge--hold,
 :root:not([data-theme="light"]) .stock-card__status-badge--hold {
   background: rgba(123, 144, 255, 0.20) !important;
-  color: #7B90FF !important;
+  color: #7FD6FF !important;
 }
 
 /* Status button: the whole Edit/status trigger is colored to match the
@@ -2278,7 +2284,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--watch,
 [data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--watch,
 :root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--watch {
   background: rgba(253, 180, 75, 0.18) !important;
-  color: #FDB44B !important;
+  color: #FFD469 !important;
   border-color: transparent !important;
 }
 
@@ -2292,7 +2298,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--queued,
 [data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--queued,
 :root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--queued {
   background: rgba(167, 139, 250, 0.2) !important;
-  color: #c4b5fd !important;
+  color: #C9A6FF !important;
   border-color: transparent !important;
 }
 
@@ -2313,7 +2319,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 [data-theme="dark"] button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 :root:not([data-theme="light"]) button.stock-card__user-pill-trigger.stock-card__user-pill--hold {
   background: rgba(123, 144, 255, 0.20) !important;
-  color: #7B90FF !important;
+  color: #7FD6FF !important;
   border-color: transparent !important;
 }
 
@@ -2405,8 +2411,8 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 [data-theme="dark"] .status-btn--watch.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--watch.status-btn--active {
   background: rgba(253, 180, 75, 0.16);
-  border-color: #FDB44B;
-  color: #FDB44B;
+  border-color: #FFD469;
+  color: #FFD469;
   box-shadow: 0 0 0 1px rgba(253, 180, 75, 0.22);
 }
 
@@ -2420,8 +2426,8 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 [data-theme="dark"] .status-btn--queued.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--queued.status-btn--active {
   background: rgba(167, 139, 250, 0.2);
-  border-color: #c4b5fd;
-  color: #c4b5fd;
+  border-color: #C9A6FF;
+  color: #C9A6FF;
   box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.24);
 }
 
@@ -2442,8 +2448,8 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 [data-theme="dark"] .status-btn--hold.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--hold.status-btn--active {
   background: rgba(123, 144, 255, 0.20);
-  border-color: #7B90FF;
-  color: #7B90FF;
+  border-color: #7FD6FF;
+  color: #7FD6FF;
   box-shadow: 0 0 0 1px rgba(123, 144, 255, 0.24);
 }
 
@@ -5507,16 +5513,16 @@ a:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .undervalued-chip--good { color: #4ade80; }
-  :root:not([data-theme="light"]) .undervalued-chip--warn { color: #fbbf24; }
-  :root:not([data-theme="light"]) .undervalued-chip--danger { color: #f87171; }
-  :root:not([data-theme="light"]) .undervalued-chip--info { color: #60a5fa; }
+  :root:not([data-theme="light"]) .undervalued-chip--good { color: #43E97B; }
+  :root:not([data-theme="light"]) .undervalued-chip--warn { color: #FFD469; }
+  :root:not([data-theme="light"]) .undervalued-chip--danger { color: #FF6B6B; }
+  :root:not([data-theme="light"]) .undervalued-chip--info { color: #7FD6FF; }
 }
 
-:root[data-theme="dark"] .undervalued-chip--good { color: #4ade80; }
-:root[data-theme="dark"] .undervalued-chip--warn { color: #fbbf24; }
-:root[data-theme="dark"] .undervalued-chip--danger { color: #f87171; }
-:root[data-theme="dark"] .undervalued-chip--info { color: #60a5fa; }
+:root[data-theme="dark"] .undervalued-chip--good { color: #43E97B; }
+:root[data-theme="dark"] .undervalued-chip--warn { color: #FFD469; }
+:root[data-theme="dark"] .undervalued-chip--danger { color: #FF6B6B; }
+:root[data-theme="dark"] .undervalued-chip--info { color: #7FD6FF; }
 
 /* Criteria summary under the meta line — makes the screen visible even on a
    week where every pick comes through clean and carries no warning chips. */
@@ -5584,19 +5590,19 @@ a:hover {
 /* Both labels need lighter text on a dark ground to stay legible. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .undervalued-pick__label--catalyst {
-    color: #4ade80;
+    color: #43E97B;
   }
   :root:not([data-theme="light"]) .undervalued-pick__label--bear {
-    color: #fb923c;
+    color: #FFA94D;
   }
 }
 
 :root[data-theme="dark"] .undervalued-pick__label--catalyst {
-  color: #4ade80;
+  color: #43E97B;
 }
 
 :root[data-theme="dark"] .undervalued-pick__label--bear {
-  color: #fb923c;
+  color: #FFA94D;
 }
 
 .undervalued-pick__value {
@@ -7360,6 +7366,23 @@ a:hover {
   font-size: 0.7rem;
   color: var(--text-tertiary);
   line-height: 1.5;
+}
+
+.research-query-card__sources {
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.research-query-card__sources a {
+  color: var(--text-tertiary);
+  text-decoration: underline;
+  text-decoration-color: var(--glass-border);
+}
+
+.research-query-card__sources a:hover {
+  color: var(--text-primary);
 }
 
 .research-followup {
