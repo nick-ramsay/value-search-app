@@ -14,6 +14,7 @@ export function serializeQuery(d: IResearchQuery) {
     // Mongoose Map fields don't serialize to a plain object through
     // NextResponse.json() on their own — convert explicitly.
     stockNames: d.stockNames ? Object.fromEntries(d.stockNames) : {},
+    webSources: d.webSources ?? [],
     errorMessage: d.errorMessage ?? null,
     createdAt: d.createdAt,
     processingStartedAt: d.processingStartedAt ?? null,

@@ -13,6 +13,7 @@ type ResearchQueryView = {
   result: string | null;
   mentionedStocks: string[];
   consideredStocks: string[];
+  webSources: { title: string; url: string }[];
   stockNames: Record<string, string>;
   errorMessage: string | null;
   createdAt: string;
@@ -208,6 +209,19 @@ function FollowupTurn({ turn }: { turn: ResearchQueryView }) {
               </a>
             </div>
           ) : null}
+          {turn.webSources.length > 0 ? (
+            <p className="research-query-card__sources mb-0">
+              Sources:{" "}
+              {turn.webSources.map((source, i) => (
+                <span key={source.url}>
+                  {i > 0 ? ", " : ""}
+                  <a href={source.url} target="_blank" rel="noopener noreferrer">
+                    {source.title}
+                  </a>
+                </span>
+              ))}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -364,6 +378,19 @@ function ResearchQueryCard({
               {q.consideredStocks.length > 0 ? (
                 <p className="research-query-card__considered mb-0">
                   Considered: {q.consideredStocks.join(", ")}
+                </p>
+              ) : null}
+              {q.webSources.length > 0 ? (
+                <p className="research-query-card__sources mb-0">
+                  Sources:{" "}
+                  {q.webSources.map((source, i) => (
+                    <span key={source.url}>
+                      {i > 0 ? ", " : ""}
+                      <a href={source.url} target="_blank" rel="noopener noreferrer">
+                        {source.title}
+                      </a>
+                    </span>
+                  ))}
                 </p>
               ) : null}
 

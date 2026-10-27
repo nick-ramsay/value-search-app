@@ -18,6 +18,12 @@ export interface IResearchQuery extends mongoose.Document {
    * bare ticker wherever a symbol is referenced. Pymongo writes this as a
    * plain dict; Mongoose's Map type reads it back correctly either way. */
   stockNames: Map<string, string>;
+  /** Populated only when the pyworker's intent-extraction step decided this
+   * question needed real-world knowledge outside the stock database (e.g.
+   * a private company's ownership) and ran a web search — empty otherwise.
+   * Surfaced in the UI so it's clear when an answer drew on an external
+   * source rather than valuesearch.app's own data. */
+  webSources: { title: string; url: string }[];
   errorMessage?: string | null;
   processingStartedAt?: Date | null;
   completedAt?: Date | null;
@@ -48,6 +54,7 @@ const ResearchQuerySchema = new mongoose.Schema<IResearchQuery>(
     mentionedStocks: { type: [String], default: [] },
     consideredStocks: { type: [String], default: [] },
     stockNames: { type: Map, of: String, default: {} },
+    webSources: { type: [{ title: String, url: String }], default: [] },
     errorMessage: { type: String, default: null },
     processingStartedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
