@@ -31,22 +31,26 @@ function FiltersSection({
   selectedIndustries,
   selectedSectors,
   selectedCountries,
+  selectedAiRatings,
   excludeEtfsEnabled,
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
   minPrice,
+  minScore,
 }: {
   filterOptions: FilterOptions;
   symbols: string[];
   selectedIndustries: string[];
   selectedSectors: string[];
   selectedCountries: string[];
+  selectedAiRatings: string[];
   excludeEtfsEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
   minPrice?: number;
+  minScore?: number;
 }) {
   const { industries, sectors, countries, sectorIndustryMap } = filterOptions;
   return (
@@ -80,11 +84,13 @@ function FiltersSection({
                 selectedIndustries={selectedIndustries}
                 selectedSectors={selectedSectors}
                 selectedCountries={selectedCountries}
+                selectedAiRatings={selectedAiRatings}
                 excludeEtfsEnabled={excludeEtfsEnabled}
                 bottomingEnabled={bottomingEnabled}
                 toppingChopEnabled={toppingChopEnabled}
                 momentumEnabled={momentumEnabled}
                 minPrice={minPrice}
+                minScore={minScore}
                 symbols={symbols}
               />
             </div>
@@ -153,6 +159,8 @@ type HomeSearchParams = {
   toppingChop?: string | string[];
   momentum?: string | string[];
   minPrice?: string | string[];
+  aiRating?: string | string[];
+  minScore?: string | string[];
 };
 
 async function FiltersAsyncWrapper({
@@ -180,6 +188,8 @@ async function FiltersAsyncWrapper({
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
+  const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
+  const minScore = getMinScore(resolvedSearchParams?.minScore);
   return (
     <FiltersSection
       filterOptions={filterOptions}
@@ -187,11 +197,13 @@ async function FiltersAsyncWrapper({
       selectedIndustries={selectedIndustries}
       selectedSectors={selectedSectors}
       selectedCountries={selectedCountries}
+      selectedAiRatings={selectedAiRatings}
       excludeEtfsEnabled={excludeEtfsEnabled}
       bottomingEnabled={bottomingEnabled}
       toppingChopEnabled={toppingChopEnabled}
       momentumEnabled={momentumEnabled}
       minPrice={minPrice}
+      minScore={minScore}
     />
   );
 }
@@ -213,6 +225,20 @@ function getMinPrice(value?: string | string[]): number | undefined {
   if (!raw) return undefined;
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) return undefined;
+  return n;
+}
+
+/**
+ * Parse the minScore search param into a 0-100 finite number, or undefined
+ * if absent/invalid. Shown/stored as a 0-100 percentage for readability —
+ * valueSearchScore.calculatedScorePercentage itself is a 0-1 fraction in the
+ * DB (see buildValueFilterConditions, which divides by 100 before querying).
+ */
+function getMinScore(value?: string | string[]): number | undefined {
+  const raw = getSearchParamValue(value);
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0 || n > 100) return undefined;
   return n;
 }
 
@@ -338,21 +364,25 @@ async function buildValueFilterConditions({
   industries,
   sectors,
   countries,
+  aiRatings,
   excludeEtfs,
   bottoming,
   toppingChop,
   momentum,
   minPrice,
+  minScore,
 }: {
   symbols?: string[];
   industries?: string[];
   sectors?: string[];
   countries?: string[];
+  aiRatings?: string[];
   excludeEtfs?: boolean;
   bottoming?: boolean;
   toppingChop?: boolean;
   momentum?: boolean;
   minPrice?: number;
+  minScore?: number;
 }): Promise<Record<string, unknown>[]> {
   const conditions: Record<string, unknown>[] = [];
 
@@ -388,6 +418,12 @@ async function buildValueFilterConditions({
     conditions.push({ country: { $in: countries } });
   }
 
+  if (aiRatings && aiRatings.length > 0) {
+    // Stored uppercase (see generate_ai_assessments.py _RATING_TO_SCORE);
+    // display/URL values are Title Case (AI_RATING_OPTIONS) for readability.
+    conditions.push({ aiRating: { $in: aiRatings.map((r) => r.toUpperCase()) } });
+  }
+
   // Bottoming/toppingChop/momentum are inclusive of each other: ticking more
   // than one should widen the result set (match ANY of them), not narrow it
   // to stocks exhibiting all of them simultaneously — the three sub-clauses
@@ -419,6 +455,12 @@ async function buildValueFilterConditions({
     conditions.push({ price: { $gte: minPrice } });
   }
 
+  if (minScore !== undefined) {
+    // calculatedScorePercentage is a 0-1 fraction in the DB; minScore is a
+    // 0-100 percentage for display/URL readability — see getMinScore.
+    conditions.push({ "valueSearchScore.calculatedScorePercentage": { $gte: minScore / 100 } });
+  }
+
   return conditions;
 }
 
@@ -429,21 +471,25 @@ async function getValues(
     industries,
     sectors,
     countries,
+    aiRatings,
     excludeEtfs,
     bottoming,
     toppingChop,
     momentum,
     minPrice,
+    minScore,
   }: {
     symbols?: string[];
     industries?: string[];
     sectors?: string[];
     countries?: string[];
+    aiRatings?: string[];
     excludeEtfs?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
     minPrice?: number;
+    minScore?: number;
   },
 ): Promise<{ values: ValueRecord[]; hasMore: boolean }> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
@@ -473,11 +519,13 @@ async function getValues(
     industries,
     sectors,
     countries,
+    aiRatings,
     excludeEtfs,
     bottoming,
     toppingChop,
     momentum,
     minPrice,
+    minScore,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
@@ -530,21 +578,25 @@ async function getValuesCount({
   industries,
   sectors,
   countries,
+  aiRatings,
   excludeEtfs,
   bottoming,
   toppingChop,
   momentum,
   minPrice,
+  minScore,
 }: {
   symbols?: string[];
   industries?: string[];
   sectors?: string[];
   countries?: string[];
+  aiRatings?: string[];
   excludeEtfs?: boolean;
   bottoming?: boolean;
   toppingChop?: boolean;
   momentum?: boolean;
   minPrice?: number;
+  minScore?: number;
 }): Promise<number> {
   const hasSymbols = Boolean(symbols && symbols.length > 0);
   if (!hasSymbols && excludeEtfs && industries?.includes(EXCLUDED_ETF_INDUSTRY)) {
@@ -569,11 +621,13 @@ async function getValuesCount({
     industries,
     sectors,
     countries,
+    aiRatings,
     excludeEtfs,
     bottoming,
     toppingChop,
     momentum,
     minPrice,
+    minScore,
   });
   const filter: Record<string, unknown> = conditions.length > 0 ? { $and: conditions } : {};
 
@@ -606,6 +660,8 @@ async function ResultsCard({
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
+  const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
+  const minScore = getMinScore(resolvedSearchParams?.minScore);
   const isFiltered = symbols.length > 0;
 
   const filterParams = {
@@ -613,11 +669,13 @@ async function ResultsCard({
     industries: selectedIndustries,
     sectors: selectedSectors,
     countries: selectedCountries,
+    aiRatings: selectedAiRatings,
     excludeEtfs: excludeEtfsEnabled,
     bottoming: bottomingEnabled,
     toppingChop: toppingChopEnabled,
     momentum: momentumEnabled,
     minPrice,
+    minScore,
   };
 
   const [{ values, hasMore }, totalCount, filterOptions] = await Promise.all([
@@ -637,36 +695,43 @@ async function ResultsCard({
     industries?: string[];
     sectors?: string[];
     countries?: string[];
+    aiRatings?: string[];
     excludeEtfs?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
     minPrice?: number;
+    minScore?: number;
   }) => {
     const p = new URLSearchParams();
     const syms = overrides.symbols ?? symbols;
     const inds = overrides.industries ?? selectedIndustries;
     const secs = overrides.sectors ?? selectedSectors;
     const cous = overrides.countries ?? selectedCountries;
+    const rats = overrides.aiRatings ?? selectedAiRatings;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
     const mom = overrides.momentum ?? momentumEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it,
     // distinct from omitting the key entirely (which keeps the current value)
-    // — minPrice can't use ?? like the booleans above, since undefined is
-    // both "not overriding" and "the cleared value" for a number|undefined field.
+    // — minPrice/minScore can't use ?? like the booleans above, since
+    // undefined is both "not overriding" and "the cleared value" for a
+    // number|undefined field.
     const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
+    const ms = "minScore" in overrides ? overrides.minScore : minScore;
     if (overrides.page) p.set("page", overrides.page.toString());
     for (const symbol of syms) p.append("symbol", symbol);
     for (const industry of inds) p.append("industry", industry);
     for (const sector of secs) p.append("sector", sector);
     for (const country of cous) p.append("country", country);
+    for (const rating of rats) p.append("aiRating", rating);
     if (!exc) p.set("excludeEtfs", "0");
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
     if (mom) p.set("momentum", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
+    if (ms !== undefined) p.set("minScore", ms.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
   };
@@ -715,6 +780,12 @@ async function ResultsCard({
       removeHref: buildHref({ countries: selectedCountries.filter((c) => c !== country) }),
       ariaLabel: `Remove ${country} filter`,
     })) : []),
+    ...(!isFiltered ? selectedAiRatings.map((rating) => ({
+      id: `aiRating:${rating}`,
+      label: rating,
+      removeHref: buildHref({ aiRatings: selectedAiRatings.filter((r) => r !== rating) }),
+      ariaLabel: `Remove ${rating} filter`,
+    })) : []),
     ...(!isFiltered && bottomingEnabled ? [{
       id: "bottoming",
       label: "Recently Bottomed",
@@ -739,6 +810,12 @@ async function ResultsCard({
       removeHref: buildHref({ minPrice: undefined }),
       ariaLabel: "Remove minimum price filter",
     }] : []),
+    ...(!isFiltered && minScore !== undefined ? [{
+      id: "minScore",
+      label: `Min score ${minScore}%`,
+      removeHref: buildHref({ minScore: undefined }),
+      ariaLabel: "Remove minimum score filter",
+    }] : []),
   ];
 
   return (
@@ -762,11 +839,13 @@ async function ResultsCard({
             selectedIndustries={selectedIndustries}
             selectedSectors={selectedSectors}
             selectedCountries={selectedCountries}
+            selectedAiRatings={selectedAiRatings}
             excludeEtfsEnabled={excludeEtfsEnabled}
             bottomingEnabled={bottomingEnabled}
             toppingChopEnabled={toppingChopEnabled}
             momentumEnabled={momentumEnabled}
             minPrice={minPrice}
+            minScore={minScore}
           >
             {values.length === 0 ? (
               <p className="text-muted text-center mb-0">
@@ -792,22 +871,26 @@ function ResultsLoadingFallback({
   selectedIndustries = [],
   selectedSectors = [],
   selectedCountries = [],
+  selectedAiRatings = [],
   excludeEtfsEnabled = true,
   bottomingEnabled = false,
   toppingChopEnabled = false,
   momentumEnabled = false,
   minPrice,
+  minScore,
 }: {
   isFiltered?: boolean;
   symbols?: string[];
   selectedIndustries?: string[];
   selectedSectors?: string[];
   selectedCountries?: string[];
+  selectedAiRatings?: string[];
   excludeEtfsEnabled?: boolean;
   bottomingEnabled?: boolean;
   toppingChopEnabled?: boolean;
   momentumEnabled?: boolean;
   minPrice?: number;
+  minScore?: number;
 }) {
   return (
     <div className="d-flex flex-column flex-grow-1">
@@ -850,6 +933,12 @@ function ResultsLoadingFallback({
                     <i className="bi bi-x" />
                   </span>
                 ))}
+                {selectedAiRatings.map((rating) => (
+                  <span key={`aiRating:${rating}`} className="active-filter-chip active-filter-chip--skeleton">
+                    {rating}
+                    <i className="bi bi-x" />
+                  </span>
+                ))}
                 {bottomingEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     Recently Bottomed
@@ -871,6 +960,12 @@ function ResultsLoadingFallback({
                 {minPrice !== undefined && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     {`Min price $${minPrice}`}
+                    <i className="bi bi-x" />
+                  </span>
+                )}
+                {minScore !== undefined && (
+                  <span className="active-filter-chip active-filter-chip--skeleton">
+                    {`Min score ${minScore}%`}
                     <i className="bi bi-x" />
                   </span>
                 )}
@@ -931,6 +1026,8 @@ export default async function Home({
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
+  const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
+  const minScore = getMinScore(resolvedSearchParams?.minScore);
 
   const isFiltered = symbols.length > 0;
 
@@ -973,11 +1070,13 @@ export default async function Home({
                   selectedIndustries={selectedIndustries}
                   selectedSectors={selectedSectors}
                   selectedCountries={selectedCountries}
+                  selectedAiRatings={selectedAiRatings}
                   excludeEtfsEnabled={excludeEtfsEnabled}
                   bottomingEnabled={bottomingEnabled}
                   toppingChopEnabled={toppingChopEnabled}
                   momentumEnabled={momentumEnabled}
                   minPrice={minPrice}
+                  minScore={minScore}
                 />
               }>
                 <ResultsCard searchParams={searchParams} />

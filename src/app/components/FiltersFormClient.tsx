@@ -6,6 +6,7 @@ import { useHomeNavigation } from "./HomeNavigationContext";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import InfoTooltip from "./InfoTooltip";
 import { availableIndustriesForSectors, pruneIndustriesForSectors } from "@/lib/sectorIndustryFilter";
+import { AI_RATING_OPTIONS } from "@/lib/ai-rating-display";
 
 type Props = {
   industries: string[];
@@ -15,11 +16,13 @@ type Props = {
   selectedIndustries: string[];
   selectedSectors: string[];
   selectedCountries: string[];
+  selectedAiRatings: string[];
   excludeEtfsEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
   minPrice?: number;
+  minScore?: number;
   symbols: string[];
 };
 
@@ -31,11 +34,13 @@ export default function FiltersFormClient({
   selectedIndustries,
   selectedSectors,
   selectedCountries,
+  selectedAiRatings,
   excludeEtfsEnabled,
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
   minPrice,
+  minScore,
   symbols,
 }: Props) {
   const router = useRouter();
@@ -45,16 +50,19 @@ export default function FiltersFormClient({
     industries?: string[];
     sectors?: string[];
     countries?: string[];
+    aiRatings?: string[];
     excludeEtfs?: boolean;
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
     minPrice?: number;
+    minScore?: number;
   }) => {
     const p = new URLSearchParams();
     const inds = overrides.industries ?? selectedIndustries;
     const secs = overrides.sectors ?? selectedSectors;
     const cous = overrides.countries ?? selectedCountries;
+    const rats = overrides.aiRatings ?? selectedAiRatings;
     const exc = overrides.excludeEtfs ?? excludeEtfsEnabled;
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
@@ -62,15 +70,18 @@ export default function FiltersFormClient({
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it
     // — see the identical pattern (and why) in page.tsx's buildHref.
     const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
+    const ms = "minScore" in overrides ? overrides.minScore : minScore;
     for (const symbol of symbols) p.append("symbol", symbol);
     for (const industry of inds) p.append("industry", industry);
     for (const sector of secs) p.append("sector", sector);
     for (const country of cous) p.append("country", country);
+    for (const rating of rats) p.append("aiRating", rating);
     if (!exc) p.set("excludeEtfs", "0");
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
     if (mom) p.set("momentum", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
+    if (ms !== undefined) p.set("minScore", ms.toString());
     const s = p.toString();
     return s ? `/?${s}` : "/";
   };
@@ -103,6 +114,10 @@ export default function FiltersFormClient({
     navigate(buildHref({ countries: nextCountries }));
   };
 
+  const handleCommitAiRatings = (nextRatings: string[]) => {
+    navigate(buildHref({ aiRatings: nextRatings }));
+  };
+
   // Min price: local draft so typing doesn't navigate per keystroke — commits
   // (navigates) only on blur or Enter, same "don't apply until you're done"
   // principle as the dropdowns' commit-on-close. Resynced from the minPrice
@@ -129,15 +144,37 @@ export default function FiltersFormClient({
     setMinPriceDraft(next !== undefined ? String(next) : "");
   };
 
+  // Min score: identical local-draft/commit-on-blur-or-Enter pattern as Min
+  // Price above, clamped to 0-100 (see page.tsx's getMinScore) instead of
+  // "any positive number".
+  const [minScoreDraft, setMinScoreDraft] = useState(minScore !== undefined ? String(minScore) : "");
+  const [lastMinScoreProp, setLastMinScoreProp] = useState(minScore);
+  if (minScore !== lastMinScoreProp) {
+    setLastMinScoreProp(minScore);
+    setMinScoreDraft(minScore !== undefined ? String(minScore) : "");
+  }
+
+  const commitMinScore = () => {
+    const trimmed = minScoreDraft.trim();
+    const parsed = trimmed === "" ? NaN : Number(trimmed);
+    const next = Number.isFinite(parsed) && parsed > 0 && parsed <= 100 ? parsed : undefined;
+    if (next !== minScore) {
+      navigate(buildHref({ minScore: next }));
+    }
+    setMinScoreDraft(next !== undefined ? String(next) : "");
+  };
+
   const hasActiveFilters =
     selectedIndustries.length > 0 ||
     selectedSectors.length > 0 ||
     selectedCountries.length > 0 ||
+    selectedAiRatings.length > 0 ||
     !excludeEtfsEnabled ||
     bottomingEnabled ||
     toppingChopEnabled ||
     momentumEnabled ||
-    minPrice !== undefined;
+    minPrice !== undefined ||
+    minScore !== undefined;
 
   return (
     <div className={`row g-3${isPending ? " filters-form--pending" : ""}`}>
@@ -196,6 +233,23 @@ export default function FiltersFormClient({
       </div>
       <div className="col-md-3">
         <div className="filter-form-label-row">
+          <label htmlFor="aiRating" className="form-label filter-form-label mb-0">
+            AI Rating
+          </label>
+        </div>
+        <MultiSelectDropdown
+          id="aiRating"
+          label="AI Rating"
+          placeholderAll="All ratings"
+          options={AI_RATING_OPTIONS}
+          selected={selectedAiRatings}
+          onCommit={handleCommitAiRatings}
+          disabled={isPending}
+          searchPlaceholder="Search ratings…"
+        />
+      </div>
+      <div className="col-md-3">
+        <div className="filter-form-label-row">
           <label htmlFor="minPrice" className="form-label filter-form-label mb-0">
             Min Price
           </label>
@@ -223,6 +277,39 @@ export default function FiltersFormClient({
             disabled={isPending}
             aria-label="Minimum price"
           />
+        </div>
+      </div>
+      <div className="col-md-3">
+        <div className="filter-form-label-row">
+          <label htmlFor="minScore" className="form-label filter-form-label mb-0">
+            Min Score
+          </label>
+          <InfoTooltip text="Filters by the stock's overall value score — the same score shown on each stock card, out of 100." />
+        </div>
+        <div className="min-score-input-wrap">
+          <input
+            type="number"
+            id="minScore"
+            className="form-control glass-select min-score-input"
+            placeholder="e.g. 70"
+            min="0"
+            max="100"
+            step="1"
+            inputMode="decimal"
+            value={minScoreDraft}
+            onChange={(e) => setMinScoreDraft(e.target.value)}
+            onBlur={commitMinScore}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitMinScore();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            disabled={isPending}
+            aria-label="Minimum score"
+          />
+          <span className="min-score-input__suffix" aria-hidden>%</span>
         </div>
       </div>
       <div className="col-12">

@@ -3632,6 +3632,35 @@ textarea.form-control:focus {
   margin: 0;
 }
 
+/* Min score filter input — same treatment as .min-price-input, mirrored to
+   the right: a percentage reads naturally as a suffix ("75%"), not a prefix
+   like price's "$". */
+.min-score-input-wrap {
+  position: relative;
+}
+
+.min-score-input__suffix {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.min-score-input.form-control.glass-select {
+  padding-left: 0.65rem;
+  padding-right: 1.6rem;
+  -moz-appearance: textfield;
+}
+
+.min-score-input.form-control.glass-select::-webkit-outer-spin-button,
+.min-score-input.form-control.glass-select::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Info icon + hover/tap tooltip bubble */
 .info-tooltip {
   position: relative;

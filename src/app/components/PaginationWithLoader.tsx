@@ -14,11 +14,13 @@ type PaginationWithLoaderProps = {
   selectedIndustries: string[];
   selectedSectors: string[];
   selectedCountries: string[];
+  selectedAiRatings: string[];
   excludeEtfsEnabled: boolean;
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
   minPrice?: number;
+  minScore?: number;
   children: React.ReactNode;
 };
 
@@ -29,11 +31,13 @@ function buildPageHref(
     selectedIndustries: string[];
     selectedSectors: string[];
     selectedCountries: string[];
+    selectedAiRatings: string[];
     excludeEtfsEnabled: boolean;
     bottomingEnabled: boolean;
     toppingChopEnabled: boolean;
     momentumEnabled: boolean;
     minPrice?: number;
+    minScore?: number;
   }
 ): string {
   const searchParams = new URLSearchParams();
@@ -42,11 +46,13 @@ function buildPageHref(
   for (const industry of params.selectedIndustries) searchParams.append("industry", industry);
   for (const sector of params.selectedSectors) searchParams.append("sector", sector);
   for (const country of params.selectedCountries) searchParams.append("country", country);
+  for (const rating of params.selectedAiRatings) searchParams.append("aiRating", rating);
   if (!params.excludeEtfsEnabled) searchParams.set("excludeEtfs", "0");
   if (params.bottomingEnabled) searchParams.set("bottoming", "1");
   if (params.toppingChopEnabled) searchParams.set("toppingChop", "1");
   if (params.momentumEnabled) searchParams.set("momentum", "1");
   if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString());
+  if (params.minScore !== undefined) searchParams.set("minScore", params.minScore.toString());
   const search = searchParams.toString();
   return search.length > 0 ? `/?${search}` : "/";
 }
@@ -59,11 +65,13 @@ export default function PaginationWithLoader({
   selectedIndustries,
   selectedSectors,
   selectedCountries,
+  selectedAiRatings,
   excludeEtfsEnabled,
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
   minPrice,
+  minScore,
   children,
 }: PaginationWithLoaderProps) {
   const router = useRouter();
@@ -74,11 +82,13 @@ export default function PaginationWithLoader({
     selectedIndustries,
     selectedSectors,
     selectedCountries,
+    selectedAiRatings,
     excludeEtfsEnabled,
     bottomingEnabled,
     toppingChopEnabled,
     momentumEnabled,
     minPrice,
+    minScore,
   };
 
   const prevHref = buildPageHref(currentPage - 1, params);
