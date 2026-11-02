@@ -899,7 +899,7 @@ export function HistoryChartsPanel({
   showInlineCloseAll?: boolean;
   onCloseThisPanel?: () => void;
 }) {
-  const [activeView, setActiveView] = useState<ActiveView>("score");
+  const [activeView, setActiveView] = useState<ActiveView>("price");
   const [state, setState] = useState<FetchState>({ status: "idle" });
   const [expanded, setExpanded] = useState(false);
 

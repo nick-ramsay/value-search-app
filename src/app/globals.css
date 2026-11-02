@@ -1887,6 +1887,22 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: #fff !important;
 }
 
+/* Inactive history-toggle pills — Bootstrap's default .btn-outline-primary
+   border/text is its own blue, unrelated to this app's accent. Override so
+   the unselected pills read as the same accent color as the selected one. */
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: transparent !important;
+}
+
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:hover,
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:focus {
+  background: var(--accent-glass) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
 .stock-card__assessment-text {
   margin: 0;
   padding: 0.85rem 1rem;
@@ -2351,7 +2367,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 
 .status-btn-group--loading {
   height: 2rem;
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--glass-bg-subtle);
   width: 100%;
   animation: navbarSkeletonPulse 1.4s ease-in-out infinite;
@@ -2365,7 +2381,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
   font-size: clamp(0.6rem, 2.8vw, 0.75rem);
   font-weight: 600;
   line-height: 1.2;
-  border-radius: 8px;
+  border-radius: 999px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-subtle);
   color: var(--text-tertiary);
@@ -2391,10 +2407,10 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 }
 
 .status-btn--watch.status-btn--active {
-  background: rgba(168, 96, 0, 0.12);
-  border-color: #A86000;
-  color: #A86000;
-  box-shadow: 0 0 0 1px rgba(168, 96, 0, 0.16);
+  background: rgba(154, 82, 0, 0.13);
+  border-color: #9A5200;
+  color: #9A5200;
+  box-shadow: 0 0 0 1px rgba(154, 82, 0, 0.17);
 }
 
 [data-theme="dark"] .status-btn--watch.status-btn--active,
@@ -2406,18 +2422,18 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 }
 
 .status-btn--queued.status-btn--active {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: #7c3aed;
-  color: #7c3aed;
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.18);
+  background: rgba(107, 33, 224, 0.15);
+  border-color: #6B21E0;
+  color: #6B21E0;
+  box-shadow: 0 0 0 1px rgba(107, 33, 224, 0.19);
 }
 
 [data-theme="dark"] .status-btn--queued.status-btn--active,
 :root:not([data-theme="light"]) .status-btn--queued.status-btn--active {
-  background: rgba(167, 139, 250, 0.2);
-  border-color: #c4b5fd;
-  color: #c4b5fd;
-  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.24);
+  background: rgba(167, 139, 250, 0.22);
+  border-color: #A78BFA;
+  color: #A78BFA;
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.26);
 }
 
 .status-btn--own.status-btn--active {
@@ -2428,10 +2444,10 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 }
 
 .status-btn--hold.status-btn--active {
-  background: rgba(45, 69, 184, 0.12);
-  border-color: #2D45B8;
-  color: #2D45B8;
-  box-shadow: 0 0 0 1px rgba(45, 69, 184, 0.16);
+  background: rgba(26, 53, 214, 0.13);
+  border-color: #1A35D6;
+  color: #1A35D6;
+  box-shadow: 0 0 0 1px rgba(26, 53, 214, 0.17);
 }
 
 [data-theme="dark"] .status-btn--hold.status-btn--active,
