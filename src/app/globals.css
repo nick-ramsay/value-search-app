@@ -4482,16 +4482,21 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   color: #a8f0b8 !important;
 }
 
+/* Previously shared Buy's exact green, just at slightly higher opacity —
+   too subtle a difference to read as intentional, and easily looked the
+   same or even reversed depending on the card's backdrop. Uses a visibly
+   deeper/richer green (not just more opaque) so Strong Buy reads as
+   unambiguously the stronger signal next to Buy. */
 .badge-rating-strong-buy {
-  background-color: rgba(52, 199, 89, 0.2) !important;
+  background-color: rgba(21, 117, 53, 0.28) !important;
   border: none !important;
-  color: #1a6b2e !important;
+  color: #0A4A1C !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-buy,
 :root:not([data-theme="light"]) .badge-rating-strong-buy {
-  background-color: rgba(50, 215, 75, 0.28) !important;
-  color: #a8f0b8 !important;
+  background-color: rgba(34, 197, 94, 0.36) !important;
+  color: #4ADE80 !important;
 }
 
 /* Make Bootstrap semantic badge colors translucent over glass; text for contrast */
