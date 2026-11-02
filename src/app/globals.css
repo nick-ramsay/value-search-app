@@ -1887,6 +1887,21 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: #fff !important;
 }
 
+/* The dark-theme accent is a bright, light-toned teal — white text on it
+   has a contrast ratio of ~1.85:1, badly failing WCAG. Dark text (matching
+   the page background tone) gets ~10:1 instead. Light theme's accent is
+   deep/dark enough that white text already works fine there. */
+[data-theme="dark"] .stock-card__trends-view-toggle.btn-group .btn-primary,
+[data-theme="dark"] .stock-card__trends-view-toggle.btn-group .btn-primary:hover,
+[data-theme="dark"] .stock-card__trends-view-toggle.btn-group .btn-primary:focus,
+[data-theme="dark"] .stock-card__trends-view-toggle.btn-group .btn-primary:active,
+:root:not([data-theme="light"]) .stock-card__trends-view-toggle.btn-group .btn-primary,
+:root:not([data-theme="light"]) .stock-card__trends-view-toggle.btn-group .btn-primary:hover,
+:root:not([data-theme="light"]) .stock-card__trends-view-toggle.btn-group .btn-primary:focus,
+:root:not([data-theme="light"]) .stock-card__trends-view-toggle.btn-group .btn-primary:active {
+  color: var(--bg-start) !important;
+}
+
 /* Inactive history-toggle pills — plain muted text on a neutral border at
    rest, not the accent. A full-strength accent border/text on every
    inactive segment too just competed with the active one instead of
@@ -1909,6 +1924,23 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   background: var(--accent-glass) !important;
   border-color: var(--accent) !important;
   color: var(--accent) !important;
+}
+
+/* The first/last pill's inner edge has its border-width zeroed at rest
+   (see .btn:first-child / .btn:last-child above) so two neutral borders
+   don't double up at the seam between segments. On hover/focus restore
+   that edge too, so the hovered pill gets a complete ring on every side
+   instead of looking open on the side facing its neighbor. Bootstrap
+   already raises the hovered/focused button's z-index within the group,
+   so this edge paints over the neighbor's border rather than under it. */
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:first-child:hover,
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:first-child:focus {
+  border-right-width: 1px !important;
+}
+
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:last-child:hover,
+.stock-card__trends-view-toggle.btn-group .btn-outline-primary:last-child:focus {
+  border-left-width: 1px !important;
 }
 
 .stock-card__assessment-text {
@@ -4465,17 +4497,17 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 /* Make Bootstrap semantic badge colors translucent over glass; text for contrast */
 .badge.bg-success,
 .badge.bg-success-subtle {
-  background-color: rgba(52, 199, 89, 0.14) !important;
+  background-color: rgba(52, 199, 89, 0.18) !important;
   border: none !important;
-  color: #1a6b2e !important;
+  color: #0F5A22 !important;
 }
 
 [data-theme="dark"] .badge.bg-success,
 [data-theme="dark"] .badge.bg-success-subtle,
 :root:not([data-theme="light"]) .badge.bg-success,
 :root:not([data-theme="light"]) .badge.bg-success-subtle {
-  background-color: rgba(50, 215, 75, 0.2) !important;
-  color: #a8f0b8 !important;
+  background-color: rgba(50, 215, 75, 0.24) !important;
+  color: #c3f7cf !important;
 }
 
 .badge.bg-danger,
@@ -4493,16 +4525,21 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   color: #ffb3af !important;
 }
 
+/* Was a muted olive-yellow (hue ~41°) — too close in lightness/saturation
+   to the success green's translucent fill to tell apart at a glance,
+   especially at badge size. Shifted toward a clearly orange-amber hue
+   (~30°) with higher saturation so it reads unambiguously as "amber", not
+   a washed-out yellow-green. */
 .badge.bg-warning {
-  background-color: rgba(210, 170, 50, 0.28) !important;
+  background-color: rgba(217, 119, 6, 0.26) !important;
   border: none !important;
-  color: #5c4208 !important;
+  color: #6E2E00 !important;
 }
 
 [data-theme="dark"] .badge.bg-warning,
 :root:not([data-theme="light"]) .badge.bg-warning {
-  background-color: rgba(252, 211, 77, 0.32) !important;
-  color: #fef3c7 !important;
+  background-color: rgba(251, 191, 36, 0.36) !important;
+  color: #FFD24D !important;
 }
 
 .badge.bg-primary,
