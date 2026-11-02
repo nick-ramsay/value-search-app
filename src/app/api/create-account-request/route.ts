@@ -42,40 +42,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Same response whether or not the account already exists, so this
+    // endpoint can't be used to enumerate registered emails. An existing
+    // account just silently gets no code (they should log in instead) —
+    // the generic response doesn't reveal which case happened.
     const existing = await User.findOne({ email: normalizedEmail });
-    if (existing) {
-      return NextResponse.json(
-        {
-          message:
-            "An account already exists with this email. Try logging in.",
-        },
-        { status: 400 }
-      );
+    if (!existing) {
+      const recentRequest = await UserCreationRequest.findOne({
+        email: normalizedEmail,
+        createdAt: { $gte: new Date(Date.now() - RESEND_COOLDOWN_SECONDS * 1000) },
+      });
+      if (!recentRequest) {
+        const code = generateCode();
+        await UserCreationRequest.replaceOne(
+          { email: normalizedEmail },
+          { email: normalizedEmail, emailVerificationToken: code },
+          { upsert: true }
+        );
+        await sendVerificationEmail(normalizedEmail, code);
+      }
     }
-
-    const recentRequest = await UserCreationRequest.findOne({
-      email: normalizedEmail,
-      createdAt: { $gte: new Date(Date.now() - RESEND_COOLDOWN_SECONDS * 1000) },
-    });
-    if (recentRequest) {
-      return NextResponse.json(
-        { message: "A code was already sent — please wait a minute before requesting another." },
-        { status: 429 }
-      );
-    }
-
-    const code = generateCode();
-    await UserCreationRequest.replaceOne(
-      { email: normalizedEmail },
-      { email: normalizedEmail, emailVerificationToken: code },
-      { upsert: true }
-    );
-
-    await sendVerificationEmail(normalizedEmail, code);
 
     return NextResponse.json({
       success: true,
-      message: "Verification code sent to your email",
+      message: "If this email can create an account, a verification code has been sent.",
     });
   } catch (error) {
     console.error("create-account-request error:", error);

@@ -42,37 +42,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Same response whether or not an account exists for this email, so
+    // this endpoint can't be used to enumerate registered emails. A
+    // nonexistent account just silently gets no code — the generic
+    // response doesn't reveal which case happened.
     const user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
-      return NextResponse.json(
-        { message: "No account found with this email." },
-        { status: 404 }
-      );
+    if (user) {
+      const recentRequest = await ResetPasswordRequest.findOne({
+        email: normalizedEmail,
+        createdAt: { $gte: new Date(Date.now() - RESEND_COOLDOWN_SECONDS * 1000) },
+      });
+      if (!recentRequest) {
+        const code = generateCode();
+        await ResetPasswordRequest.replaceOne(
+          { email: normalizedEmail },
+          { email: normalizedEmail, resetCode: code },
+          { upsert: true }
+        );
+        await sendPasswordResetEmail(normalizedEmail, code);
+      }
     }
-
-    const recentRequest = await ResetPasswordRequest.findOne({
-      email: normalizedEmail,
-      createdAt: { $gte: new Date(Date.now() - RESEND_COOLDOWN_SECONDS * 1000) },
-    });
-    if (recentRequest) {
-      return NextResponse.json(
-        { message: "A code was already sent — please wait a minute before requesting another." },
-        { status: 429 }
-      );
-    }
-
-    const code = generateCode();
-    await ResetPasswordRequest.replaceOne(
-      { email: normalizedEmail },
-      { email: normalizedEmail, resetCode: code },
-      { upsert: true }
-    );
-
-    await sendPasswordResetEmail(normalizedEmail, code);
 
     return NextResponse.json({
       success: true,
-      message: "Password reset code sent to your email",
+      message: "If this email has an account, a password reset code has been sent.",
     });
   } catch (error) {
     console.error("reset-password-request error:", error);
