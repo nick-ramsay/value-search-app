@@ -4,6 +4,11 @@ import User from "@/models/User";
 import ResetPasswordRequest from "@/models/ResetPasswordRequest";
 import bcrypt from "bcryptjs";
 
+// Wrong-code attempts allowed against a single issued code before it's
+// invalidated, closing the 6-digit code's otherwise-brute-forceable
+// 900,000-value keyspace.
+const MAX_VERIFY_ATTEMPTS = 5;
+
 export async function POST(request: Request) {
   try {
     const { email, resetCode, newPassword } = await request.json();
@@ -27,12 +32,20 @@ export async function POST(request: Request) {
     const normalizedEmail = (email as string).toLowerCase().trim();
     await connectDB();
 
-    const requestDoc = await ResetPasswordRequest.findOne({
-      email: normalizedEmail,
-      resetCode: String(resetCode).trim(),
-    });
+    const requestDoc = await ResetPasswordRequest.findOne({ email: normalizedEmail });
 
-    if (!requestDoc) {
+    if (!requestDoc || requestDoc.resetCode !== String(resetCode).trim()) {
+      if (requestDoc) {
+        requestDoc.attempts += 1;
+        if (requestDoc.attempts >= MAX_VERIFY_ATTEMPTS) {
+          // Too many wrong guesses against this code — invalidate it rather
+          // than letting the keyspace keep getting chipped away at. The
+          // legitimate user just requests a fresh code.
+          await ResetPasswordRequest.deleteOne({ _id: requestDoc._id });
+        } else {
+          await requestDoc.save();
+        }
+      }
       return NextResponse.json(
         { message: "Invalid or expired reset code" },
         { status: 400 }
