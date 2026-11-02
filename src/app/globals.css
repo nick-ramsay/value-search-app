@@ -23,16 +23,20 @@
   /* Typography */
   --font-sans: system-ui, ui-sans-serif, "Segoe UI", sans-serif;
 
-  /* Accent – verdigris teal */
-  --accent: #1E8A72;
-  --accent-hover: #1A9E83;
-  --accent-glass: rgba(30, 138, 114, 0.13);
-  --accent-soft: rgba(30, 138, 114, 0.13);
+  /* Accent – vivid jewel-tone teal. Deliberately deeper/more saturated
+     rather than brighter: on a near-white page, raising lightness only
+     washes a teal out and *lowers* contrast, so vibrancy here comes from
+     saturation (now ~100%, was ~64%) while keeping luminance in the same
+     range as before. */
+  --accent: #008066;
+  --accent-hover: #00705C;
+  --accent-glass: rgba(0, 128, 102, 0.15);
+  --accent-soft: rgba(0, 128, 102, 0.15);
 
   /* Unified text-input focus highlight — soft verdigris ring + gentle accent-tinted lift.
      Shared by every text input so active fields feel identical app-wide. */
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 12px -6px rgba(30, 138, 114, 0.45);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 12px -6px rgba(0, 128, 102, 0.45);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 12px -6px rgba(196, 32, 44, 0.4);
 
@@ -44,18 +48,13 @@
   --input-bg: rgba(132, 140, 158, 0.18);
   --input-border: rgba(60, 60, 76, 0.22);
 
-  /* Signature gradient – electric teal → violet, used sparingly for the one bold moment */
-  --gradient-start: #00A87C;
-  --gradient-end: #6C4CE0;
-  --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-
   /* Semantic */
   --danger: #C4202C;
   --danger-glass: rgba(196, 32, 44, 0.11);
   --danger-soft: rgba(196, 32, 44, 0.11);
   --danger-clear: #C4202C;
-  --success: #1E7A44;
-  --success-glass: rgba(30, 122, 68, 0.11);
+  --success: #0D7A42;
+  --success-glass: rgba(13, 122, 66, 0.12);
 
   /* Text */
   --text-primary: rgba(18, 22, 30, 0.87);
@@ -63,12 +62,14 @@
   --text-tertiary: rgba(18, 22, 30, 0.38);
   --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background – "Slate & Sapphire": cool near-white canvas, barely-there gradient */
-  --bg-start: #F6F8FB;
-  --bg-mid: #EFF2F7;
-  --bg-end: #EAEEF5;
-  --bg-glow-1: rgba(58, 112, 200, 0.10); /* cool sapphire */
-  --bg-glow-2: rgba(96, 100, 165, 0.07); /* slate-violet */
+  /* Background – "Slate & Sapphire": cool near-white canvas with a visible
+     sapphire/violet aurora bleeding through the glass, rather than a
+     barely-there tint. */
+  --bg-start: #F4F7FD;
+  --bg-mid: #EAF0FB;
+  --bg-end: #E3EAFC;
+  --bg-glow-1: rgba(45, 110, 245, 0.20); /* vivid sapphire */
+  --bg-glow-2: rgba(168, 85, 235, 0.16); /* vivid violet */
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -97,13 +98,13 @@
     --skeleton-base: rgba(255, 255, 255, 0.09);
     --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-    --accent: #28BFA4;
-    --accent-hover: #33CEAE;
-    --accent-glass: rgba(40, 191, 164, 0.22);
-    --accent-soft: rgba(40, 191, 164, 0.22);
+    --accent: #22D6B5;
+    --accent-hover: #0E8070;
+    --accent-glass: rgba(34, 214, 181, 0.22);
+    --accent-soft: rgba(34, 214, 181, 0.22);
 
     --input-focus-border: var(--accent);
-    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(34, 214, 181, 0.5);
     --input-focus-border-danger: var(--danger-clear);
     --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -113,28 +114,25 @@
     --input-bg: rgba(255, 255, 255, 0.12);
     --input-border: rgba(255, 255, 255, 0.20);
 
-    --gradient-start: #00D9A3;
-    --gradient-end: #9C87FF;
-    --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-
     --danger: #FF4D55;
     --danger-glass: rgba(255, 77, 85, 0.20);
     --danger-soft: rgba(255, 77, 85, 0.20);
     --danger-clear: #FF4D55;
-    --success: #3AD476;
-    --success-glass: rgba(58, 212, 118, 0.20);
+    --success: #2FE085;
+    --success-glass: rgba(47, 224, 133, 0.20);
 
     --text-primary: rgba(232, 236, 242, 0.93);
     --text-secondary: rgba(232, 236, 242, 0.58);
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
-    --bg-start: #0E141F;
-    --bg-mid: #121826;
-    --bg-end: #161C2B;
-    --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
-    --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
+    /* Background – "Slate & Sapphire": graphite-navy, not black, with a
+       bolder blue→violet aurora bleeding through the glass. */
+    --bg-start: #0B1222;
+    --bg-mid: #121B33;
+    --bg-end: #181F3D;
+    --bg-glow-1: rgba(60, 130, 255, 0.30); /* vivid sapphire */
+    --bg-glow-2: rgba(180, 90, 255, 0.22); /* vivid violet */
 
     --dropdown-bg: rgba(28, 30, 40, 0.98);
     --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -155,13 +153,13 @@
   --skeleton-base: rgba(255, 255, 255, 0.09);
   --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-  --accent: #28BFA4;
-  --accent-hover: #33CEAE;
-  --accent-glass: rgba(40, 191, 164, 0.22);
-  --accent-soft: rgba(40, 191, 164, 0.22);
+  --accent: #22D6B5;
+  --accent-hover: #0E8070;
+  --accent-glass: rgba(34, 214, 181, 0.22);
+  --accent-soft: rgba(34, 214, 181, 0.22);
 
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(40, 191, 164, 0.5);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(34, 214, 181, 0.5);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -171,28 +169,25 @@
   --input-bg: rgba(255, 255, 255, 0.12);
   --input-border: rgba(255, 255, 255, 0.20);
 
-  --gradient-start: #00D9A3;
-  --gradient-end: #9C87FF;
-  --accent-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-
   --danger: #FF4D55;
   --danger-glass: rgba(255, 77, 85, 0.20);
   --danger-soft: rgba(255, 77, 85, 0.20);
   --danger-clear: #FF4D55;
-  --success: #3AD476;
-  --success-glass: rgba(58, 212, 118, 0.20);
+  --success: #2FE085;
+  --success-glass: rgba(47, 224, 133, 0.20);
 
   --text-primary: rgba(232, 236, 242, 0.93);
   --text-secondary: rgba(232, 236, 242, 0.58);
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Slate & Sapphire": graphite-navy, not black; cool sapphire depth */
-  --bg-start: #0E141F;
-  --bg-mid: #121826;
-  --bg-end: #161C2B;
-  --bg-glow-1: rgba(72, 122, 222, 0.18); /* sapphire */
-  --bg-glow-2: rgba(84, 132, 205, 0.13); /* steel */
+  /* Background – "Slate & Sapphire": graphite-navy, not black, with a
+     bolder blue→violet aurora bleeding through the glass. */
+  --bg-start: #0B1222;
+  --bg-mid: #121B33;
+  --bg-end: #181F3D;
+  --bg-glow-1: rgba(60, 130, 255, 0.30); /* vivid sapphire */
+  --bg-glow-2: rgba(180, 90, 255, 0.22); /* vivid violet */
 
   --dropdown-bg: rgba(28, 30, 40, 0.98);
   --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -1882,12 +1877,12 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   border-left-width: 0;
 }
 
-/* Active history-toggle pill uses the signature accent gradient (matches the Sign in button) */
+/* Active history-toggle pill uses a solid accent fill */
 .stock-card__trends-view-toggle.btn-group .btn-primary,
 .stock-card__trends-view-toggle.btn-group .btn-primary:hover,
 .stock-card__trends-view-toggle.btn-group .btn-primary:focus,
 .stock-card__trends-view-toggle.btn-group .btn-primary:active {
-  background: var(--accent-gradient) !important;
+  background: var(--accent) !important;
   border: none !important;
   color: #fff !important;
 }
@@ -3523,7 +3518,7 @@ textarea.form-control:focus {
 }
 
 .filter-toggle-input:checked + .filter-toggle-label .filter-toggle-slider {
-  background: var(--accent-gradient);
+  background: var(--accent);
   box-shadow: none;
 }
 
@@ -4008,7 +4003,7 @@ textarea.form-control:focus {
 }
 
 .theme-toggle-btn.active {
-  background: var(--accent-gradient) !important;
+  background: var(--accent) !important;
   border: none !important;
   color: #fff !important;
   box-shadow: 0 2px 8px var(--accent-glass);
@@ -4538,9 +4533,12 @@ a:hover {
 
 /* Filters accordion wrapper – match stock card background; no difference between header and body */
 .filters-accordion-glass .accordion-item {
-  background: var(--glass-bg-subtle);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  /* Matches .stock-card's background exactly (same var, same opacity) so the
+     Filters panel reads as the same glass material as the result cards
+     below it, rather than a more translucent, differently-tinted one. */
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   /* Was overflow: hidden for corner-clipping, but that also clipped the
@@ -4565,8 +4563,8 @@ a:hover {
 }
 
 [data-theme="light"] .filters-accordion-glass .accordion-item {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(255, 255, 255, 0.65);
 }
 
 .filters-accordion-glass .accordion-button {
@@ -4821,7 +4819,7 @@ a:hover {
 }
 
 .glass-btn-primary {
-  background: var(--accent-gradient) !important;
+  background: var(--accent) !important;
   border: none !important;
   color: #fff !important;
   box-shadow: 0 4px 16px var(--accent-glass);
@@ -4829,7 +4827,7 @@ a:hover {
 }
 
 .glass-btn-primary:hover:not(:disabled) {
-  background: var(--accent-gradient) !important;
+  background: var(--accent-hover) !important;
   border: none !important;
   color: #fff !important;
   transform: translateY(-1px);
