@@ -1887,12 +1887,20 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
   color: #fff !important;
 }
 
-/* Inactive history-toggle pills — Bootstrap's default .btn-outline-primary
-   border/text is its own blue, unrelated to this app's accent. Override so
-   the unselected pills read as the same accent color as the selected one. */
+/* Inactive history-toggle pills — plain muted text on a neutral border at
+   rest, not the accent. A full-strength accent border/text on every
+   inactive segment too just competed with the active one instead of
+   clearly reading as "not selected" — but no border at all left them not
+   reading as buttons. Uses --input-border rather than --glass-border:
+   the latter is a white-tinted highlight meant for a glass panel floating
+   over a colorful backdrop, so it all but disappears against this card's
+   solid white interior in light mode; --input-border is the token this
+   app already uses whenever something needs to read as a distinct
+   bordered control against the near-white page. Accent only appears on
+   hover/focus, as a hint of what clicking will do. */
 .stock-card__trends-view-toggle.btn-group .btn-outline-primary {
-  border-color: var(--accent) !important;
-  color: var(--accent) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-secondary) !important;
   background: transparent !important;
 }
 
