@@ -19,6 +19,7 @@ type PaginationWithLoaderProps = {
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
+  fallingKnifeEnabled: boolean;
   minPrice?: number;
   minScore?: number;
   children: React.ReactNode;
@@ -36,6 +37,7 @@ function buildPageHref(
     bottomingEnabled: boolean;
     toppingChopEnabled: boolean;
     momentumEnabled: boolean;
+    fallingKnifeEnabled: boolean;
     minPrice?: number;
     minScore?: number;
   }
@@ -51,6 +53,7 @@ function buildPageHref(
   if (params.bottomingEnabled) searchParams.set("bottoming", "1");
   if (params.toppingChopEnabled) searchParams.set("toppingChop", "1");
   if (params.momentumEnabled) searchParams.set("momentum", "1");
+  if (params.fallingKnifeEnabled) searchParams.set("fallingKnife", "1");
   if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString());
   if (params.minScore !== undefined) searchParams.set("minScore", params.minScore.toString());
   const search = searchParams.toString();
@@ -70,6 +73,7 @@ export default function PaginationWithLoader({
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
+  fallingKnifeEnabled,
   minPrice,
   minScore,
   children,
@@ -87,6 +91,7 @@ export default function PaginationWithLoader({
     bottomingEnabled,
     toppingChopEnabled,
     momentumEnabled,
+    fallingKnifeEnabled,
     minPrice,
     minScore,
   };

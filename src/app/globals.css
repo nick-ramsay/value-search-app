@@ -1199,16 +1199,22 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: #2563eb;
   background: color-mix(in srgb, #2563eb 12%, transparent) !important;
 }
+.stock-card__price-trend-pill--falling-knife {
+  color: #DC2626;
+  background: color-mix(in srgb, #DC2626 12%, transparent) !important;
+}
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--bottoming { color: #4ade80; }
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--topping { color: #fbbf24; }
   :root:not([data-theme="light"]) .stock-card__price-trend-pill--momentum { color: #60a5fa; }
+  :root:not([data-theme="light"]) .stock-card__price-trend-pill--falling-knife { color: #f87171; }
 }
 
 :root[data-theme="dark"] .stock-card__price-trend-pill--bottoming { color: #4ade80; }
 :root[data-theme="dark"] .stock-card__price-trend-pill--topping { color: #fbbf24; }
 :root[data-theme="dark"] .stock-card__price-trend-pill--momentum { color: #60a5fa; }
+:root[data-theme="dark"] .stock-card__price-trend-pill--falling-knife { color: #f87171; }
 
 /* ---- Value score progress bar (thin accent strip below signals) ---- */
 .stock-card__score-bar-wrap {

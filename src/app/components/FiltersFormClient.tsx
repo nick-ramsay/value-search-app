@@ -21,6 +21,7 @@ type Props = {
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
+  fallingKnifeEnabled: boolean;
   minPrice?: number;
   minScore?: number;
   symbols: string[];
@@ -39,6 +40,7 @@ export default function FiltersFormClient({
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
+  fallingKnifeEnabled,
   minPrice,
   minScore,
   symbols,
@@ -55,6 +57,7 @@ export default function FiltersFormClient({
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
+    fallingKnife?: boolean;
     minPrice?: number;
     minScore?: number;
   }) => {
@@ -67,6 +70,7 @@ export default function FiltersFormClient({
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
     const mom = overrides.momentum ?? momentumEnabled;
+    const fk = overrides.fallingKnife ?? fallingKnifeEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it
     // — see the identical pattern (and why) in page.tsx's buildHref.
     const mp = "minPrice" in overrides ? overrides.minPrice : minPrice;
@@ -80,6 +84,7 @@ export default function FiltersFormClient({
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
     if (mom) p.set("momentum", "1");
+    if (fk) p.set("fallingKnife", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
     if (ms !== undefined) p.set("minScore", ms.toString());
     const s = p.toString();
@@ -173,6 +178,7 @@ export default function FiltersFormClient({
     bottomingEnabled ||
     toppingChopEnabled ||
     momentumEnabled ||
+    fallingKnifeEnabled ||
     minPrice !== undefined ||
     minScore !== undefined;
 
@@ -368,6 +374,20 @@ export default function FiltersFormClient({
             <label htmlFor="momentum" className="filter-toggle-label">
               <span className="filter-toggle-slider" aria-hidden />
               <span className="filter-toggle-label__text">Momentum</span>
+            </label>
+          </div>
+          <div className="filter-toggle">
+            <input
+              type="checkbox"
+              id="fallingKnife"
+              className="filter-toggle-input"
+              checked={fallingKnifeEnabled}
+              onChange={(e) => navigate(buildHref({ fallingKnife: e.target.checked }))}
+              disabled={isPending}
+            />
+            <label htmlFor="fallingKnife" className="filter-toggle-label">
+              <span className="filter-toggle-slider" aria-hidden />
+              <span className="filter-toggle-label__text">Falling Knife</span>
             </label>
           </div>
           {hasActiveFilters && (

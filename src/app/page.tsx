@@ -36,6 +36,7 @@ function FiltersSection({
   bottomingEnabled,
   toppingChopEnabled,
   momentumEnabled,
+  fallingKnifeEnabled,
   minPrice,
   minScore,
 }: {
@@ -49,6 +50,7 @@ function FiltersSection({
   bottomingEnabled: boolean;
   toppingChopEnabled: boolean;
   momentumEnabled: boolean;
+  fallingKnifeEnabled: boolean;
   minPrice?: number;
   minScore?: number;
 }) {
@@ -89,6 +91,7 @@ function FiltersSection({
                 bottomingEnabled={bottomingEnabled}
                 toppingChopEnabled={toppingChopEnabled}
                 momentumEnabled={momentumEnabled}
+                fallingKnifeEnabled={fallingKnifeEnabled}
                 minPrice={minPrice}
                 minScore={minScore}
                 symbols={symbols}
@@ -158,6 +161,7 @@ type HomeSearchParams = {
   bottoming?: string | string[];
   toppingChop?: string | string[];
   momentum?: string | string[];
+  fallingKnife?: string | string[];
   minPrice?: string | string[];
   aiRating?: string | string[];
   minScore?: string | string[];
@@ -187,6 +191,7 @@ async function FiltersAsyncWrapper({
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
+  const fallingKnifeEnabled = getSearchParamValue(resolvedSearchParams?.fallingKnife) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
   const minScore = getMinScore(resolvedSearchParams?.minScore);
@@ -202,6 +207,7 @@ async function FiltersAsyncWrapper({
       bottomingEnabled={bottomingEnabled}
       toppingChopEnabled={toppingChopEnabled}
       momentumEnabled={momentumEnabled}
+      fallingKnifeEnabled={fallingKnifeEnabled}
       minPrice={minPrice}
       minScore={minScore}
     />
@@ -369,6 +375,7 @@ async function buildValueFilterConditions({
   bottoming,
   toppingChop,
   momentum,
+  fallingKnife,
   minPrice,
   minScore,
 }: {
@@ -381,6 +388,7 @@ async function buildValueFilterConditions({
   bottoming?: boolean;
   toppingChop?: boolean;
   momentum?: boolean;
+  fallingKnife?: boolean;
   minPrice?: number;
   minScore?: number;
 }): Promise<Record<string, unknown>[]> {
@@ -424,11 +432,12 @@ async function buildValueFilterConditions({
     conditions.push({ aiRating: { $in: aiRatings.map((r) => r.toUpperCase()) } });
   }
 
-  // Bottoming/toppingChop/momentum are inclusive of each other: ticking more
-  // than one should widen the result set (match ANY of them), not narrow it
-  // to stocks exhibiting all of them simultaneously — the three sub-clauses
-  // are $or'd together here, then that single combined clause joins the
-  // other filters (industry/sector/country/price) via the outer $and as usual.
+  // Bottoming/toppingChop/momentum/fallingKnife are inclusive of each other:
+  // ticking more than one should widen the result set (match ANY of them),
+  // not narrow it to stocks exhibiting all of them simultaneously — the
+  // sub-clauses are $or'd together here, then that single combined clause
+  // joins the other filters (industry/sector/country/price) via the outer
+  // $and as usual.
   const priceTrendClauses: Record<string, unknown>[] = [];
   if (bottoming) {
     priceTrendClauses.push({ "priceTrend.bottoming.isBottoming": true });
@@ -438,6 +447,9 @@ async function buildValueFilterConditions({
   }
   if (momentum) {
     priceTrendClauses.push({ "priceTrend.momentum.isMomentum": true });
+  }
+  if (fallingKnife) {
+    priceTrendClauses.push({ "priceTrend.fallingKnife.isFallingKnife": true });
   }
   if (priceTrendClauses.length > 0) {
     conditions.push(
@@ -476,6 +488,7 @@ async function getValues(
     bottoming,
     toppingChop,
     momentum,
+    fallingKnife,
     minPrice,
     minScore,
   }: {
@@ -488,6 +501,7 @@ async function getValues(
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
+    fallingKnife?: boolean;
     minPrice?: number;
     minScore?: number;
   },
@@ -524,6 +538,7 @@ async function getValues(
     bottoming,
     toppingChop,
     momentum,
+    fallingKnife,
     minPrice,
     minScore,
   });
@@ -583,6 +598,7 @@ async function getValuesCount({
   bottoming,
   toppingChop,
   momentum,
+  fallingKnife,
   minPrice,
   minScore,
 }: {
@@ -595,6 +611,7 @@ async function getValuesCount({
   bottoming?: boolean;
   toppingChop?: boolean;
   momentum?: boolean;
+  fallingKnife?: boolean;
   minPrice?: number;
   minScore?: number;
 }): Promise<number> {
@@ -626,6 +643,7 @@ async function getValuesCount({
     bottoming,
     toppingChop,
     momentum,
+    fallingKnife,
     minPrice,
     minScore,
   });
@@ -659,6 +677,7 @@ async function ResultsCard({
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
+  const fallingKnifeEnabled = getSearchParamValue(resolvedSearchParams?.fallingKnife) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
   const minScore = getMinScore(resolvedSearchParams?.minScore);
@@ -674,6 +693,7 @@ async function ResultsCard({
     bottoming: bottomingEnabled,
     toppingChop: toppingChopEnabled,
     momentum: momentumEnabled,
+    fallingKnife: fallingKnifeEnabled,
     minPrice,
     minScore,
   };
@@ -700,6 +720,7 @@ async function ResultsCard({
     bottoming?: boolean;
     toppingChop?: boolean;
     momentum?: boolean;
+    fallingKnife?: boolean;
     minPrice?: number;
     minScore?: number;
   }) => {
@@ -713,6 +734,7 @@ async function ResultsCard({
     const bot = overrides.bottoming ?? bottomingEnabled;
     const top = overrides.toppingChop ?? toppingChopEnabled;
     const mom = overrides.momentum ?? momentumEnabled;
+    const fk = overrides.fallingKnife ?? fallingKnifeEnabled;
     // Presence check (not ??) so an explicit {minPrice: undefined} clears it,
     // distinct from omitting the key entirely (which keeps the current value)
     // — minPrice/minScore can't use ?? like the booleans above, since
@@ -730,6 +752,7 @@ async function ResultsCard({
     if (bot) p.set("bottoming", "1");
     if (top) p.set("toppingChop", "1");
     if (mom) p.set("momentum", "1");
+    if (fk) p.set("fallingKnife", "1");
     if (mp !== undefined) p.set("minPrice", mp.toString());
     if (ms !== undefined) p.set("minScore", ms.toString());
     const s = p.toString();
@@ -804,6 +827,12 @@ async function ResultsCard({
       removeHref: buildHref({ momentum: false }),
       ariaLabel: "Remove momentum filter",
     }] : []),
+    ...(!isFiltered && fallingKnifeEnabled ? [{
+      id: "fallingKnife",
+      label: "Falling Knife",
+      removeHref: buildHref({ fallingKnife: false }),
+      ariaLabel: "Remove falling knife filter",
+    }] : []),
     ...(!isFiltered && minPrice !== undefined ? [{
       id: "minPrice",
       label: `Min price $${minPrice}`,
@@ -844,6 +873,7 @@ async function ResultsCard({
             bottomingEnabled={bottomingEnabled}
             toppingChopEnabled={toppingChopEnabled}
             momentumEnabled={momentumEnabled}
+            fallingKnifeEnabled={fallingKnifeEnabled}
             minPrice={minPrice}
             minScore={minScore}
           >
@@ -876,6 +906,7 @@ function ResultsLoadingFallback({
   bottomingEnabled = false,
   toppingChopEnabled = false,
   momentumEnabled = false,
+  fallingKnifeEnabled = false,
   minPrice,
   minScore,
 }: {
@@ -889,6 +920,7 @@ function ResultsLoadingFallback({
   bottomingEnabled?: boolean;
   toppingChopEnabled?: boolean;
   momentumEnabled?: boolean;
+  fallingKnifeEnabled?: boolean;
   minPrice?: number;
   minScore?: number;
 }) {
@@ -954,6 +986,12 @@ function ResultsLoadingFallback({
                 {momentumEnabled && (
                   <span className="active-filter-chip active-filter-chip--skeleton">
                     Momentum
+                    <i className="bi bi-x" />
+                  </span>
+                )}
+                {fallingKnifeEnabled && (
+                  <span className="active-filter-chip active-filter-chip--skeleton">
+                    Falling Knife
                     <i className="bi bi-x" />
                   </span>
                 )}
@@ -1025,6 +1063,7 @@ export default async function Home({
   const bottomingEnabled = getSearchParamValue(resolvedSearchParams?.bottoming) === "1";
   const toppingChopEnabled = getSearchParamValue(resolvedSearchParams?.toppingChop) === "1";
   const momentumEnabled = getSearchParamValue(resolvedSearchParams?.momentum) === "1";
+  const fallingKnifeEnabled = getSearchParamValue(resolvedSearchParams?.fallingKnife) === "1";
   const minPrice = getMinPrice(resolvedSearchParams?.minPrice);
   const selectedAiRatings = getSelectedValues(resolvedSearchParams?.aiRating);
   const minScore = getMinScore(resolvedSearchParams?.minScore);
@@ -1075,6 +1114,7 @@ export default async function Home({
                   bottomingEnabled={bottomingEnabled}
                   toppingChopEnabled={toppingChopEnabled}
                   momentumEnabled={momentumEnabled}
+                  fallingKnifeEnabled={fallingKnifeEnabled}
                   minPrice={minPrice}
                   minScore={minScore}
                 />

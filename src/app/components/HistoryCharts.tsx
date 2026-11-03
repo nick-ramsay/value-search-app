@@ -19,6 +19,7 @@ type PriceTrendSummary = {
   bottoming: PriceTrendPatternSummary;
   toppingChop: PriceTrendPatternSummary;
   momentum: PriceTrendPatternSummary;
+  fallingKnife: PriceTrendPatternSummary;
 } | null;
 
 type HistoryResponse = {
@@ -583,18 +584,19 @@ function formatPriceTooltip(value: number, dateLabel: string): string {
 }
 
 /** One recent-window band's label/fill/text color, keyed by which
- * price_trend.py pattern fired (bottoming/toppingChop/momentum are mutually
- * exclusive by construction — see that module's gates). */
+ * price_trend.py pattern fired (bottoming/toppingChop/momentum/fallingKnife
+ * are mutually exclusive by construction — see that module's gates). */
 const PRICE_TREND_BAND_STYLE = {
   bottoming: { label: "Bottom", fill: "rgba(26, 127, 75, 0.10)", text: "#1a7f4b" },
   topping: { label: "Topping", fill: "rgba(180, 83, 9, 0.10)", text: "#b45309" },
   momentum: { label: "Momentum", fill: "rgba(37, 99, 235, 0.10)", text: "#2563eb" },
+  fallingKnife: { label: "Falling Knife", fill: "rgba(220, 38, 38, 0.10)", text: "#DC2626" },
 } as const;
 
 /** Daily closing price, with the recent window shaded when price_trend.py
- * flagged a bottoming, topping-chop, or momentum pattern (see that module
- * for the underlying algorithm — this only visualizes the result, never
- * recomputes it). */
+ * flagged a bottoming, topping-chop, momentum, or falling-knife pattern (see
+ * that module for the underlying algorithm — this only visualizes the
+ * result, never recomputes it). */
 function PriceHistoryChart({
   data,
   priceTrend,
@@ -617,7 +619,16 @@ function PriceHistoryChart({
   const bottomingFired = priceTrend?.bottoming.fired ?? false;
   const toppingFired = priceTrend?.toppingChop.fired ?? false;
   const momentumFired = priceTrend?.momentum.fired ?? false;
-  const firedKind = bottomingFired ? "bottoming" : toppingFired ? "topping" : momentumFired ? "momentum" : null;
+  const fallingKnifeFired = priceTrend?.fallingKnife.fired ?? false;
+  const firedKind = bottomingFired
+    ? "bottoming"
+    : toppingFired
+      ? "topping"
+      : momentumFired
+        ? "momentum"
+        : fallingKnifeFired
+          ? "fallingKnife"
+          : null;
 
   const layout = useMemo(() => {
     if (!data.length) return null;
@@ -725,6 +736,12 @@ function PriceHistoryChart({
           <span className="badge bg-info text-dark stock-card__badge">
             Momentum
             <i className="bi bi-rocket-takeoff-fill ms-1" aria-hidden />
+          </span>
+        )}
+        {fallingKnifeFired && (
+          <span className="badge bg-danger text-white stock-card__badge">
+            Falling Knife
+            <i className="bi bi-exclamation-triangle-fill ms-1" aria-hidden />
           </span>
         )}
         <span className="text-muted" aria-hidden>
@@ -916,7 +933,7 @@ export function HistoryChartsPanel({
     };
   }, [collapseId]);
 
-  // A price-trend signal pill on the card (bottoming/toppingChop/momentum —
+  // A price-trend signal pill on the card (bottoming/toppingChop/momentum/fallingKnife —
   // see StockResultCard.tsx) dispatches this on the same collapse element to
   // jump straight to the price view, instead of whatever tab was last open.
   useEffect(() => {

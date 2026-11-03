@@ -38,10 +38,10 @@ export type ValueRecordMetrics = {
 };
 
 /**
- * Bottoming / topping-chop / momentum price-shape signals, written by the
- * pyworker's price_trend.py onto stock-ai-assessments as `priceTrend`.
- * Purely a display signal — never affects valueSearchScore. See that
- * module's docstring for how the score/gate/flags are computed.
+ * Bottoming / topping-chop / momentum / falling-knife price-shape signals,
+ * written by the pyworker's price_trend.py onto stock-ai-assessments as
+ * `priceTrend`. Purely a display signal — never affects valueSearchScore.
+ * See that module's docstring for how the score/gate/flags are computed.
  */
 export type PriceTrendPattern = {
   score: number;
@@ -58,6 +58,7 @@ export type PriceTrendDisplay = {
   bottoming: PriceTrendPattern & { isBottoming: boolean };
   toppingChop: PriceTrendPattern & { isToppingChop: boolean };
   momentum: PriceTrendPattern & { isMomentum: boolean };
+  fallingKnife: PriceTrendPattern & { isFallingKnife: boolean };
 };
 
 /** One cleanly-separated section of an AI assessment (e.g. "Financial Health"). */
@@ -238,13 +239,19 @@ function readPriceTrend(v: unknown): PriceTrendDisplay | undefined {
   const bottomingRaw = obj.bottoming as Record<string, unknown>;
   const toppingChopRaw = obj.toppingChop as Record<string, unknown>;
 
-  // momentum is newer than bottoming/toppingChop — docs the worker hasn't
-  // reprocessed since it shipped won't have it yet. Fall back to an unfired
-  // pattern rather than dropping the whole (already-working) priceTrend read.
+  // momentum/fallingKnife are newer than bottoming/toppingChop — docs the
+  // worker hasn't reprocessed since they shipped won't have them yet. Fall
+  // back to an unfired pattern rather than dropping the whole
+  // (already-working) priceTrend read.
   const momentumBase = readBasePattern(obj.momentum) ?? {
     score: 0, gatePassed: false, flags: [], priorMovePct: null, rsi: null,
   };
   const momentumRaw = (obj.momentum as Record<string, unknown> | undefined) ?? {};
+
+  const fallingKnifeBase = readBasePattern(obj.fallingKnife) ?? {
+    score: 0, gatePassed: false, flags: [], priorMovePct: null, rsi: null,
+  };
+  const fallingKnifeRaw = (obj.fallingKnife as Record<string, unknown> | undefined) ?? {};
 
   return {
     hasSufficientHistory: true,
@@ -253,6 +260,7 @@ function readPriceTrend(v: unknown): PriceTrendDisplay | undefined {
     bottoming: { ...bottomingBase, isBottoming: bottomingRaw.isBottoming === true },
     toppingChop: { ...toppingChopBase, isToppingChop: toppingChopRaw.isToppingChop === true },
     momentum: { ...momentumBase, isMomentum: momentumRaw.isMomentum === true },
+    fallingKnife: { ...fallingKnifeBase, isFallingKnife: fallingKnifeRaw.isFallingKnife === true },
   };
 }
 

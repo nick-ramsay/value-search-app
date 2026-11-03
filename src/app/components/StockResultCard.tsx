@@ -331,7 +331,7 @@ export default function StockResultCard({
     instance?.hide();
   }, []);
 
-  // A price-trend signal pill (bottoming/toppingChop/momentum) jumps straight
+  // A price-trend signal pill (bottoming/toppingChop/momentum/fallingKnife) jumps straight
   // to the price trends view: tell HistoryChartsPanel to switch to it (it
   // listens on the same collapse element — see HistoryCharts.tsx), then open
   // the panel with .show() rather than .toggle() so clicking a pill never
@@ -605,6 +605,18 @@ export default function StockResultCard({
           >
             <span className="stock-card__price-trend-pill__label">Momentum</span>
             <i className="bi bi-rocket-takeoff-fill" aria-hidden />
+          </button>
+        ) : null}
+        {item.priceTrend?.fallingKnife?.isFallingKnife ? (
+          <button
+            type="button"
+            className="badge stock-card__badge stock-card__price-trend-pill stock-card__price-trend-pill--falling-knife"
+            title="Fell over recent weeks and is still making fresh lows — a falling knife, not necessarily a bargain — view price trends"
+            aria-label="Fell over recent weeks and is still making fresh lows — a falling knife, not necessarily a bargain — view price trends"
+            onClick={handleOpenPriceTrend}
+          >
+            <span className="stock-card__price-trend-pill__label">Falling Knife</span>
+            <i className="bi bi-exclamation-triangle-fill" aria-hidden />
           </button>
         ) : null}
       </div>
