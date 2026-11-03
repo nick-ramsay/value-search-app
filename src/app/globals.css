@@ -4439,101 +4439,117 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
   box-shadow: var(--glass-shadow);
 }
 
-/* AI Rating badges – differentiated; text tuned for contrast */
+/* AI Rating badges – differentiated; text tuned for contrast.
+   Back to red/yellow/green (not teal/gray) per explicit preference, but
+   with two deliberate accessibility moves within that constraint, since
+   red-green is the hardest possible pairing for red-green color
+   blindness: (1) every color here is pushed to near-full saturation
+   rather than the previous pastel-ish tones — confusion gets worse as
+   saturation drops, so "vibrant" and "distinguishable" pull the same
+   direction here; (2) within each red/green pair, the two tiers sit at
+   deliberately different LIGHTNESS, not just different saturation — Sell
+   is a bright, light red while Strong Sell is a noticeably darker, denser
+   red; Buy is a mid green while Strong Buy is a notably deeper, darker
+   green. Lightness is a cue red-green deficiency does NOT erase, so even
+   if the hue itself is ambiguous, "the darker chip" vs "the lighter chip"
+   still reads correctly. Neutral uses gold/yellow, which sits on the
+   blue-yellow axis — unaffected by red-green deficiency entirely, so it's
+   a reliable anchor between the two. */
 .badge-rating-strong-sell {
-  background-color: rgba(255, 59, 48, 0.12) !important;
+  background-color: rgba(153, 27, 27, 0.26) !important;
   border: none !important;
-  color: #c0281f !important;
+  color: #991B1B !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-sell,
 :root:not([data-theme="light"]) .badge-rating-strong-sell {
-  background-color: rgba(255, 69, 58, 0.22) !important;
-  color: #ffb3af !important;
+  background-color: rgba(255, 107, 107, 0.30) !important;
+  color: #FF6B6B !important;
 }
 
 .badge-rating-sell {
-  background-color: rgba(255, 149, 0, 0.14) !important;
+  background-color: rgba(220, 38, 38, 0.16) !important;
   border: none !important;
-  color: #a05a00 !important;
+  color: #DC2626 !important;
 }
 
 [data-theme="dark"] .badge-rating-sell,
 :root:not([data-theme="light"]) .badge-rating-sell {
-  background-color: rgba(255, 159, 10, 0.22) !important;
-  color: #ffd580 !important;
+  background-color: rgba(255, 168, 168, 0.20) !important;
+  color: #FFA8A8 !important;
 }
 
 .badge-rating-neutral {
-  background-color: rgba(142, 142, 147, 0.16) !important;
+  background-color: rgba(161, 98, 7, 0.16) !important;
   border: none !important;
-  color: #3a3a3c !important;
+  color: #A16207 !important;
 }
 
 [data-theme="dark"] .badge-rating-neutral,
 :root:not([data-theme="light"]) .badge-rating-neutral {
-  background-color: rgba(174, 174, 178, 0.2) !important;
-  color: #e5e5ea !important;
+  background-color: rgba(250, 204, 21, 0.22) !important;
+  color: #FACC15 !important;
 }
 
 .badge-rating-buy {
-  background-color: rgba(52, 199, 89, 0.14) !important;
+  background-color: rgba(15, 120, 56, 0.16) !important;
   border: none !important;
-  color: #1a6b2e !important;
+  color: #0F7838 !important;
 }
 
 [data-theme="dark"] .badge-rating-buy,
 :root:not([data-theme="light"]) .badge-rating-buy {
-  background-color: rgba(50, 215, 75, 0.2) !important;
-  color: #a8f0b8 !important;
+  background-color: rgba(143, 224, 168, 0.18) !important;
+  color: #8FE0A8 !important;
 }
 
-/* Previously shared Buy's exact green, just at slightly higher opacity —
-   too subtle a difference to read as intentional, and easily looked the
-   same or even reversed depending on the card's backdrop. Uses a visibly
-   deeper/richer green (not just more opaque) so Strong Buy reads as
-   unambiguously the stronger signal next to Buy. */
+/* Notably darker/denser green than Buy (not just more opaque) — see the
+   lightness-separation note above. */
 .badge-rating-strong-buy {
-  background-color: rgba(21, 117, 53, 0.28) !important;
+  background-color: rgba(10, 77, 38, 0.30) !important;
   border: none !important;
-  color: #0A4A1C !important;
+  color: #0A4D26 !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-buy,
 :root:not([data-theme="light"]) .badge-rating-strong-buy {
-  background-color: rgba(34, 197, 94, 0.36) !important;
-  color: #4ADE80 !important;
+  background-color: rgba(34, 197, 94, 0.32) !important;
+  color: #22C55E !important;
 }
 
-/* Make Bootstrap semantic badge colors translucent over glass; text for contrast */
+/* Make Bootstrap semantic badge colors translucent over glass; text for
+   contrast. Shares its green/red with the Strong Buy/Strong Sell rating
+   tiers above (same meaning, same color app-wide) rather than a third,
+   different green/red — this is the score-percentage badge, shown right
+   next to the rating badge on every card. */
 .badge.bg-success,
 .badge.bg-success-subtle {
-  background-color: rgba(52, 199, 89, 0.18) !important;
+  background-color: rgba(10, 77, 38, 0.20) !important;
   border: none !important;
-  color: #0F5A22 !important;
+  color: #0A4D26 !important;
 }
 
 [data-theme="dark"] .badge.bg-success,
 [data-theme="dark"] .badge.bg-success-subtle,
 :root:not([data-theme="light"]) .badge.bg-success,
 :root:not([data-theme="light"]) .badge.bg-success-subtle {
-  background-color: rgba(50, 215, 75, 0.24) !important;
-  color: #c3f7cf !important;
+  background-color: rgba(34, 197, 94, 0.26) !important;
+  color: #22C55E !important;
 }
 
 .badge.bg-danger,
 .badge.bg-danger-subtle {
-  background-color: rgba(255, 59, 48, 0.12) !important;
+  background-color: rgba(153, 27, 27, 0.22) !important;
   border: none !important;
-  color: #c0281f !important;
+  color: #991B1B !important;
 }
 
 [data-theme="dark"] .badge.bg-danger,
 [data-theme="dark"] .badge.bg-danger-subtle,
 :root:not([data-theme="light"]) .badge.bg-danger,
 :root:not([data-theme="light"]) .badge.bg-danger-subtle {
-  background-color: rgba(255, 69, 58, 0.22) !important;
-  color: #ffb3af !important;
+  background-color: rgba(255, 107, 107, 0.26) !important;
+  color: #FF6B6B !important;
 }
 
 /* Was a muted olive-yellow (hue ~41°) — too close in lightness/saturation
