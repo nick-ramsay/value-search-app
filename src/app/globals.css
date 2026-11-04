@@ -4518,13 +4518,14 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 }
 
 /* Make Bootstrap semantic badge colors translucent over glass; text for
-   contrast. Shares its green/red with the Strong Buy/Strong Sell rating
-   tiers above (same meaning, same color app-wide) rather than a third,
-   different green/red — this is the score-percentage badge, shown right
-   next to the rating badge on every card. */
+   contrast. Exactly matches the Strong Buy/Strong Sell/Neutral rating
+   tiers above — same background opacity and text color, not just the same
+   hue — since this is the score-percentage badge shown right next to the
+   rating badge on every card, and the two should read as literally the
+   same color, not just a close relative. */
 .badge.bg-success,
 .badge.bg-success-subtle {
-  background-color: rgba(16, 76, 32, 0.20) !important;
+  background-color: rgba(16, 76, 32, 0.30) !important;
   border: none !important;
   color: #104C20 !important;
 }
@@ -4533,13 +4534,13 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 [data-theme="dark"] .badge.bg-success-subtle,
 :root:not([data-theme="light"]) .badge.bg-success,
 :root:not([data-theme="light"]) .badge.bg-success-subtle {
-  background-color: rgba(43, 202, 85, 0.26) !important;
+  background-color: rgba(43, 202, 85, 0.32) !important;
   color: #2BCA55 !important;
 }
 
 .badge.bg-danger,
 .badge.bg-danger-subtle {
-  background-color: rgba(166, 30, 17, 0.22) !important;
+  background-color: rgba(166, 30, 17, 0.26) !important;
   border: none !important;
   color: #A61E11 !important;
 }
@@ -4548,22 +4549,19 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 [data-theme="dark"] .badge.bg-danger-subtle,
 :root:not([data-theme="light"]) .badge.bg-danger,
 :root:not([data-theme="light"]) .badge.bg-danger-subtle {
-  background-color: rgba(244, 68, 52, 0.26) !important;
+  background-color: rgba(244, 68, 52, 0.30) !important;
   color: #F44434 !important;
 }
 
-/* Shares its gold/yellow with the Neutral rating tier above (Google's
-   brand yellow, see that comment) rather than a separate amber, so the
-   color means the same thing everywhere it appears. */
 .badge.bg-warning {
-  background-color: rgba(136, 102, 2, 0.20) !important;
+  background-color: rgba(136, 102, 2, 0.16) !important;
   border: none !important;
   color: #886602 !important;
 }
 
 [data-theme="dark"] .badge.bg-warning,
 :root:not([data-theme="light"]) .badge.bg-warning {
-  background-color: rgba(252, 200, 44, 0.28) !important;
+  background-color: rgba(252, 200, 44, 0.22) !important;
   color: #FCC82C !important;
 }
 
