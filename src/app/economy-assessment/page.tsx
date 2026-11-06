@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 
 import clientPromise from "@/lib/mongodb";
 import AppNavbar from "../components/AppNavbar";
+import EconomyAssessmentRefreshButton from "../components/EconomyAssessmentRefreshButton";
 
 const COLLECTION = "stock-economy-assessment";
 
@@ -130,6 +131,7 @@ export default async function EconomyAssessmentPage() {
                 <p className="economy-assessment-lead mb-0">
                   AI-generated synthesis of every sector &amp; industry assessment, refreshed weekly.
                 </p>
+                <EconomyAssessmentRefreshButton />
               </div>
             </section>
 
