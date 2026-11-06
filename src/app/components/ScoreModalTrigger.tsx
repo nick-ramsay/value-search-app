@@ -63,7 +63,7 @@ export default function ScoreModalTrigger({
       aria-labelledby={`${modalId}-label`}
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable score-breakdown-modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title" id={`${modalId}-label`}>

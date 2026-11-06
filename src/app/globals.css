@@ -587,6 +587,35 @@ button.accordion-button.ai-accordion-button:focus-visible {
   border-bottom: none;
 }
 
+/* Above phone width, lay the checklist out as a 2-column grid instead of one
+   tall single-column list — a stock with the full ~17 criteria otherwise
+   overflows most realistic viewport heights (confirmed: 713px tall at
+   390x700). Widen the dialog past Bootstrap's 500px default too, since each
+   column needs room for the longest label ("Relative strength index
+   (30–70)") without wrapping. modal-dialog-scrollable (see
+   ScoreModalTrigger.tsx) handles whatever doesn't fit even after this — it
+   scrolls just .modal-body, keeping the header/close button always visible,
+   rather than the old behavior of the entire dialog scrolling as one block. */
+@media (min-width: 576px) {
+  .score-breakdown-modal .score-breakdown-modal-dialog {
+    max-width: 640px;
+  }
+
+  .score-breakdown-modal .score-breakdown-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 1.75rem;
+  }
+
+  /* :last-child alone only clears the border under the final item — in a
+     2-column grid that leaves a stray divider under its row-mate when the
+     list has an even count. Clearing the last two covers both parities;
+     the only edge case (odd count) drops one extra, harmless divider. */
+  .score-breakdown-modal .score-breakdown-item:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+}
+
 .score-breakdown-modal .score-breakdown-item__label {
   display: inline-flex;
   align-items: center;
