@@ -82,7 +82,7 @@ export type ValueRecord = {
    * display fallback for older documents that predate the split.
    */
   assessment?: string;
-  /** Assessment broken into its distinct sections (e.g. Financial Health, Valuation & Sector Fit, Investment Recommendation). Preferred display source when present. */
+  /** Assessment broken into its distinct sections (e.g. Financial Health, Valuation & Sector Fit, Overall Assessment). Preferred display source when present. */
   assessmentSections?: ValueRecordAssessmentSection[];
   industry?: string;
   sector?: string;
