@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
           name: `${user.firstname} ${user.lastname}`,
           firstname: user.firstname,
           lastname: user.lastname,
+          role: user.role,
         };
       },
     }),
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
           token.firstname = (user as { firstname?: string }).firstname;
           token.lastname = (user as { lastname?: string }).lastname;
         }
+        token.role = (user as { role?: "admin" | "standard" }).role;
       }
       return token;
     },
@@ -54,6 +56,8 @@ export const authOptions: NextAuthOptions = {
           token.firstname as string;
         (session.user as { lastname?: string }).lastname =
           token.lastname as string;
+        (session.user as { role?: "admin" | "standard" }).role =
+          token.role as "admin" | "standard";
       }
       return session;
     },

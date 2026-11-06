@@ -256,8 +256,9 @@ export default function StockResultCard({
   const accordionParentId = `#${accordionId}`;
   const [companyDescExpanded, setCompanyDescExpanded] = useState(false);
 
-  const { status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const isLoggedIn = sessionStatus === "authenticated";
+  const isAdmin = session?.user?.role === "admin";
 
   const cardRef = useRef<HTMLElement>(null);
   const [showPriceLastUpdated, setShowPriceLastUpdated] = useState(false);
@@ -697,7 +698,7 @@ export default function StockResultCard({
           ) : null}
 
           {/* Data used for AI assessment – logged in only; header matches View trends / AI Assessment / Edit */}
-          {isLoggedIn && (
+          {isLoggedIn && isAdmin && (
           <div
             className="accordion mt-3 stock-card__inner-accordion stock-card__assessment-data-accordion"
             id={`accordion-detail-${cardDomId}`}

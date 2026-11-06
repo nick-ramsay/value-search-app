@@ -16,6 +16,9 @@ export async function GET(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.trim() ?? "";
