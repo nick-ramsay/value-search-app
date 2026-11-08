@@ -2715,6 +2715,18 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
   gap: 0.25rem;
 }
 
+/* Matches .stock-card__label-pill's footprint so the labels row doesn't
+   shift size once the real pills (or nothing, if the stock has none) arrive. */
+.skel--label-pill {
+  width: 3.75rem;
+  height: 1.4rem;
+  border-radius: 999px;
+}
+
+.skel--label-pill-narrow {
+  width: 2.5rem;
+}
+
 [data-theme="light"] .stock-card__labels-inline .stock-card__label-pill {
   background: #c8f0ec;
   border-color: rgba(34, 140, 132, 0.4);

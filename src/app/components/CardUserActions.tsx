@@ -273,6 +273,16 @@ export default function CardUserActions({
       </div>
     ) : null;
 
+  // Shown only until the fetch above resolves — once it does, labelsInlineContent
+  // takes over if there are labels, otherwise both stay null (same as today's
+  // "no labels" state), so this never lingers for a symbol with none set.
+  const labelsPlaceholderContent = statusLoading ? (
+    <div className="stock-card__labels-inline">
+      <span className="skel skel--label-pill" />
+      <span className="skel skel--label-pill skel--label-pill-narrow" />
+    </div>
+  ) : null;
+
   const targetPillSlotEl =
     mounted && targetPillSlotId && typeof document !== "undefined"
       ? document.getElementById(targetPillSlotId)
@@ -555,8 +565,8 @@ export default function CardUserActions({
           targetPillContent &&
           createPortal(targetPillContent, targetPillSlotEl)}
         {labelsSlotEl &&
-          labelsInlineContent &&
-          createPortal(labelsInlineContent, labelsSlotEl)}
+          (labelsInlineContent || labelsPlaceholderContent) &&
+          createPortal(labelsInlineContent ?? labelsPlaceholderContent, labelsSlotEl)}
         {actionBarContent}
         {collapseContent}
       </div>
@@ -574,8 +584,8 @@ export default function CardUserActions({
         targetPillContent &&
         createPortal(targetPillContent, targetPillSlotEl)}
       {labelsSlotEl &&
-        labelsInlineContent &&
-        createPortal(labelsInlineContent, labelsSlotEl)}
+        (labelsInlineContent || labelsPlaceholderContent) &&
+        createPortal(labelsInlineContent ?? labelsPlaceholderContent, labelsSlotEl)}
       {slotEl && createPortal(actionBarContent, slotEl)}
       {collapseContent}
     </>
