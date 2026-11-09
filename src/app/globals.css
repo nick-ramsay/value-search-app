@@ -62,14 +62,16 @@
   --text-tertiary: rgba(18, 22, 30, 0.38);
   --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background – "Slate & Sapphire": cool near-white canvas with a visible
-     sapphire/violet aurora bleeding through the glass, rather than a
-     barely-there tint. */
-  --bg-start: #F4F7FD;
-  --bg-mid: #EAF0FB;
-  --bg-end: #E3EAFC;
-  --bg-glow-1: rgba(45, 110, 245, 0.20); /* vivid sapphire */
-  --bg-glow-2: rgba(168, 85, 235, 0.16); /* vivid violet */
+  /* Background – "Teal & Ink": cool near-white canvas with the app's own
+     accent teal (top-left) and a deep ink-blue (bottom-right) bleeding
+     through the glass, instead of an unrelated blue-violet aurora — the
+     background now shares its color story with the accent/badges rather
+     than sitting behind them as disconnected decoration. */
+  --bg-start: #F4F7FA;
+  --bg-mid: #EDF3F1;
+  --bg-end: #E6EEF2;
+  --bg-glow-1: rgba(0, 128, 102, 0.20); /* accent teal */
+  --bg-glow-2: rgba(30, 64, 128, 0.16); /* deep ink-blue */
 
   /* Dropdown (light) */
   --dropdown-bg: #ffffff;
@@ -126,13 +128,15 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Slate & Sapphire": graphite-navy, not black, with a
-       bolder blue→violet aurora bleeding through the glass. */
-    --bg-start: #0B1222;
-    --bg-mid: #121B33;
-    --bg-end: #181F3D;
-    --bg-glow-1: rgba(60, 130, 255, 0.30); /* vivid sapphire */
-    --bg-glow-2: rgba(180, 90, 255, 0.22); /* vivid violet */
+    /* Background – "Teal & Ink": graphite-navy, not black, with the app's
+       own accent teal (top-left) and a deep indigo-blue (bottom-right)
+       bleeding through the glass, instead of an unrelated blue→violet
+       aurora — ties the canvas to the same color story as the accent/badges. */
+    --bg-start: #0B1420;
+    --bg-mid: #0E1B2A;
+    --bg-end: #11202E;
+    --bg-glow-1: rgba(34, 214, 181, 0.30); /* accent teal */
+    --bg-glow-2: rgba(40, 80, 170, 0.26); /* deep indigo-blue */
 
     --dropdown-bg: rgba(28, 30, 40, 0.98);
     --dropdown-border: rgba(255, 255, 255, 0.09);
@@ -181,13 +185,15 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Slate & Sapphire": graphite-navy, not black, with a
-     bolder blue→violet aurora bleeding through the glass. */
-  --bg-start: #0B1222;
-  --bg-mid: #121B33;
-  --bg-end: #181F3D;
-  --bg-glow-1: rgba(60, 130, 255, 0.30); /* vivid sapphire */
-  --bg-glow-2: rgba(180, 90, 255, 0.22); /* vivid violet */
+  /* Background – "Teal & Ink": graphite-navy, not black, with the app's
+     own accent teal (top-left) and a deep indigo-blue (bottom-right)
+     bleeding through the glass, instead of an unrelated blue→violet
+     aurora — ties the canvas to the same color story as the accent/badges. */
+  --bg-start: #0B1420;
+  --bg-mid: #0E1B2A;
+  --bg-end: #11202E;
+  --bg-glow-1: rgba(34, 214, 181, 0.30); /* accent teal */
+  --bg-glow-2: rgba(40, 80, 170, 0.26); /* deep indigo-blue */
 
   --dropdown-bg: rgba(28, 30, 40, 0.98);
   --dropdown-border: rgba(255, 255, 255, 0.09);
