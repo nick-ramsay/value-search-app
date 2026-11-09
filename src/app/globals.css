@@ -4551,11 +4551,15 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
 }
 
 /* Notably darker/denser green than Buy (not just more opaque) — see the
-   lightness-separation note above. */
+   lightness-separation note above. Saturation raised and lightness nudged
+   up slightly from the original #104C20: at that low a lightness, even a
+   fairly saturated green reads as near-black/olive rather than green —
+   this keeps the "darker than Buy" hierarchy (still well below Buy's
+   #1D7233) while staying unambiguously green at a glance. */
 .badge-rating-strong-buy {
-  background-color: rgba(16, 76, 32, 0.30) !important;
+  background-color: rgba(8, 99, 32, 0.30) !important;
   border: none !important;
-  color: #104C20 !important;
+  color: #086320 !important;
 }
 
 [data-theme="dark"] .badge-rating-strong-buy,
@@ -4572,9 +4576,9 @@ nav[aria-busy="true"][aria-label="Results pages"] .pagination-page-label {
    same color, not just a close relative. */
 .badge.bg-success,
 .badge.bg-success-subtle {
-  background-color: rgba(16, 76, 32, 0.30) !important;
+  background-color: rgba(8, 99, 32, 0.30) !important;
   border: none !important;
-  color: #104C20 !important;
+  color: #086320 !important;
 }
 
 [data-theme="dark"] .badge.bg-success,
