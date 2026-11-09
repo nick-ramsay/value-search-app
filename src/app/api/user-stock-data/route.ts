@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -52,6 +53,10 @@ type PatchBody = {
   symbol: string;
   status?: StatusType;
   comments?: IComment[];
+  /** Appended as a new comment, server-side — lets a caller (e.g. the status
+   * confirmation prompt) add one note alongside a status change without
+   * first fetching the existing comments array to replace it wholesale. */
+  note?: string;
   buyTarget?: number | null;
   sellTarget?: number | null;
   label?: string | null;
@@ -116,9 +121,16 @@ export async function PATCH(request: Request) {
     update.label = trimmed || null;
     update.labels = arr;
   }
+  const trimmedNote = typeof body.note === "string" ? body.note.trim() : "";
+  const mongoUpdate: Record<string, unknown> = { $set: update };
+  if (trimmedNote) {
+    mongoUpdate.$push = {
+      comments: { id: randomUUID(), text: trimmedNote, createdAt: new Date() },
+    };
+  }
   const doc = await UserStockData.findOneAndUpdate(
     { userId: session.user.id, symbol },
-    { $set: update },
+    mongoUpdate,
     { new: true, upsert: true }
   );
   return NextResponse.json({

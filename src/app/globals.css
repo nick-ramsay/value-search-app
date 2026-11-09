@@ -7239,6 +7239,146 @@ a:hover {
   border-color: rgba(255, 255, 255, 0.65);
 }
 
+/* ── Status-change confirmation prompt ───────────────────────────────────
+   Same backdrop/dialog shell and animation as .note-delete-dialog (not a
+   destructive action, so the confirm button is accent-colored, not red). */
+.status-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1055;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: noteModalFadeIn 0.15s ease forwards;
+}
+
+.status-confirm-dialog {
+  position: fixed;
+  z-index: 1056;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 2rem));
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow-floating);
+  padding: 1.25rem 1.35rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: noteModalSlideIn 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+[data-theme="light"] .status-confirm-dialog {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.status-confirm-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.status-confirm-dialog__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-confirm-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.status-confirm-dialog__close:hover {
+  background: var(--glass-bg-subtle);
+  color: var(--text-primary);
+}
+
+.status-confirm-dialog__close .bi {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.status-confirm-dialog__textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  resize: vertical;
+  min-height: 4.5rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.status-confirm-dialog__textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.status-confirm-dialog__textarea:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-ring);
+}
+
+.status-confirm-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.status-confirm-dialog__cancel {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.status-confirm-dialog__cancel:hover {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+}
+
+.status-confirm-dialog__confirm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.status-confirm-dialog__confirm:hover {
+  background: var(--accent-hover);
+}
+
 /* ── Back-to-top floating button ─────────────────────────────────────────── */
 .back-to-top-btn {
   position: fixed;
