@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { buildMonthlyBalancesGroupedTotalsCsv } from "@/lib/monthly-balances-export-csv";
+import { buildAccountDetailsPdf } from "@/lib/monthly-balances-export-pdf";
 import {
   ASSET_ACCOUNT_TYPES,
   DEBT_ACCOUNT_TYPES,
@@ -976,6 +977,13 @@ export default function MonthlyBalancesClient() {
     a.remove();
     URL.revokeObjectURL(url);
   }, [accounts, monthRows]);
+
+  const handleExportAccountDetailsPdf = useCallback(() => {
+    const doc = buildAccountDetailsPdf(accounts);
+    const d = new Date();
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    doc.save(`account-details-${iso}.pdf`);
+  }, [accounts]);
 
   /** Commit active cell edit when locking (same as input blur). */
   useEffect(() => {
@@ -1956,6 +1964,20 @@ export default function MonthlyBalancesClient() {
                           aria-hidden
                         />
                         Export CSV
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        className="dropdown-item d-flex align-items-center gap-2"
+                        disabled={loading || accounts.length === 0}
+                        onClick={handleExportAccountDetailsPdf}
+                      >
+                        <i
+                          className="bi bi-file-earmark-pdf"
+                          aria-hidden
+                        />
+                        Export Account Details
                       </button>
                     </li>
                     <li>
