@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 
 import clientPromise from "@/lib/mongodb";
 import AppNavbar from "../components/AppNavbar";
+import UndervaluedPicksRefreshButton from "../components/UndervaluedPicksRefreshButton";
 
 const COLLECTION = "stock-undervalued-reports";
 
@@ -197,6 +198,7 @@ export default async function UndervaluedPicksPage() {
                   AI-ranked stocks whose price appears to understate their durable earning
                   power, refreshed weekly.
                 </p>
+                <UndervaluedPicksRefreshButton />
               </div>
             </section>
 
