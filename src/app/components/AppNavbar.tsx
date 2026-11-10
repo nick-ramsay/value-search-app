@@ -28,6 +28,7 @@ export default function AppNavbar({
   const isEconomyAssessment = pathname === "/economy-assessment";
   const isUndervaluedPicks = pathname === "/undervalued-picks";
   const isResearch = pathname === "/research";
+  const isThesis = pathname === "/thesis";
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true ||
     isSectorAssessments ||
@@ -116,6 +117,13 @@ export default function AppNavbar({
         <li>
           <Link href="/research" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-stars" aria-hidden /> Research
+          </Link>
+        </li>
+      )}
+      {!isThesis && (
+        <li>
+          <Link href="/thesis" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-journal-check" aria-hidden /> Thesis
           </Link>
         </li>
       )}
