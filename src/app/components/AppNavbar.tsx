@@ -29,6 +29,7 @@ export default function AppNavbar({
   const isUndervaluedPicks = pathname === "/undervalued-picks";
   const isResearch = pathname === "/research";
   const isThesis = pathname === "/thesis";
+  const isAdminPage = pathname === "/admin";
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true ||
     isSectorAssessments ||
@@ -131,6 +132,13 @@ export default function AppNavbar({
         <li>
           <Link href="/about" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-info-circle" aria-hidden /> About
+          </Link>
+        </li>
+      )}
+      {(session?.user as { role?: string })?.role === "admin" && !isAdminPage && (
+        <li>
+          <Link href="/admin" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-shield-lock" aria-hidden /> Admin
           </Link>
         </li>
       )}

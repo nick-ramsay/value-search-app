@@ -8048,4 +8048,23 @@ a:hover {
   border-color: var(--danger-glass);
 }
 
+/* ── Admin page ───────────────────────────────────────────────────────── */
+
+.admin-tool-card__title {
+  margin: 0 0 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* The refresh buttons' own .economy-assessment-refresh wrapper centers
+   itself (built for sitting under a centered page heading) — left-align it
+   here instead, under a left-aligned tool title. */
+.admin-tool-card .economy-assessment-refresh {
+  align-items: flex-start;
+}
+
+.admin-tool-card .economy-assessment-refresh-status {
+  text-align: left;
+}
+
 
