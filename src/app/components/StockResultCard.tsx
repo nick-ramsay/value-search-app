@@ -9,6 +9,7 @@ import { HistoryChartsPanel, HistoryChartsTrigger } from "./HistoryCharts";
 import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
 import CardNotes from "./CardComments";
+import StockRefreshButton from "./StockRefreshButton";
 import ReactMarkdown from "react-markdown";
 
 function getRatingAccentClass(rating: string): string {
@@ -418,6 +419,7 @@ export default function StockResultCard({
             <i className="bi bi-info-circle" aria-hidden />
             <span className="stock-card__company-info-label" aria-hidden>About</span>
           </button>
+          {item.symbol && <StockRefreshButton symbol={item.symbol} />}
         </div>
         {(() => {
           const metaItems = (

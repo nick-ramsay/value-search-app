@@ -911,6 +911,75 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--accent);
 }
 
+/* Admin-only per-card manual refresh — circular, blue glass tint. Reuses
+   the exact same blue as .badge.bg-primary (not the app's teal accent),
+   so this reads as a distinct "admin action" rather than a normal control. */
+.stock-card__refresh-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  margin-left: 0.4rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 98, 196, 0.3);
+  background: rgba(0, 98, 196, 0.12);
+  color: #003d7a;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.stock-card__refresh-btn:hover:not(:disabled) {
+  background: rgba(0, 98, 196, 0.2);
+  border-color: rgba(0, 98, 196, 0.5);
+}
+
+.stock-card__refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.stock-card__refresh-btn .bi {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.stock-card__refresh-btn--spinning .bi {
+  animation: stockRefreshSpin 0.9s linear infinite;
+}
+
+@keyframes stockRefreshSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.stock-card__refresh-btn--error {
+  border-color: rgba(196, 32, 44, 0.45);
+  background: var(--danger-glass);
+  color: var(--danger-clear);
+}
+
+[data-theme="dark"] .stock-card__refresh-btn,
+:root:not([data-theme="light"]) .stock-card__refresh-btn {
+  border-color: rgba(61, 158, 255, 0.4);
+  background: rgba(61, 158, 255, 0.18);
+  color: #e3f2fd;
+}
+
+[data-theme="dark"] .stock-card__refresh-btn:hover:not(:disabled),
+:root:not([data-theme="light"]) .stock-card__refresh-btn:hover:not(:disabled) {
+  background: rgba(61, 158, 255, 0.28);
+  border-color: rgba(61, 158, 255, 0.6);
+}
+
+[data-theme="dark"] .stock-card__refresh-btn--error,
+:root:not([data-theme="light"]) .stock-card__refresh-btn--error {
+  border-color: rgba(255, 77, 85, 0.5);
+  background: var(--danger-glass);
+  color: var(--danger-clear);
+}
+
 .stock-card__title {
   display: inline-flex;
   align-items: flex-start;
