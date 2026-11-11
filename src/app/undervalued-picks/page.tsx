@@ -7,22 +7,18 @@ import AppNavbar from "../components/AppNavbar";
 
 const COLLECTION = "stock-undervalued-reports";
 
-// No dynamic APIs are used on this page (no searchParams, cookies, etc.), so
-// without this Next.js treats it as fully static — rendered once at build time
-// and never refreshed, regardless of what generate_undervalued_report.py later
-// writes to Mongo.
-//
-// Passive ISR alone only bounds staleness when traffic actually arrives — a
-// quiet page can go far longer than the window with nobody there to trigger
-// it (see economy-assessment/page.tsx for the incident that taught us this).
-// The real guarantee comes from an ACTIVE trigger instead: a Vercel Cron Job
-// (see /vercel.json) hits GET /api/revalidate/undervalued-picks once a day
-// regardless of visitor traffic. The underlying report only regenerates
-// weekly (generate_undervalued_report.py, Sundays), so daily is already far
-// more often than needed — revalidate here just matches that same daily
-// cadence as a passive backstop, rather than sitting at an hour and causing
-// extra same-data reruns on any traffic in between cron firings.
-export const revalidate = 86400;
+// Deliberately uncached — every request re-reads the "current" document
+// directly from Mongo (a single findOne by _id, negligible cost). This page
+// used to rely on ISR (revalidate = 86400) backstopped by a weekly Vercel
+// Cron Job calling revalidatePath(), but that only bounds staleness to
+// "whenever the cron/cache-window next fires," which proved insufficient
+// twice: a quiet page going stale with no traffic to trigger a refresh (see
+// economy-assessment/page.tsx), and later, after the admin "Refresh now"
+// button was added, the page still showing pre-refresh content for a while
+// after a manual refresh completed because nothing had re-triggered
+// revalidation yet. Querying Mongo on every view removes the entire class
+// of bug — there's no cache to go stale in the first place.
+export const revalidate = 0;
 
 type UndervaluedPick = {
   rank: string;

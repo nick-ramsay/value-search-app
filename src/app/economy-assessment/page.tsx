@@ -6,26 +6,18 @@ import AppNavbar from "../components/AppNavbar";
 
 const COLLECTION = "stock-economy-assessment";
 
-// No dynamic APIs are used on this page (no searchParams, cookies, etc.), so
-// without this Next.js would treat it as fully static — rendered once at
-// build time and never refreshed again, regardless of what generate_economy_
-// assessment_claude.py later writes to Mongo.
-//
-// Passive ISR alone (revalidate on the next request after the window
-// elapses) only bounds staleness when traffic actually arrives — a quiet
-// page can go far longer than the window with nobody there to trigger the
-// refresh, which is exactly what happened here (~2 weeks stale) before this
-// existed. The real guarantee comes from an ACTIVE trigger instead: a
-// Vercel Cron Job (see /vercel.json) hits GET /api/revalidate/economy-assessment
-// once a day (the most frequent Vercel allows on this plan) regardless of
-// visitor traffic, calling revalidatePath("/economy-assessment") to force
-// regeneration. The underlying data only changes weekly anyway (see
-// generate_economy_assessment_claude.py's schedule), so daily is already
-// far more often than needed — revalidate here just matches that same daily
-// cadence as a passive backstop (e.g. covers the cron itself misfiring),
-// rather than sitting at an hour and causing extra same-data reruns on any
-// traffic in between cron firings.
-export const revalidate = 86400;
+// Deliberately uncached — every request re-reads the "current" document
+// directly from Mongo (a single findOne by _id, negligible cost). This page
+// used to rely on ISR (revalidate = 86400) backstopped by a weekly Vercel
+// Cron Job calling revalidatePath(), but that only bounds staleness to
+// "whenever the cron/cache-window next fires," which two incidents proved
+// insufficient: a quiet page going ~2 weeks stale with no traffic to trigger
+// a refresh, and later, after the admin "Refresh now" button was added, the
+// page still showing pre-refresh content for hours after a manual refresh
+// completed because nothing had re-triggered revalidation yet. Querying
+// Mongo on every view removes the entire class of bug — there's no cache to
+// go stale in the first place.
+export const revalidate = 0;
 
 type EconomySection = {
   number: string;

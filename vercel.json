@@ -1,12 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/revalidate/economy-assessment",
-      "schedule": "0 8 * * 1"
-    },
-    {
-      "path": "/api/revalidate/undervalued-picks",
-      "schedule": "15 8 * * 1"
-    }
-  ]
-}
+{}

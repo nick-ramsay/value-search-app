@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -100,16 +99,6 @@ export async function GET() {
   if (latest.status === "pending" || latest.status === "processing") {
     canRefreshNow = false;
   } else if (latest.status === "complete") {
-    // The page is statically rendered with a 24h ISR window, backstopped
-    // only by a *weekly* Vercel Cron revalidation (see /vercel.json — built
-    // when the underlying data only ever changed on that same weekly
-    // schedule). A manual refresh can land on any day, so without this the
-    // page could keep serving pre-refresh content for up to a week. This
-    // poll is how the admin UI learns a pyworker-side refresh just
-    // completed, so it's also the right place to force the cache fresh —
-    // cheap and idempotent to call on every poll once status is "complete".
-    revalidatePath("/economy-assessment");
-
     const cooldownUntil = new Date(
       latest.createdAt.getTime() + MANUAL_REFRESH_COOLDOWN_HOURS * 60 * 60 * 1000,
     );
