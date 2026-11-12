@@ -89,9 +89,13 @@
 /* System preference dark (when theme is "system" and OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glass-bg: rgba(22, 24, 32, 0.68);
-    --glass-bg-strong: rgba(30, 32, 42, 0.82);
-    --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+    /* Glass undertone shifted from blue-grey to green-grey (G no longer
+       the lowest channel) so floating panels read as frosted glass over
+       the forest-green canvas below, not a mismatched cool-blue material
+       sitting on top of it. */
+    --glass-bg: rgba(20, 26, 22, 0.68);
+    --glass-bg-strong: rgba(27, 34, 29, 0.82);
+    --glass-bg-subtle: rgba(16, 21, 18, 0.52);
     --glass-border: rgba(255, 255, 255, 0.10);
     --glass-border-subtle: rgba(255, 255, 255, 0.06);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
@@ -129,27 +133,32 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Quiet Ledger": charcoal, not black, with color pulled
-       back almost entirely so the teal accent (ratings/badges/buttons)
-       reads as a genuine signal against a dark, serious canvas —
-       trading-terminal restraint rather than a colorful aurora. Lightened
-       from the original near-black #0C0E12/#121419/#181A20 base. */
-    --bg-start: #16191F;
-    --bg-mid: #1C1F26;
-    --bg-end: #24272F;
-    --bg-glow-1: rgba(34, 214, 181, 0.10); /* faint accent-teal whisper */
+    /* Background – "Quiet Forest": deep forest-green charcoal (green the
+       dominant channel at every stop, not blue) rather than the previous
+       blue-black "Quiet Ledger" base, with color still pulled back enough
+       that the teal accent (ratings/badges/buttons) reads as a genuine
+       signal against it — trading-terminal restraint, now in a forest
+       register instead of a neutral one. */
+    --bg-start: #0F1813;
+    --bg-mid: #16211A;
+    --bg-end: #1D2B22;
+    --bg-glow-1: rgba(120, 200, 110, 0.09); /* faint dappled canopy-light whisper */
     --bg-glow-2: rgba(255, 255, 255, 0.03); /* barely-there light falloff */
 
-    --dropdown-bg: rgba(28, 30, 40, 0.98);
+    --dropdown-bg: rgba(26, 32, 28, 0.98);
     --dropdown-border: rgba(255, 255, 255, 0.09);
   }
 }
 
 /* Forced dark theme */
 [data-theme="dark"] {
-  --glass-bg: rgba(22, 24, 32, 0.68);
-  --glass-bg-strong: rgba(30, 32, 42, 0.82);
-  --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+  /* Glass undertone shifted from blue-grey to green-grey (G no longer the
+     lowest channel) so floating panels read as frosted glass over the
+     forest-green canvas below, not a mismatched cool-blue material
+     sitting on top of it. */
+  --glass-bg: rgba(20, 26, 22, 0.68);
+  --glass-bg-strong: rgba(27, 34, 29, 0.82);
+  --glass-bg-subtle: rgba(16, 21, 18, 0.52);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-border-subtle: rgba(255, 255, 255, 0.06);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
@@ -187,18 +196,19 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Quiet Ledger": charcoal, not black, with color pulled
-     back almost entirely so the teal accent (ratings/badges/buttons)
-     reads as a genuine signal against a dark, serious canvas —
-     trading-terminal restraint rather than a colorful aurora. Lightened
-     from the original near-black #0C0E12/#121419/#181A20 base. */
-  --bg-start: #16191F;
-  --bg-mid: #1C1F26;
-  --bg-end: #24272F;
-  --bg-glow-1: rgba(34, 214, 181, 0.10); /* faint accent-teal whisper */
+  /* Background – "Quiet Forest": deep forest-green charcoal (green the
+     dominant channel at every stop, not blue) rather than the previous
+     blue-black "Quiet Ledger" base, with color still pulled back enough
+     that the teal accent (ratings/badges/buttons) reads as a genuine
+     signal against it — trading-terminal restraint, now in a forest
+     register instead of a neutral one. */
+  --bg-start: #0F1813;
+  --bg-mid: #16211A;
+  --bg-end: #1D2B22;
+  --bg-glow-1: rgba(120, 200, 110, 0.09); /* faint dappled canopy-light whisper */
   --bg-glow-2: rgba(255, 255, 255, 0.03); /* barely-there light falloff */
 
-  --dropdown-bg: rgba(28, 30, 40, 0.98);
+  --dropdown-bg: rgba(26, 32, 28, 0.98);
   --dropdown-border: rgba(255, 255, 255, 0.09);
 }
 
