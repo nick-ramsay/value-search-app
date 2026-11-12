@@ -214,7 +214,20 @@ function AssessmentDataPanel({
   );
 }
 
-/** Format date/time with a fixed locale so server and client render the same (avoids hydration mismatch). */
+/** Format date/time with a fixed locale AND timeZone so server and client
+ * render byte-for-byte the same string. Locale alone isn't enough —
+ * toLocaleDateString/toLocaleTimeString fall back to the runtime's local
+ * timezone when none is given, which differs between the server (Vercel,
+ * UTC) and the client (the visitor's own device) for anyone not in UTC.
+ * That mismatch is this component's own initial render (unconditionally
+ * part of the AI-assessment section, not gated behind a click-reveal
+ * state like the price/assessment "last updated" toggles elsewhere in
+ * this file), so it's compared during hydration and fails — confirmed via
+ * a live WebKit/iPhone-viewport reproduction (React error #418) that
+ * didn't reproduce in Chromium, since V8's Intl (Node's engine too) and
+ * JavaScriptCore's Intl apply the runtime's zone the same way, but the
+ * two runtimes themselves (Vercel's Lambda vs a real device) sit in
+ * different zones. Pinning to UTC removes the ambiguity entirely. */
 function formatLastUpdated(value?: string) {
   if (!value) return "";
   const date = new Date(value);
@@ -222,13 +235,15 @@ function formatLastUpdated(value?: string) {
   try {
     const datePart = date.toLocaleDateString("en-US", {
       dateStyle: "medium",
+      timeZone: "UTC",
     });
     const timePart = date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
+      timeZone: "UTC",
     });
-    return `${datePart} ${timePart}`;
+    return `${datePart} ${timePart} UTC`;
   } catch {
     return date.toISOString();
   }
