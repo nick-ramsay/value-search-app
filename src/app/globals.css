@@ -89,13 +89,15 @@
 /* System preference dark (when theme is "system" and OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    /* Glass undertone shifted from blue-grey to green-grey (G no longer
-       the lowest channel) so floating panels read as frosted glass over
-       the forest-green canvas below, not a mismatched cool-blue material
-       sitting on top of it. */
-    --glass-bg: rgba(20, 26, 22, 0.68);
-    --glass-bg-strong: rgba(27, 34, 29, 0.82);
-    --glass-bg-subtle: rgba(16, 21, 18, 0.52);
+    /* Glass undertone kept near-neutral (only a whisper of warmth) rather
+       than fully hue-matched to either corner of the space-to-Mars
+       diagonal below (see --bg-start/--bg-end) — a warm-leaning grey would
+       clash with the cool space corner, a cool one would clash with the
+       Mars corner. Reads as instrument-panel glass, equally at home over
+       either end of the gradient. */
+    --glass-bg: rgba(22, 19, 18, 0.68);
+    --glass-bg-strong: rgba(30, 26, 25, 0.82);
+    --glass-bg-subtle: rgba(18, 15, 14, 0.52);
     --glass-border: rgba(255, 255, 255, 0.10);
     --glass-border-subtle: rgba(255, 255, 255, 0.06);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
@@ -105,13 +107,19 @@
     --skeleton-base: rgba(255, 255, 255, 0.09);
     --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-    --accent: #22D6B5;
-    --accent-hover: #0E8070;
-    --accent-glass: rgba(34, 214, 181, 0.22);
-    --accent-soft: rgba(34, 214, 181, 0.22);
+    /* Accent shifted from the generic teal to a warm amber/copper — "Mars
+       dust" — so the brand color itself participates in the Mars Descent
+       theme rather than reading as a leftover cool accent. Hue (~33°) is
+       kept well clear of both --danger (red, ~355°) and --success (green,
+       ~150°), so BUY/SELL badge semantics (.badge.bg-success/bg-danger,
+       unaffected by --accent) stay unambiguous. */
+    --accent: #FFA94D;
+    --accent-hover: #D97F24;
+    --accent-glass: rgba(255, 169, 77, 0.22);
+    --accent-soft: rgba(255, 169, 77, 0.22);
 
     --input-focus-border: var(--accent);
-    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(34, 214, 181, 0.5);
+    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(255, 169, 77, 0.5);
     --input-focus-border-danger: var(--danger-clear);
     --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -133,32 +141,34 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Quiet Forest": deep forest-green charcoal (green the
-       dominant channel at every stop, not blue) rather than the previous
-       blue-black "Quiet Ledger" base, with color still pulled back enough
-       that the teal accent (ratings/badges/buttons) reads as a genuine
-       signal against it — trading-terminal restraint, now in a forest
-       register instead of a neutral one. */
-    --bg-start: #0F1813;
-    --bg-mid: #16211A;
-    --bg-end: #1D2B22;
-    --bg-glow-1: rgba(120, 200, 110, 0.09); /* faint dappled canopy-light whisper */
-    --bg-glow-2: rgba(255, 255, 255, 0.03); /* barely-there light falloff */
+    /* Background – "Mars Descent": a single diagonal (135deg, so 0% sits at
+       the top-left corner and 100% at the bottom-right, matching the
+       gradient's own on-screen direction) running from near-black deep
+       space, through a dark warming atmospheric-entry tone, down to the
+       rust-red Martian surface. The amber accent (ratings/badges/buttons)
+       reads as a genuine signal against both ends of this range. */
+    --bg-start: #05060B;
+    --bg-mid: #1C120F;
+    --bg-end: #35180B;
+    --bg-glow-1: rgba(150, 170, 215, 0.05); /* faint cool starlight, space corner */
+    --bg-glow-2: rgba(214, 122, 60, 0.12); /* warm dust-storm haze, Mars corner */
 
-    --dropdown-bg: rgba(26, 32, 28, 0.98);
+    --dropdown-bg: rgba(28, 24, 23, 0.98);
     --dropdown-border: rgba(255, 255, 255, 0.09);
   }
 }
 
 /* Forced dark theme */
 [data-theme="dark"] {
-  /* Glass undertone shifted from blue-grey to green-grey (G no longer the
-     lowest channel) so floating panels read as frosted glass over the
-     forest-green canvas below, not a mismatched cool-blue material
-     sitting on top of it. */
-  --glass-bg: rgba(20, 26, 22, 0.68);
-  --glass-bg-strong: rgba(27, 34, 29, 0.82);
-  --glass-bg-subtle: rgba(16, 21, 18, 0.52);
+  /* Glass undertone kept near-neutral (only a whisper of warmth) rather
+     than fully hue-matched to either corner of the space-to-Mars diagonal
+     below (see --bg-start/--bg-end) — a warm-leaning grey would clash with
+     the cool space corner, a cool one would clash with the Mars corner.
+     Reads as instrument-panel glass, equally at home over either end of
+     the gradient. */
+  --glass-bg: rgba(22, 19, 18, 0.68);
+  --glass-bg-strong: rgba(30, 26, 25, 0.82);
+  --glass-bg-subtle: rgba(18, 15, 14, 0.52);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-border-subtle: rgba(255, 255, 255, 0.06);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
@@ -168,13 +178,19 @@
   --skeleton-base: rgba(255, 255, 255, 0.09);
   --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-  --accent: #22D6B5;
-  --accent-hover: #0E8070;
-  --accent-glass: rgba(34, 214, 181, 0.22);
-  --accent-soft: rgba(34, 214, 181, 0.22);
+  /* Accent shifted from the generic teal to a warm amber/copper — "Mars
+     dust" — so the brand color itself participates in the Mars Descent
+     theme rather than reading as a leftover cool accent. Hue (~33°) is
+     kept well clear of both --danger (red, ~355°) and --success (green,
+     ~150°), so BUY/SELL badge semantics (.badge.bg-success/bg-danger,
+     unaffected by --accent) stay unambiguous. */
+  --accent: #FFA94D;
+  --accent-hover: #D97F24;
+  --accent-glass: rgba(255, 169, 77, 0.22);
+  --accent-soft: rgba(255, 169, 77, 0.22);
 
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(34, 214, 181, 0.5);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(255, 169, 77, 0.5);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -196,19 +212,19 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Quiet Forest": deep forest-green charcoal (green the
-     dominant channel at every stop, not blue) rather than the previous
-     blue-black "Quiet Ledger" base, with color still pulled back enough
-     that the teal accent (ratings/badges/buttons) reads as a genuine
-     signal against it — trading-terminal restraint, now in a forest
-     register instead of a neutral one. */
-  --bg-start: #0F1813;
-  --bg-mid: #16211A;
-  --bg-end: #1D2B22;
-  --bg-glow-1: rgba(120, 200, 110, 0.09); /* faint dappled canopy-light whisper */
-  --bg-glow-2: rgba(255, 255, 255, 0.03); /* barely-there light falloff */
+  /* Background – "Mars Descent": a single diagonal (135deg, so 0% sits at
+     the top-left corner and 100% at the bottom-right, matching the
+     gradient's own on-screen direction) running from near-black deep
+     space, through a dark warming atmospheric-entry tone, down to the
+     rust-red Martian surface. The amber accent (ratings/badges/buttons)
+     reads as a genuine signal against both ends of this range. */
+  --bg-start: #05060B;
+  --bg-mid: #1C120F;
+  --bg-end: #35180B;
+  --bg-glow-1: rgba(150, 170, 215, 0.05); /* faint cool starlight, space corner */
+  --bg-glow-2: rgba(214, 122, 60, 0.12); /* warm dust-storm haze, Mars corner */
 
-  --dropdown-bg: rgba(26, 32, 28, 0.98);
+  --dropdown-bg: rgba(28, 24, 23, 0.98);
   --dropdown-border: rgba(255, 255, 255, 0.09);
 }
 
@@ -962,6 +978,21 @@ button.accordion-button.ai-accordion-button:focus-visible {
 @keyframes stockRefreshSpin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Immediate feedback for the gap between the click and the backend
+   confirming the refresh request has actually started (see
+   StockRefreshButton's `waiting` state) — a wiggle reads as "working on
+   it" without implying the continuous one-direction progress the
+   confirmed-in-flight spin (above) conveys. */
+.stock-card__refresh-btn--waiting .bi {
+  animation: stockRefreshWiggle 0.6s ease-in-out infinite;
+}
+
+@keyframes stockRefreshWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-18deg); }
+  75% { transform: rotate(18deg); }
 }
 
 .stock-card__refresh-btn--error {

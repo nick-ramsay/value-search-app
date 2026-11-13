@@ -115,11 +115,18 @@ export default function StockRefreshButton({ symbol }: { symbol: string }) {
   };
 
   const hasError = !inFlight && !justSucceeded && latestRequest?.status === "error";
+  // Clicked, but the POST to create the refresh request hasn't resolved (or
+  // resolved without yet showing pending/processing) — distinct from
+  // `inFlight`, which only turns true once the backend has actually
+  // confirmed the request started.
+  const waiting = submitting && !inFlight;
 
   let icon = "bi-arrow-clockwise";
   let title = `Refresh ${symbol}: quote, fundamentals, and AI assessment`;
   if (inFlight) {
     title = `Refreshing ${symbol}…`;
+  } else if (waiting) {
+    title = `Sending refresh request for ${symbol}…`;
   } else if (justSucceeded) {
     icon = "bi-check-lg";
     title = `${symbol} refreshed`;
@@ -128,10 +135,16 @@ export default function StockRefreshButton({ symbol }: { symbol: string }) {
     title = latestRequest?.errorMessage || "Refresh failed";
   }
 
+  const animationClass = inFlight
+    ? " stock-card__refresh-btn--spinning"
+    : waiting
+      ? " stock-card__refresh-btn--waiting"
+      : "";
+
   return (
     <button
       type="button"
-      className={`stock-card__refresh-btn${inFlight ? " stock-card__refresh-btn--spinning" : ""}${hasError ? " stock-card__refresh-btn--error" : ""}`}
+      className={`stock-card__refresh-btn${animationClass}${hasError ? " stock-card__refresh-btn--error" : ""}`}
       onClick={handleClick}
       disabled={submitting || inFlight}
       aria-label={title}
