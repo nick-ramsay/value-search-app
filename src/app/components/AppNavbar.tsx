@@ -30,6 +30,7 @@ export default function AppNavbar({
   const isResearch = pathname === "/research";
   const isThesis = pathname === "/thesis";
   const isAdminPage = pathname === "/admin";
+  const isSettingsPage = pathname === "/settings";
   const hideNavbarSearch =
     pathname?.startsWith("/monthly-balances") === true ||
     isSectorAssessments ||
@@ -125,6 +126,13 @@ export default function AppNavbar({
         <li>
           <Link href="/thesis" className="dropdown-item d-flex align-items-center gap-2 py-2">
             <i className="bi bi-journal-check" aria-hidden /> Thesis
+          </Link>
+        </li>
+      )}
+      {!isSettingsPage && (
+        <li>
+          <Link href="/settings" className="dropdown-item d-flex align-items-center gap-2 py-2">
+            <i className="bi bi-gear" aria-hidden /> Settings
           </Link>
         </li>
       )}

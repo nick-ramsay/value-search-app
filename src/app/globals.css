@@ -4,11 +4,11 @@
 
 :root,
 [data-theme="light"] {
-  /* Glass material */
-  --glass-bg: rgba(255, 255, 255, 0.52);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  /* Glass material — taskboard.work's own values */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-bg-strong: rgba(255, 255, 255, 0.65);
   --glass-bg-subtle: rgba(255, 255, 255, 0.35);
-  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.5);
   --glass-border-subtle: rgba(255, 255, 255, 0.28);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.12);
@@ -20,23 +20,22 @@
   --skeleton-base: rgba(18, 22, 30, 0.08);
   --skeleton-sheen: rgba(255, 255, 255, 0.9);
 
-  /* Typography */
-  --font-sans: system-ui, ui-sans-serif, "Segoe UI", sans-serif;
+  /* Typography — taskboard.work's exact stack */
+  --font-sans: ui-sans-serif, system-ui, sans-serif, 'Segoe UI', Roboto, sans-serif;
 
-  /* Accent – vivid jewel-tone teal. Deliberately deeper/more saturated
-     rather than brighter: on a near-white page, raising lightness only
-     washes a teal out and *lowers* contrast, so vibrancy here comes from
-     saturation (now ~100%, was ~64%) while keeping luminance in the same
-     range as before. */
-  --accent: #008066;
-  --accent-hover: #00705C;
-  --accent-glass: rgba(0, 128, 102, 0.15);
-  --accent-soft: rgba(0, 128, 102, 0.15);
+  /* Accent — taskboard.work's blue. Color-coded labels (BUY/SELL badges,
+     value-search-score, price-trend pills, speculative-risk flags) do NOT
+     use this token — they're independently colored (.badge.bg-success/
+     bg-danger/bg-warning etc.), so this swap can't affect them. */
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-glass: rgba(0, 113, 227, 0.15);
+  --accent-soft: rgba(0, 113, 227, 0.15);
 
-  /* Unified text-input focus highlight — soft verdigris ring + gentle accent-tinted lift.
+  /* Unified text-input focus highlight — soft accent-tinted ring + lift.
      Shared by every text input so active fields feel identical app-wide. */
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 12px -6px rgba(0, 128, 102, 0.45);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 12px -6px rgba(0, 113, 227, 0.45);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 12px -6px rgba(196, 32, 44, 0.4);
 
@@ -62,21 +61,18 @@
   --text-tertiary: rgba(18, 22, 30, 0.38);
   --text-on-glass: rgba(18, 22, 30, 0.92);
 
-  /* Background – "Quiet Ledger" (cool-stone variant): near-neutral canvas,
-     color pulled back almost entirely so teal stays the only real color
-     note in the UI (ratings/badges/buttons) rather than competing with a
-     colored backdrop. Shifted from the original's warm cream/paper tone to
-     a cooler stone/slate-grey, with a touch more presence in the teal
-     glow so it isn't quite as flat. */
-  --bg-start: #F7F9F8;
-  --bg-mid: #F0F3F1;
-  --bg-end: #E8ECE9;
-  --bg-glow-1: rgba(0, 128, 102, 0.10); /* accent-teal whisper */
-  --bg-glow-2: rgba(70, 80, 78, 0.06); /* near-invisible cool graphite */
+  /* Background (default) – taskboard.work's own default gradient ("focused
+     sunrise → calm teal → crisp sky"). Users can pick an alternate
+     background from /settings (see the data-bg-theme blocks below), which
+     override --bg-start/--bg-mid/--bg-end; this is what shows before any
+     such choice is made. */
+  --bg-start: #f9efe0;
+  --bg-mid: #d9f2f0;
+  --bg-end: #d6e9ff;
 
   /* Dropdown (light) */
-  --dropdown-bg: #ffffff;
-  --dropdown-border: rgba(0, 0, 0, 0.08);
+  --dropdown-bg: rgba(255, 255, 255, 0.85);
+  --dropdown-border: rgba(255, 255, 255, 0.5);
 
   /* Motion */
   --transition-fast: 0.18s ease;
@@ -89,37 +85,30 @@
 /* System preference dark (when theme is "system" and OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    /* Glass undertone kept near-neutral (only a whisper of warmth) rather
-       than fully hue-matched to either corner of the space-to-Mars
-       diagonal below (see --bg-start/--bg-end) — a warm-leaning grey would
-       clash with the cool space corner, a cool one would clash with the
-       Mars corner. Reads as instrument-panel glass, equally at home over
-       either end of the gradient. */
-    --glass-bg: rgba(22, 19, 18, 0.68);
-    --glass-bg-strong: rgba(30, 26, 25, 0.82);
-    --glass-bg-subtle: rgba(18, 15, 14, 0.52);
-    --glass-border: rgba(255, 255, 255, 0.10);
-    --glass-border-subtle: rgba(255, 255, 255, 0.06);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
-    --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
-    --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
+    /* Glass material — taskboard.work's own dark values */
+    --glass-bg: rgba(30, 30, 40, 0.6);
+    --glass-bg-strong: rgba(40, 40, 55, 0.75);
+    --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-subtle: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
+    --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.5);
     --glass-highlight: rgba(255, 255, 255, 0.05);
     --skeleton-base: rgba(255, 255, 255, 0.09);
     --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-    /* Accent shifted from the generic teal to a warm amber/copper — "Mars
-       dust" — so the brand color itself participates in the Mars Descent
-       theme rather than reading as a leftover cool accent. Hue (~33°) is
-       kept well clear of both --danger (red, ~355°) and --success (green,
-       ~150°), so BUY/SELL badge semantics (.badge.bg-success/bg-danger,
-       unaffected by --accent) stay unambiguous. */
-    --accent: #FFA94D;
-    --accent-hover: #D97F24;
-    --accent-glass: rgba(255, 169, 77, 0.22);
-    --accent-soft: rgba(255, 169, 77, 0.22);
+    /* Accent — taskboard.work's blue. Color-coded labels (BUY/SELL badges,
+       value-search-score, price-trend pills, speculative-risk flags) do
+       NOT use this token — they're independently colored (.badge.bg-success/
+       bg-danger/bg-warning etc.), so this swap can't affect them. */
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --accent-glass: rgba(10, 132, 255, 0.25);
+    --accent-soft: rgba(10, 132, 255, 0.25);
 
     --input-focus-border: var(--accent);
-    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(255, 169, 77, 0.5);
+    --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(10, 132, 255, 0.5);
     --input-focus-border-danger: var(--danger-clear);
     --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -141,56 +130,46 @@
     --text-tertiary: rgba(232, 236, 242, 0.42);
     --text-on-glass: rgba(232, 236, 242, 0.97);
 
-    /* Background – "Mars Descent": a single diagonal (135deg, so 0% sits at
-       the top-left corner and 100% at the bottom-right, matching the
-       gradient's own on-screen direction) running from near-black deep
-       space, through a dark warming atmospheric-entry tone, down to the
-       rust-red Martian surface. The amber accent (ratings/badges/buttons)
-       reads as a genuine signal against both ends of this range. */
-    --bg-start: #05060B;
-    --bg-mid: #1C120F;
-    --bg-end: #35180B;
-    --bg-glow-1: rgba(150, 170, 215, 0.05); /* faint cool starlight, space corner */
-    --bg-glow-2: rgba(214, 122, 60, 0.12); /* warm dust-storm haze, Mars corner */
+    /* Background (default) – taskboard.work's own default dark gradient
+       ("rich navy → teal → indigo"). Users can pick an alternate
+       background from /settings (see the data-bg-theme blocks below),
+       which override --bg-start/--bg-mid/--bg-end; this is what shows
+       before any such choice is made. */
+    --bg-start: #0c1442;
+    --bg-mid: #0e3d4a;
+    --bg-end: #1e1b4b;
 
-    --dropdown-bg: rgba(28, 24, 23, 0.98);
-    --dropdown-border: rgba(255, 255, 255, 0.09);
+    --dropdown-bg: rgba(35, 35, 48, 0.9);
+    --dropdown-border: rgba(255, 255, 255, 0.1);
   }
 }
 
 /* Forced dark theme */
 [data-theme="dark"] {
-  /* Glass undertone kept near-neutral (only a whisper of warmth) rather
-     than fully hue-matched to either corner of the space-to-Mars diagonal
-     below (see --bg-start/--bg-end) — a warm-leaning grey would clash with
-     the cool space corner, a cool one would clash with the Mars corner.
-     Reads as instrument-panel glass, equally at home over either end of
-     the gradient. */
-  --glass-bg: rgba(22, 19, 18, 0.68);
-  --glass-bg-strong: rgba(30, 26, 25, 0.82);
-  --glass-bg-subtle: rgba(18, 15, 14, 0.52);
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-border-subtle: rgba(255, 255, 255, 0.06);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
-  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.60);
-  --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.60);
+  /* Glass material — taskboard.work's own dark values */
+  --glass-bg: rgba(30, 30, 40, 0.6);
+  --glass-bg-strong: rgba(40, 40, 55, 0.75);
+  --glass-bg-subtle: rgba(18, 20, 28, 0.52);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-subtle: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --glass-shadow-floating: 0 12px 48px rgba(0, 0, 0, 0.5);
   --glass-highlight: rgba(255, 255, 255, 0.05);
   --skeleton-base: rgba(255, 255, 255, 0.09);
   --skeleton-sheen: rgba(255, 255, 255, 0.28);
 
-  /* Accent shifted from the generic teal to a warm amber/copper — "Mars
-     dust" — so the brand color itself participates in the Mars Descent
-     theme rather than reading as a leftover cool accent. Hue (~33°) is
-     kept well clear of both --danger (red, ~355°) and --success (green,
-     ~150°), so BUY/SELL badge semantics (.badge.bg-success/bg-danger,
-     unaffected by --accent) stay unambiguous. */
-  --accent: #FFA94D;
-  --accent-hover: #D97F24;
-  --accent-glass: rgba(255, 169, 77, 0.22);
-  --accent-soft: rgba(255, 169, 77, 0.22);
+  /* Accent — taskboard.work's blue. Color-coded labels (BUY/SELL badges,
+     value-search-score, price-trend pills, speculative-risk flags) do NOT
+     use this token — they're independently colored (.badge.bg-success/
+     bg-danger/bg-warning etc.), so this swap can't affect them. */
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --accent-glass: rgba(10, 132, 255, 0.25);
+  --accent-soft: rgba(10, 132, 255, 0.25);
 
   --input-focus-border: var(--accent);
-  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(255, 169, 77, 0.5);
+  --input-focus-ring: 0 0 0 3px var(--accent-glass), 0 3px 14px -6px rgba(10, 132, 255, 0.5);
   --input-focus-border-danger: var(--danger-clear);
   --input-focus-ring-danger: 0 0 0 3px var(--danger-glass), 0 3px 14px -6px rgba(255, 77, 85, 0.45);
 
@@ -212,20 +191,174 @@
   --text-tertiary: rgba(232, 236, 242, 0.42);
   --text-on-glass: rgba(232, 236, 242, 0.97);
 
-  /* Background – "Mars Descent": a single diagonal (135deg, so 0% sits at
-     the top-left corner and 100% at the bottom-right, matching the
-     gradient's own on-screen direction) running from near-black deep
-     space, through a dark warming atmospheric-entry tone, down to the
-     rust-red Martian surface. The amber accent (ratings/badges/buttons)
-     reads as a genuine signal against both ends of this range. */
-  --bg-start: #05060B;
-  --bg-mid: #1C120F;
-  --bg-end: #35180B;
-  --bg-glow-1: rgba(150, 170, 215, 0.05); /* faint cool starlight, space corner */
-  --bg-glow-2: rgba(214, 122, 60, 0.12); /* warm dust-storm haze, Mars corner */
+  /* Background (default) – taskboard.work's own default dark gradient
+     ("rich navy → teal → indigo"). Users can pick an alternate background
+     from /settings (see the data-bg-theme blocks below), which override
+     --bg-start/--bg-mid/--bg-end; this is what shows before any such
+     choice is made. */
+  --bg-start: #0c1442;
+  --bg-mid: #0e3d4a;
+  --bg-end: #1e1b4b;
 
-  --dropdown-bg: rgba(28, 24, 23, 0.98);
-  --dropdown-border: rgba(255, 255, 255, 0.09);
+  --dropdown-bg: rgba(35, 35, 48, 0.9);
+  --dropdown-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Background theme options (/settings) — ported verbatim from
+   taskboard.work, same 20 preset IDs/values ───────────────────────────── */
+
+/* Light mode gradients */
+[data-theme="light"][data-bg-theme="light-sunrise-studio"] {
+  --bg-start: #ffd2a0;
+  --bg-mid: #ffe6b8;
+  --bg-end: #d6e8ff;
+}
+
+[data-theme="light"][data-bg-theme="light-citrus-focus"] {
+  --bg-start: #fff3b0;
+  --bg-mid: #d7f7a8;
+  --bg-end: #c2f4e2;
+}
+
+[data-theme="light"][data-bg-theme="light-lilac-ideas"] {
+  --bg-start: #f0ddff;
+  --bg-mid: #e0e7ff;
+  --bg-end: #d1f7ea;
+}
+
+[data-theme="light"][data-bg-theme="light-mango-waves"] {
+  --bg-start: #ffd6a3;
+  --bg-mid: #ffb3b8;
+  --bg-end: #d3e6ff;
+}
+
+[data-theme="light"][data-bg-theme="light-mint-notes"] {
+  --bg-start: #e7fff4;
+  --bg-mid: #ccf5e7;
+  --bg-end: #d4f1ff;
+}
+
+/* Dark mode gradients */
+[data-theme="dark"][data-bg-theme="dark-aurora-focus"] {
+  --bg-start: #050818;
+  --bg-mid: #053047;
+  --bg-end: #221b4b;
+}
+
+[data-theme="dark"][data-bg-theme="dark-neon-ocean"] {
+  --bg-start: #020617;
+  --bg-mid: #054960;
+  --bg-end: #312e81;
+}
+
+[data-theme="dark"][data-bg-theme="dark-midnight-grid"] {
+  --bg-start: #090b16;
+  --bg-mid: #141827;
+  --bg-end: #1f2737;
+}
+
+[data-theme="dark"][data-bg-theme="dark-orchid-haze"] {
+  --bg-start: #1b1028;
+  --bg-mid: #261a3f;
+  --bg-end: #141a33;
+}
+
+[data-theme="dark"][data-bg-theme="dark-deep-space"] {
+  --bg-start: #02030b;
+  --bg-mid: #050c20;
+  --bg-end: #0a1f2b;
+}
+
+/* Light mode solids (flatten gradient + dark text) */
+[data-theme="light"][data-bg-theme="light-soft-paper"] {
+  --bg-start: #f9f5ef;
+  --bg-mid: #f9f5ef;
+  --bg-end: #f9f5ef;
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-on-glass: rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="light"][data-bg-theme="light-oat"] {
+  --bg-start: #f3e3cf;
+  --bg-mid: #f3e3cf;
+  --bg-end: #f3e3cf;
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-on-glass: rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="light"][data-bg-theme="light-cloud-blue"] {
+  --bg-start: #e5f1ff;
+  --bg-mid: #e5f1ff;
+  --bg-end: #e5f1ff;
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-on-glass: rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="light"][data-bg-theme="light-pale-rose"] {
+  --bg-start: #ffe8f1;
+  --bg-mid: #ffe8f1;
+  --bg-end: #ffe8f1;
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-on-glass: rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="light"][data-bg-theme="light-soft-mint"] {
+  --bg-start: #e7fbf3;
+  --bg-mid: #e7fbf3;
+  --bg-end: #e7fbf3;
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-on-glass: rgba(0, 0, 0, 0.9);
+}
+
+/* Dark mode solids (flatten gradient + light text, with visible hue) */
+[data-theme="dark"][data-bg-theme="dark-ink"] {
+  --bg-start: #0f172a;
+  --bg-mid: #0f172a;
+  --bg-end: #0f172a;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-on-glass: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"][data-bg-theme="dark-charcoal"] {
+  --bg-start: #1e293b;
+  --bg-mid: #1e293b;
+  --bg-end: #1e293b;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-on-glass: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"][data-bg-theme="dark-forest"] {
+  --bg-start: #0d3329;
+  --bg-mid: #0d3329;
+  --bg-end: #0d3329;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-on-glass: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"][data-bg-theme="dark-deep-teal"] {
+  --bg-start: #0c3d4d;
+  --bg-mid: #0c3d4d;
+  --bg-end: #0c3d4d;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-on-glass: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"][data-bg-theme="dark-plum"] {
+  --bg-start: #3d1a4a;
+  --bg-mid: #3d1a4a;
+  --bg-end: #3d1a4a;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-on-glass: rgba(255, 255, 255, 0.95);
 }
 
 /* Navbar toggler icon visibility in dark mode (taskboard) */
@@ -256,15 +389,15 @@ body {
   /* dvh tracks the *visible* viewport, so mobile browser toolbars don't
      leave blank space below the content. vh above is the fallback. */
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 12% 15%, var(--bg-glow-1), transparent 45%),
-    radial-gradient(circle at 88% 85%, var(--bg-glow-2), transparent 45%),
-    linear-gradient(
-      135deg,
-      var(--bg-start) 0%,
-      var(--bg-mid) 45%,
-      var(--bg-end) 100%
-    );
+  /* taskboard.work's own background rule — a single linear-gradient, no
+     radial glow layers. --bg-start/--bg-mid/--bg-end are overridden by
+     whichever data-bg-theme preset the user picked in /settings, if any. */
+  background: linear-gradient(
+    135deg,
+    var(--bg-start) 0%,
+    var(--bg-mid) 40%,
+    var(--bg-end) 100%
+  );
   background-attachment: fixed;
 }
 
@@ -5127,6 +5260,65 @@ a:hover {
   text-decoration: underline;
 }
 
+/* ─── Glass pill (ported from taskboard.work for the /settings theme picker) ─── */
+.glass-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-on-glass);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-pill-button {
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  gap: 8px;
+  text-decoration: none;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.glass-pill-button:hover:not(:disabled) {
+  background: var(--glass-bg-strong);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Settings background option tiles */
+.bg-option-tile {
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background-size: 140% 140%;
+  background-position: center;
+}
+
+.bg-option-tile-active {
+  box-shadow: 0 0 0 2px var(--accent-glass);
+}
+
+.bg-option-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
 /* Non-modal login page: glass-style form inputs to match the panel */
 .glass-panel .form-control {
   background: var(--input-bg) !important;
@@ -5298,6 +5490,12 @@ a:hover {
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
   padding: 0.5rem;
+  /* The item list is long enough (and grows as features are added — e.g.
+     Settings) that on a short viewport it can run off-screen with no way
+     to reach the rest. Scroll internally instead of overflowing. */
+  max-height: calc(100vh - var(--navbar-height) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .user-dropdown-menu .dropdown-item {
