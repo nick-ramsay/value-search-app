@@ -385,6 +385,44 @@
   }
 }
 
+/* ─── Custom scrollbar (glass aesthetic) ──────────────────────────────────
+   Thin, rounded, translucent thumb matching the app's pervasive pill
+   (border-radius: 999px) language, instead of the browser default. Uses
+   --text-tertiary/--text-secondary rather than a glass/border token so it
+   stays visible against both the light and dark page backgrounds (those
+   invert appropriately per theme) and adapts automatically across every
+   /settings background preset, which already overrides those same text
+   tokens for its solid-color options. Applied globally (not just html/body)
+   so dropdown menus, modals, and textareas pick it up too. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--text-tertiary);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Base */
 html,
 body {
@@ -1080,6 +1118,63 @@ button.accordion-button.ai-accordion-button:focus-visible {
   background: rgba(60, 60, 67, 0.08);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* News summary — circular icon button, same neutral glass tint and hover
+   treatment as .stock-card__company-info-btn (About) right next to it, just
+   icon-only/circular instead of a labeled pill. Visible to every user (not
+   admin-gated), and only rendered at all when a symbol has a weekly news
+   summary (see StockResultCard's item.newsSummary check). */
+.stock-card__news-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  margin-left: 0.4rem;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.stock-card__news-btn:hover,
+.stock-card__news-btn:focus-visible {
+  background: var(--glass-bg-strong);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stock-card__news-btn .bi {
+  font-size: 0.9rem;
+}
+
+[data-theme="light"] .stock-card__news-btn {
+  background: rgba(60, 60, 67, 0.05);
+  border-color: rgba(60, 60, 67, 0.12);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .stock-card__news-btn:hover,
+[data-theme="light"] .stock-card__news-btn:focus-visible {
+  background: rgba(60, 60, 67, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.news-summary-modal__text {
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.news-summary-modal__updated {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
 }
 
 /* Admin-only per-card manual refresh — circular, blue glass tint. Reuses
@@ -2378,6 +2473,23 @@ button.stock-card__user-pill-trigger[aria-expanded="true"] {
 .stock-card__inner-accordion .stock-card__inner-accordion-btn:not(.collapsed) {
   background: var(--glass-bg-strong) !important;
   border-radius: 8px 8px 0 0;
+}
+
+/* Bootstrap's default chevron is a fixed black SVG — invisible against a
+   dark card background. Same invert-to-white fix already used for
+   .ai-accordion-button::after. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stock-card__inner-accordion-btn::after {
+    filter: brightness(0) invert(1) !important;
+  }
+}
+
+[data-theme="dark"] .stock-card__inner-accordion-btn::after {
+  filter: brightness(0) invert(1) !important;
+}
+
+[data-theme="light"] .stock-card__inner-accordion-btn::after {
+  filter: none !important;
 }
 
 .stock-card__inner-accordion .stock-card__inner-accordion-body {

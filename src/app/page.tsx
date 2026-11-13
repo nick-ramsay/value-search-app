@@ -2,7 +2,7 @@ import { cache, Suspense } from "react";
 import { unstable_cache } from "next/cache";
 
 import clientPromise from "@/lib/mongodb";
-import { docToValueRecord, getPricesBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
+import { docToValueRecord, getPricesBySymbols, getNewsSummaryBySymbols, type DocInput, type ValueRecord } from "@/lib/value-search";
 import { pruneIndustriesForSectors } from "@/lib/sectorIndustryFilter";
 import AppNavbar from "../app/components/AppNavbar";
 import PaginationWithLoader from "../app/components/PaginationWithLoader";
@@ -559,7 +559,10 @@ async function getValues(
   const pageSymbols = pageDocs
     .map((d) => (typeof d.symbol === "string" ? d.symbol : undefined))
     .filter((s): s is string => Boolean(s));
-  const priceBySymbol = await getPricesBySymbols(pageSymbols);
+  const [priceBySymbol, newsSummaryBySymbol] = await Promise.all([
+    getPricesBySymbols(pageSymbols),
+    getNewsSummaryBySymbols(pageSymbols),
+  ]);
 
   const values = pageDocs.map((doc) => {
     const record = docToValueRecord(doc as DocInput);
@@ -580,6 +583,11 @@ async function getValues(
         record.industry = record.industry ?? snapshot.industry;
         record.sector = record.sector ?? snapshot.sector;
         record.country = record.country ?? snapshot.country;
+      }
+      const newsSummarySnapshot = newsSummaryBySymbol[sym] ?? newsSummaryBySymbol[baseSym];
+      if (newsSummarySnapshot) {
+        record.newsSummary = newsSummarySnapshot.summary;
+        record.newsSummaryUpdatedAt = newsSummarySnapshot.updatedAt;
       }
     }
     return record;

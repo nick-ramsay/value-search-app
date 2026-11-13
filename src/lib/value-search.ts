@@ -89,6 +89,17 @@ export type ValueRecord = {
   country?: string;
   valueSearchScore?: ValueSearchScoreDisplay;
   priceTrend?: PriceTrendDisplay;
+  /**
+   * AI-generated current news summary for this symbol, from
+   * value-search-pyworker's news_summary.py (stock-news-summaries
+   * collection, currentNewsSummary field) — a factual recap of recent news
+   * (not a sentiment verdict), using prior weeks as context. Same text fed
+   * into the AI assessment prompt as the RECENT NEWS SUMMARY section.
+   * Undefined when no weekly news summary has been generated for this
+   * symbol yet.
+   */
+  newsSummary?: string;
+  newsSummaryUpdatedAt?: string;
 } & ValueRecordMetrics;
 
 function escapeRegExp(value: string) {
@@ -455,6 +466,58 @@ export async function getPricesBySymbols(
   return map;
 }
 
+function getNewsSummariesCollectionName(): string {
+  return process.env.MONGODB_NEWS_SUMMARIES_COLLECTION ?? "stock-news-summaries";
+}
+
+export type NewsSummarySnapshot = {
+  summary: string;
+  updatedAt?: string;
+};
+
+/**
+ * Fetch currentNewsSummary (value-search-pyworker's news_summary.py,
+ * stock-news-summaries collection) for many symbols — a factual recap of
+ * recent news, not a sentiment verdict. Returns a map of uppercase symbol
+ * -> snapshot, omitting any symbol with no summary generated yet — same
+ * "include only when there's something to show" convention
+ * getPricesBySymbols uses for industry/sector/country.
+ */
+export async function getNewsSummaryBySymbols(
+  symbols: string[]
+): Promise<Record<string, NewsSummarySnapshot>> {
+  const unique = [...new Set(symbols.map((s) => s.trim()).filter(Boolean))];
+  if (unique.length === 0) return {};
+
+  const dbName = process.env.MONGODB_DB;
+  if (!dbName) return {};
+
+  const client = await clientPromise;
+  const db = client.db(dbName);
+  const coll = getNewsSummariesCollectionName();
+
+  const upperSymbols = unique.map((s) => s.toUpperCase());
+  const docs = await db
+    .collection(coll)
+    .find(
+      { symbol: { $in: upperSymbols } },
+      { projection: { symbol: 1, currentNewsSummary: 1, currentNewsSummaryUpdatedAt: 1 } }
+    )
+    .toArray();
+
+  const map: Record<string, NewsSummarySnapshot> = {};
+  for (const doc of docs) {
+    const d = doc as Record<string, unknown>;
+    const sym = typeof d.symbol === "string" ? d.symbol : "";
+    if (!sym) continue;
+    const summary = readStringField(d, "currentNewsSummary");
+    if (!summary) continue;
+    const updatedAt = toDateString(d.currentNewsSummaryUpdatedAt);
+    map[sym.toUpperCase()] = updatedAt ? { summary, updatedAt } : { summary };
+  }
+  return map;
+}
+
 /**
  * Fetch a single stock/assessment by symbol (case-insensitive). Returns null if not found.
  * Price is loaded from the stock-quotes collection (quote.price).
@@ -505,6 +568,13 @@ export async function getValueBySymbol(
     record.industry = record.industry ?? snapshot.industry;
     record.sector = record.sector ?? snapshot.sector;
     record.country = record.country ?? snapshot.country;
+  }
+
+  const summaryMap = await getNewsSummaryBySymbols([trimmed]);
+  const summarySnapshot = summaryMap[sym] ?? summaryMap[baseSym];
+  if (summarySnapshot) {
+    record.newsSummary = summarySnapshot.summary;
+    record.newsSummaryUpdatedAt = summarySnapshot.updatedAt;
   }
 
   return record;

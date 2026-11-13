@@ -10,6 +10,7 @@ import AssessmentPillButton from "./AssessmentPillButton";
 import CardUserActions from "./CardUserActions";
 import CardNotes from "./CardComments";
 import StockRefreshButton from "./StockRefreshButton";
+import NewsSummaryModalTrigger from "./NewsSummaryModalTrigger";
 import ReactMarkdown from "react-markdown";
 
 function getRatingAccentClass(rating: string): string {
@@ -434,6 +435,15 @@ export default function StockResultCard({
             <i className="bi bi-info-circle" aria-hidden />
             <span className="stock-card__company-info-label" aria-hidden>About</span>
           </button>
+          {item.newsSummary && (
+            <NewsSummaryModalTrigger
+              modalId={`news-summary-modal-${item._id}`}
+              name={item.name}
+              symbol={item.symbol}
+              summary={item.newsSummary}
+              updatedAt={item.newsSummaryUpdatedAt}
+            />
+          )}
           {item.symbol && <StockRefreshButton symbol={item.symbol} />}
         </div>
         {(() => {
