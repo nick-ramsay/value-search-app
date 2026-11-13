@@ -15,7 +15,7 @@ type BackgroundOption = {
 };
 
 /**
- * Ported verbatim from taskboard.work's own /settings page (same 20 preset
+ * Ported verbatim from taskboard.work's own /settings page (same 22 preset
  * IDs, labels, and descriptions) — see globals.css's matching
  * `[data-theme][data-bg-theme]` blocks, which these ids/previews must stay
  * in sync with. The 5 dark solid previews below use the actual rendered
@@ -66,6 +66,14 @@ const BACKGROUND_OPTIONS: BackgroundOption[] = [
     variant: "gradient",
     preview: "linear-gradient(135deg, #e7fff4 0%, #ccf5e7 40%, #d4f1ff 100%)",
   },
+  {
+    id: "light-sky-meadow",
+    label: "Sky Meadow",
+    description: "Sky blue from the top left easing into grass green at the bottom right.",
+    theme: "light",
+    variant: "gradient",
+    preview: "linear-gradient(135deg, #c0e8ff 0%, #b2e8d4 40%, #b5df98 100%)",
+  },
   // Dark mode – gradients
   {
     id: "dark-aurora-focus",
@@ -106,6 +114,14 @@ const BACKGROUND_OPTIONS: BackgroundOption[] = [
     theme: "dark",
     variant: "gradient",
     preview: "linear-gradient(135deg, #02030b 0%, #050c20 40%, #0a1f2b 100%)",
+  },
+  {
+    id: "dark-mars-descent",
+    label: "Mars Descent",
+    description: "Space black at the top left warming into rust Mars red at the bottom right.",
+    theme: "dark",
+    variant: "gradient",
+    preview: "linear-gradient(135deg, #020203 0%, #1c0a08 40%, #9a301f 100%)",
   },
   // Light mode – solid colors
   {
@@ -219,9 +235,9 @@ function OptionGrid({
               style={style}
             >
               <span className="bg-option-swatch me-3" style={{ background: option.preview }} />
-              <span className="d-flex flex-column">
+              <span className="d-flex flex-column bg-option-tile-body">
                 <span className="fw-semibold small">{option.label}</span>
-                <span className="glass-subheading small mb-0">{option.description}</span>
+                <span className="glass-subheading small mb-0 bg-option-tile-desc">{option.description}</span>
               </span>
             </button>
           </div>

@@ -205,7 +205,7 @@
 }
 
 /* ─── Background theme options (/settings) — ported verbatim from
-   taskboard.work, same 20 preset IDs/values ───────────────────────────── */
+   taskboard.work, same 22 preset IDs/values ───────────────────────────── */
 
 /* Light mode gradients */
 [data-theme="light"][data-bg-theme="light-sunrise-studio"] {
@@ -238,6 +238,12 @@
   --bg-end: #d4f1ff;
 }
 
+[data-theme="light"][data-bg-theme="light-sky-meadow"] {
+  --bg-start: #c0e8ff;
+  --bg-mid: #b2e8d4;
+  --bg-end: #b5df98;
+}
+
 /* Dark mode gradients */
 [data-theme="dark"][data-bg-theme="dark-aurora-focus"] {
   --bg-start: #050818;
@@ -267,6 +273,12 @@
   --bg-start: #02030b;
   --bg-mid: #050c20;
   --bg-end: #0a1f2b;
+}
+
+[data-theme="dark"][data-bg-theme="dark-mars-descent"] {
+  --bg-start: #020203;
+  --bg-mid: #1c0a08;
+  --bg-end: #9a301f;
 }
 
 /* Light mode solids (flatten gradient + dark text) */
@@ -4914,21 +4926,14 @@ a:hover {
 
 /* Filters accordion wrapper – match stock card background; no difference between header and body */
 .filters-accordion-glass .accordion-item {
-  /* Matches .stock-card's background exactly (same var, same opacity) so the
-     Filters panel reads as the same glass material as the result cards
-     below it, rather than a more translucent, differently-tinted one. */
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--glass-border);
   border-radius: 18px;
   /* Was overflow: hidden for corner-clipping, but that also clipped the
      Sector/Industry/Country dropdown menus and the info tooltip bubble,
-     both of which are meant to float outside the accordion's bounds.
-     border-radius alone still renders the item's own corners rounded;
-     nothing inside it has a background that needs clipping to that shape. */
+     both of which are meant to float outside the accordion's bounds — so
+     this stays overflow: visible, and the actual glass surface (background,
+     border, backdrop-filter, shadow) moves to the ::before below instead
+     of living directly on this element. */
   overflow: visible;
-  box-shadow: var(--glass-shadow);
   /* backdrop-filter creates a new stacking context on this element, which
      traps the dropdown-menu's z-index inside it — the menu's z-index only
      competes for paint order against its own siblings within THIS
@@ -4943,7 +4948,33 @@ a:hover {
   z-index: 50;
 }
 
-[data-theme="light"] .filters-accordion-glass .accordion-item {
+/* The actual glass surface, on its own layer behind the content (z-index
+   -1) rather than directly on .accordion-item. WebKit (Safari/iOS) has a
+   bug where backdrop-filter + border-radius stops clipping the blur to
+   the rounded shape once the element sharing them has overflow: visible —
+   confirmed via Playwright's webkit engine: with background/backdrop-filter
+   on .accordion-item itself (overflow: visible, required above for the
+   dropdowns), the bottom corners rendered square instead of rounded, even
+   though border-radius was computed correctly. A border-radius alone
+   (e.g. on .accordion-body) doesn't fix it since that element has no
+   visible background of its own to clip. Isolating the glass surface onto
+   this pseudo-element lets it have no overflowing children of its own, so
+   the clip renders correctly regardless of the real content wrapper's
+   overflow: visible. */
+.filters-accordion-glass .accordion-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+[data-theme="light"] .filters-accordion-glass .accordion-item::before {
   background: rgba(255, 255, 255, 0.78);
   border-color: rgba(255, 255, 255, 0.65);
 }
@@ -5317,6 +5348,22 @@ a:hover {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.7);
   flex-shrink: 0;
+}
+
+/* Keep every background option tile the same height (long descriptions used to grow only some pills). */
+.bg-option-tile-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.bg-option-tile-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  /* Two lines at ~Bootstrap .small scale (matches glass-subheading + small) */
+  min-height: 2.75em;
 }
 
 /* Non-modal login page: glass-style form inputs to match the panel */
