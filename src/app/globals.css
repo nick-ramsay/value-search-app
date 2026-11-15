@@ -71,7 +71,7 @@
   --bg-end: #d6e9ff;
 
   /* Dropdown (light) */
-  --dropdown-bg: rgba(255, 255, 255, 0.85);
+  --dropdown-bg: rgba(255, 255, 255, 0.95);
   --dropdown-border: rgba(255, 255, 255, 0.5);
 
   /* Motion */
@@ -139,7 +139,7 @@
     --bg-mid: #0e3d4a;
     --bg-end: #1e1b4b;
 
-    --dropdown-bg: rgba(35, 35, 48, 0.9);
+    --dropdown-bg: rgba(35, 35, 48, 0.97);
     --dropdown-border: rgba(255, 255, 255, 0.1);
   }
 }
@@ -200,7 +200,7 @@
   --bg-mid: #0e3d4a;
   --bg-end: #1e1b4b;
 
-  --dropdown-bg: rgba(35, 35, 48, 0.9);
+  --dropdown-bg: rgba(35, 35, 48, 0.97);
   --dropdown-border: rgba(255, 255, 255, 0.1);
 }
 
@@ -439,16 +439,31 @@ body {
   /* dvh tracks the *visible* viewport, so mobile browser toolbars don't
      leave blank space below the content. vh above is the fallback. */
   min-height: 100dvh;
-  /* taskboard.work's own background rule — a single linear-gradient, no
-     radial glow layers. --bg-start/--bg-mid/--bg-end are overridden by
-     whichever data-bg-theme preset the user picked in /settings, if any. */
-  background: linear-gradient(
+  /* taskboard.work's own background rule, adapted with a fixed
+     background-size — --bg-start/--bg-mid/--bg-end are overridden by
+     whichever data-bg-theme preset the user picked in /settings, if any.
+     Without an explicit size, a fixed-attachment gradient sizes itself to
+     the current viewport, so its proportions visibly stretch/compress as
+     the viewport height changes (a browser resize, or a mobile toolbar
+     collapsing right after load) — pinning it to one reference height
+     keeps its look identical everywhere. background-color is the same
+     --bg-end the gradient itself finishes on, as a fallback fill for any
+     viewport taller than that reference height; the fallback is flat
+     while the gradient above it is a diagonal (so it doesn't vary
+     left-to-right the way the gradient does right at the seam), so
+     1600px is chosen generously above any realistic real-world browser
+     viewport height specifically so that seam is never actually reached. */
+  background-color: var(--bg-end);
+  background-image: linear-gradient(
     135deg,
     var(--bg-start) 0%,
     var(--bg-mid) 40%,
     var(--bg-end) 100%
   );
   background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: top left;
+  background-size: 100vw 1600px;
 }
 
 
@@ -1910,7 +1925,6 @@ button.accordion-button.ai-accordion-button:focus-visible {
 .stock-card__action--secondary[aria-expanded="true"] {
   background: var(--accent-glass);
   border-color: rgba(30, 138, 114, 0.38);
-  color: var(--accent);
 }
 
 .stock-card__action--icon {
@@ -2010,6 +2024,18 @@ button.accordion-button.ai-accordion-button:focus-visible {
   color: var(--text-secondary);
   font-size: var(--stock-card-action-font-size);
   line-height: var(--stock-card-action-line-height);
+}
+
+/* When this pill stretches to fill its row (mobile — see the flex: 1 1 0
+   rule below), centering [label, chevron] as one group leaves the label
+   itself looking off-center, since the chevron's width pulls the group's
+   midpoint to the right of the label's own midpoint — most visible on
+   "Queued", the longest label this pill ever shows. Letting the label
+   fill and center within its own leftover space, with the chevron pinned
+   to the trailing edge, centers the actual text instead of the pair. */
+.stock-card__user-pill-trigger .stock-card__action-label {
+  flex: 1 1 auto;
+  text-align: center;
 }
 
 /* Whole pill is the trigger (button); reset button defaults */
@@ -3037,7 +3063,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
   padding: 0.25rem 0.5rem;
   line-height: 1.3;
   border-radius: 999px;
-  border: 1px solid rgba(34, 140, 132, 0.35);
+  border: 1px solid transparent;
   background: rgba(34, 140, 132, 0.18);
   color: var(--text-secondary);
   font-size: 0.6875rem;
@@ -3051,7 +3077,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 
 [data-theme="light"] .stock-card__labels-list .stock-card__label-pill {
   background: #c8f0ec;
-  border-color: rgba(34, 140, 132, 0.4);
+  border-color: transparent;
   color: #0d4d48;
   box-shadow: 0 1px 2px rgba(34, 140, 132, 0.15);
 }
@@ -3067,7 +3093,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 [data-theme="dark"] .stock-card__label-pill,
 :root:not([data-theme="light"]) .stock-card__label-pill {
   background: rgba(45, 160, 155, 0.22);
-  border-color: rgba(45, 160, 155, 0.45);
+  border-color: transparent;
   color: rgba(200, 240, 238, 0.95);
 }
 
@@ -3105,7 +3131,7 @@ button.stock-card__user-pill-trigger.stock-card__user-pill--hold,
 
 [data-theme="light"] .stock-card__labels-inline .stock-card__label-pill {
   background: #c8f0ec;
-  border-color: rgba(34, 140, 132, 0.4);
+  border-color: transparent;
   color: #0d4d48;
   box-shadow: none;
 }
@@ -3577,8 +3603,8 @@ textarea.form-control:focus {
 /* Suggestions dropdown – taskboard-style glass */
 .suggestions-glass {
   background: var(--dropdown-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--dropdown-border) !important;
   box-shadow: var(--glass-shadow-floating);
   border-radius: 16px;
@@ -4435,8 +4461,8 @@ textarea.form-control:focus {
 /* Theme dropdown – taskboard-style glass */
 .theme-dropdown {
   background: var(--dropdown-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--dropdown-border) !important;
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
@@ -4538,8 +4564,8 @@ textarea.form-control:focus {
 
 .multi-select-dropdown__menu {
   background: var(--dropdown-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--dropdown-border) !important;
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
@@ -4637,7 +4663,6 @@ textarea.form-control:focus {
 [data-theme="light"] .stock-card__action--secondary[aria-expanded="true"] {
   background: rgba(30, 138, 114, 0.12) !important;
   border-color: rgba(30, 138, 114, 0.28) !important;
-  color: var(--accent);
 }
 
 [data-theme="light"] button.stock-card__user-pill-trigger[aria-expanded="true"] {
@@ -5643,8 +5668,8 @@ a:hover {
 /* User dropdown in navbar */
 .user-dropdown-menu {
   background: var(--dropdown-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--dropdown-border) !important;
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
@@ -6342,8 +6367,8 @@ a:hover {
 /* Dropdown menu — same glass recipe as the navbar's user-dropdown-menu */
 .monthly-balances-data-dropdown-menu {
   background: var(--dropdown-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
   border: 1px solid var(--dropdown-border) !important;
   border-radius: 16px;
   box-shadow: var(--glass-shadow-floating);
@@ -7892,6 +7917,18 @@ a:hover {
 .back-to-top-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* On mobile there's less room around the bottom pagination row (Page N
+   < >), so this fixed button's default bottom-right spot sits right on
+   top of its "next page" chevron once the user scrolls all the way down.
+   Lift it clear of that row's height instead of moving it sideways —
+   the next-page chevron is the one actually needed right after scrolling
+   to the bottom, so the fix has to leave it reachable on both sides. */
+@media (max-width: 575.98px) {
+  .back-to-top-btn {
+    bottom: 4.5rem;
+  }
 }
 
 /* Research page */

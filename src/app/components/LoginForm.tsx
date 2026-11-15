@@ -11,7 +11,7 @@ type LoginFormProps = {
 };
 
 export default function LoginForm({
-  callbackUrl = "/portfolio",
+  callbackUrl,
   onSuccess,
   compact = false,
 }: LoginFormProps) {
@@ -43,7 +43,16 @@ export default function LoginForm({
       }
       onSuccess?.();
       if (typeof window !== "undefined") {
-        window.location.href = callbackUrl;
+        // No callbackUrl (the login modal, opened from any page, never passes
+        // one): reload in place rather than navigating to a fixed page, so
+        // signing in via the modal keeps the user right where they were. The
+        // full-page /login route always passes its own explicit callbackUrl
+        // (see login/page.tsx), so this fallback never affects that flow.
+        if (callbackUrl) {
+          window.location.href = callbackUrl;
+        } else {
+          window.location.reload();
+        }
       }
     } catch {
       setError("Login failed. Please try again.");
