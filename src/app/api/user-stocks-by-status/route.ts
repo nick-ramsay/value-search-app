@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose-connect";
 import UserStockData from "@/models/UserStockData";
-import { docToValueRecord, getPricesBySymbols, type ValueRecord } from "@/lib/value-search";
+import { docToValueRecord, getPricesBySymbols, getNewsSummaryBySymbols, type ValueRecord } from "@/lib/value-search";
 import mongoose from "mongoose";
 
 const STATUSES = ["Avoid", "Watch", "Queued", "Own", "Hold"] as const;
@@ -47,7 +47,10 @@ export async function GET(request: Request) {
       .collection(collName)
       .find({ symbol: { $in: symbols } })
       .toArray();
-    const priceBySymbol = await getPricesBySymbols(symbols as string[]);
+    const [priceBySymbol, newsSummaryBySymbol] = await Promise.all([
+      getPricesBySymbols(symbols as string[]),
+      getNewsSummaryBySymbols(symbols as string[]),
+    ]);
     const stocks = assessments.map((doc) => {
       const record = docToValueRecord(doc);
       const raw = record.symbol?.trim();
@@ -66,6 +69,11 @@ export async function GET(request: Request) {
           record.industry = record.industry ?? snapshot.industry;
           record.sector = record.sector ?? snapshot.sector;
           record.country = record.country ?? snapshot.country;
+        }
+        const newsSummarySnapshot = newsSummaryBySymbol[sym] ?? newsSummaryBySymbol[baseSym];
+        if (newsSummarySnapshot) {
+          record.newsSummary = newsSummarySnapshot.summary;
+          record.newsSummaryUpdatedAt = newsSummarySnapshot.updatedAt;
         }
       }
       return record;
